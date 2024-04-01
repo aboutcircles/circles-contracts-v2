@@ -119,11 +119,11 @@ echo "MastercopyDemurrageERC20: ${MASTERCOPY_DEMURRAGE_ERC20_ADDRESS_07}"
 echo "MastercopyInflationaryERC20: ${MASTERCOPY_INFLATIONARY_ERC20_ADDRESS_08}"
 echo "MastercopyStandardVault: ${MASTERCOPY_STANDARD_VAULT_09}"
 
-Deploy the contracts
+# Deploy the contracts
 
 export deployment_details_file="${OUT_DIR}/chiado-artefacts-${identifier}.txt"
 echo "Deployment details will be stored in $deployment_details_file"
-§
+
 echo ""
 echo "Starting deployment..."
 echo "======================"

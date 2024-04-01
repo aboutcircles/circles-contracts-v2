@@ -1,0 +1,18 @@
+Gnosis Chain deployment
+=================
+Deployment Date: 2024-04-01 17:51:01
+Version: 0.3.1-alpha
+Git Commit: 1fd0982c4c86533de2845a975113bcd763df8a56
+Deployer Address: 0x7619F26728Ced663E50E578EB6ff42430931564c, Initial nonce: 8
+Compiler Version: v0.8.23+commit.f704f362
+
+Deployed Contracts:
+Hub: 0x00315615f899F90d6Bc46EaaC911E37871d62DD8
+Migration: 0xE22bFb93aDFa2b446226Ffb6FDa8dC641C819f23
+NameRegistry: 0xa28f05bd1C054E2AA9680497e03Df2cc17f1b3d8
+ERC20Lift: 0xE2CD16612EaF37432a8384c5dA8a66e1CAf0E68F
+StandardTreasury: 0x8e9b584764C467d95C23c27c0Ed0eE96A95b427d
+BaseGroupMintPolicy: 0x6ecbCB0166A8143aa4AC19a43Ea31f915D3D36dB
+MastercopyDemurrageERC20: 0x16920293865aCe1c5e97e672eaECFD3254224b6f
+MastercopyInflationaryERC20: 0x3467E9977856A422CfE7960D0a34af2FFB91B47f
+MastercopyStandardVault: 0xc70FAfea358d371477BbAd1c3adE0936AC4eEe24
