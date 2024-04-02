@@ -73,14 +73,20 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
      */
     IHubV1 public immutable hubV1;
 
-    INameRegistry public immutable nameRegistry;
+    /**
+     * @notice The name registry contract address.
+     */
+    INameRegistry public nameRegistry;
 
     /**
      * @notice The address of the migration contract for v1 Circles.
      */
-    address public immutable migration;
+    address public migration;
 
-    IERC20Lift public immutable liftERC20;
+    /**
+     * @notice The address of the Lift ERC20 contract.
+     */
+    IERC20Lift public liftERC20;
 
     /**
      * @notice The timestamp of the start of the invitation-only period.
@@ -95,7 +101,7 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
      * @notice The standard treasury contract address used when
      * registering a (non-custom) group.
      */
-    address public immutable standardTreasury;
+    address public standardTreasury;
 
     /**
      * @notice The mapping of registered avatar addresses to the next avatar address,
@@ -104,23 +110,21 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
      */
     mapping(address => address) public avatars;
 
-    // Mint policy registered by avatar.
+    /**
+     * @notice The mapping of group avatar addresses to the mint policy contract address.
+     */
     mapping(address => address) public mintPolicies;
 
+    /**
+     * @notice The mapping of group avatar addresses to the treasury contract address.
+     */
     mapping(address => address) public treasuries;
-
-    // mapping(uint256 => WrappedERC20) public tokenIDToInfERC20;
 
     /**
      * @notice The iterable mapping of directional trust relations between avatars and
      * their expiry times.
      */
     mapping(address => mapping(address => TrustMarker)) public trustMarkers;
-
-    // /**
-    //  * @notice tokenIDToCidV0Digest is a mapping of token IDs to the IPFS CIDv0 digest.
-    //  */
-    // mapping(uint256 => bytes32) public tokenIdToCidV0Digest;
 
     // Events
 
@@ -360,18 +364,27 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
             // Only avatars registered as human can call personal mint.
             revert CirclesHubMustBeHuman(msg.sender, 1);
         }
-        // check if v1 Circles is known to be stopped
-        if (mintTimes[msg.sender].mintV1Status != CIRCLES_STOPPED_V1) {
-            // if v1 Circles is not known to be stopped, check the status
-            address v1MintStatus = _avatarV1CirclesStatus(msg.sender);
-            _updateMintV1Status(msg.sender, v1MintStatus);
-        }
+        // check if v1 Circles is known to be stopped and update status
+        _checkHumanV1CirclesStatus(msg.sender);
 
         // claim issuance if any is available
         _claimIssuance(msg.sender);
     }
 
-    // graph transfers SHOULD allow personal -> group conversion en route
+    /**
+     * @notice Calculate issuance allows to calculate the issuance for a human avatar with a check
+     * to update the v1 mint status if updated.
+     * @param _human address of the human avatar to calculate the issuance for
+     * @return issuance amount of Circles that can be minted
+     * @return startPeriod start of the claimable period
+     * @return endPeriod end of the claimable period
+     */
+    function calculateIssuanceWithCheck(address _human) external returns (uint256, uint256, uint256) {
+        // check if v1 Circles is known to be stopped and update status
+        _checkHumanV1CirclesStatus(_human);
+        // calculate issuance for the human avatar, but don't mint
+        return calculateIssuance(_human);
+    }
 
     /**
      * @notice Group mint allows to mint group Circles by providing the required collateral.
@@ -1046,6 +1059,20 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
         }
 
         return registrationCount;
+    }
+
+    /**
+     * Check the status of an avatar's Circles in the Hub v1 contract,
+     * and update the mint status of the avatar.
+     * @param _human Address of the human avatar to check the v1 mint status of.
+     */
+    function _checkHumanV1CirclesStatus(address _human) internal {
+        // check if v1 Circles is known to be stopped
+        if (mintTimes[_human].mintV1Status != CIRCLES_STOPPED_V1) {
+            // if v1 Circles is not known to be stopped, check the status
+            address v1MintStatus = _avatarV1CirclesStatus(_human);
+            _updateMintV1Status(_human, v1MintStatus);
+        }
     }
 
     /**
