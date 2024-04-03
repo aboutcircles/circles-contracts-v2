@@ -50,9 +50,12 @@ contract ERC20LiftTest is Test, TimeCirclesSetup, HumanRegistration {
 
         console.log("hub address: ", address(hub));
 
+        DemurrageCircles proxyERC20D = DemurrageCircles(lift.ensureERC20(addresses[0], CirclesType.Demurrage));
+        console.log("proxyERC20D address: ", address(proxyERC20D));
+        assertEq(Proxy(payable(address(proxyERC20D))).masterCopy(), address(demurrage));
+
         // wrap some into demurrage ERC20
-        console.log("Circles type Demurrage: ", uint256(CirclesType.Demurrage));
-        vm.prank(addresses[0]);
-        hub.wrap(addresses[0], 10 * CRC, CirclesType.Demurrage);
+        // vm.prank(addresses[0]);
+        // hub.wrap(addresses[0], 10 * CRC, CirclesType.Demurrage);
     }
 }

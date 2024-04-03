@@ -13,20 +13,20 @@ interface IProxy {
 ///        applying the code of a master contract.
 /// @author Stefan George - <stefan@gnosis.io>
 /// @author Richard Meissner - <richard@gnosis.io>
-contract Proxy is ICirclesErrors {
+contract Proxy {
     // masterCopy always needs to be first declared variable,
     // to ensure that it is at the same location in the contracts
     // to which calls are delegated.
     // To reduce deployment costs this variable is internal
     // and needs to be retrieved via `getStorageAt`
-    address internal masterCopy;
+    address public masterCopy;
 
     /// @dev Constructor function sets address of master copy contract.
     /// @param _masterCopy Master copy address.
     constructor(address _masterCopy) {
         if (_masterCopy == address(0)) {
             // Invalid master copy address provided
-            revert CirclesAddressCannotBeZero(0);
+            revert() ;
         }
         masterCopy = _masterCopy;
     }
