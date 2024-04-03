@@ -15,9 +15,9 @@ contract ERC20Lift is ProxyFactory, IERC20Lift, ICirclesErrors {
 
     // State variables
 
-    IHubV2 public immutable hub;
+    IHubV2 public hub;
 
-    INameRegistry public immutable nameRegistry;
+    INameRegistry public nameRegistry;
 
     /**
      * @dev The master copy of the ERC20 demurrage and inflation Circles contract.
@@ -94,7 +94,8 @@ contract ERC20Lift is ProxyFactory, IERC20Lift, ICirclesErrors {
     // Internal functions
 
     function _deployERC20(address _masterCopy, address _avatar) internal returns (address) {
-        bytes memory wrapperSetupData = abi.encodeWithSelector(ERC20_WRAPPER_SETUP_CALLPREFIX, hub, _avatar);
+        bytes memory wrapperSetupData =
+            abi.encodeWithSelector(ERC20_WRAPPER_SETUP_CALLPREFIX, hub, nameRegistry, _avatar);
         address erc20wrapper = address(_createProxy(_masterCopy, wrapperSetupData));
         return erc20wrapper;
     }
