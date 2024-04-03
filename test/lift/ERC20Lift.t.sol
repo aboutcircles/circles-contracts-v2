@@ -6,12 +6,14 @@ import {StdCheats} from "forge-std/StdCheats.sol";
 import "forge-std/console.sol";
 import "../setup/TimeCirclesSetup.sol";
 import "../setup/HumanRegistration.sol";
-import "../hub/MockPathTransferHub.sol";
+import "../hub/MockDeployment.sol";
+import "../hub/MockHub.sol";
 
 contract ERC20LiftTest is Test, TimeCirclesSetup, HumanRegistration {
     // State variables
 
-    MockPathTransferHub public mockHub;
+    MockDeployment public mockDeployment;
+    MockHub public mockHub;
 
     // Constructor
 
@@ -22,5 +24,9 @@ contract ERC20LiftTest is Test, TimeCirclesSetup, HumanRegistration {
     function setUp() public {
         // Set time in 2021
         startTime();
+
+        // Mock deployment
+        mockDeployment = new MockDeployment(INFLATION_DAY_ZERO, 365 days);
+        mockHub = mockDeployment.hub();
     }
 }

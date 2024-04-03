@@ -4,8 +4,9 @@ pragma solidity >=0.8.13;
 import "../errors/Errors.sol";
 import "../hub/IHub.sol";
 import "./Base58Converter.sol";
+import "./INameRegistry.sol";
 
-contract NameRegistry is Base58Converter, INameRegistryErrors, ICirclesErrors {
+contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, ICirclesErrors {
     // Constants
 
     /**

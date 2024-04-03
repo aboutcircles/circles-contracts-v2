@@ -277,8 +277,8 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
         _registerGroup(msg.sender, _mint, standardTreasury, _name, _symbol);
 
         // for groups register possible custom name and symbol
-        nameRegistry.registerName(msg.sender, _name);
-        nameRegistry.registerSymbol(msg.sender, _symbol);
+        nameRegistry.registerCustomName(msg.sender, _name);
+        nameRegistry.registerCustomSymbol(msg.sender, _symbol);
 
         // store the IPFS CIDv0 digest for the group metadata
         nameRegistry.updateCidV0Digest(msg.sender, _cidV0Digest);
@@ -304,8 +304,8 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
         _registerGroup(msg.sender, _mint, _treasury, _name, _symbol);
 
         // for groups register possible custom name and symbol
-        nameRegistry.registerName(msg.sender, _name);
-        nameRegistry.registerSymbol(msg.sender, _symbol);
+        nameRegistry.registerCustomName(msg.sender, _name);
+        nameRegistry.registerCustomSymbol(msg.sender, _symbol);
 
         // store the IPFS CIDv0 digest for the group metadata
         nameRegistry.updateCidV0Digest(msg.sender, _cidV0Digest);
@@ -322,7 +322,7 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
         _insertAvatar(msg.sender);
 
         // for organizations, only register possible custom name
-        nameRegistry.registerName(msg.sender, _name);
+        nameRegistry.registerCustomName(msg.sender, _name);
 
         // store the IPFS CIDv0 digest for the organization metadata
         nameRegistry.updateCidV0Digest(msg.sender, _cidV0Digest);
