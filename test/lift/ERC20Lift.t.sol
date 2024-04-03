@@ -13,7 +13,7 @@ contract ERC20LiftTest is Test, TimeCirclesSetup, HumanRegistration {
     // State variables
 
     MockDeployment public mockDeployment;
-    MockHub public mockHub;
+    MockHub public hub;
 
     // Constructor
 
@@ -27,6 +27,32 @@ contract ERC20LiftTest is Test, TimeCirclesSetup, HumanRegistration {
 
         // Mock deployment
         mockDeployment = new MockDeployment(INFLATION_DAY_ZERO, 365 days);
-        mockHub = mockDeployment.hub();
+        hub = mockDeployment.hub();
+    }
+
+    // Tests
+
+    function testERC20Wrap() public {
+        // register Alice
+        vm.prank(addresses[0]);
+        hub.registerHumanUnrestricted();
+
+        // skip time and mint
+        skipTime(14 days);
+        vm.prank(addresses[0]);
+        hub.personalMintWithoutV1Check();
+
+        // test the master contracts in Lift
+        ERC20Lift lift = mockDeployment.erc20Lift();
+        DemurrageCircles demurrage = mockDeployment.mastercopyDemurrageCircles();
+        address demurrageMasterCopy = lift.masterCopyERC20Wrapper(uint256(CirclesType.Demurrage));
+        assertEq(demurrageMasterCopy, address(demurrage));
+
+        console.log("hub address: ", address(hub));
+
+        // wrap some into demurrage ERC20
+        console.log("Circles type Demurrage: ", uint256(CirclesType.Demurrage));
+        vm.prank(addresses[0]);
+        hub.wrap(addresses[0], 10 * CRC, CirclesType.Demurrage);
     }
 }

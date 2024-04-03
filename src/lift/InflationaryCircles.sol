@@ -42,7 +42,7 @@ contract InflationaryCircles is ERC20InflationaryBalances, ERC1155Holder {
 
     // Setup function
 
-    function setup(IHubV2 _hub, INameRegistry _nameRegistry, address _avatar) external {
+    function setup(address _hub, address _nameRegistry, address _avatar) external {
         if (address(hub) != address(0)) {
             // Must not be initialized already.
             revert CirclesProxyAlreadyInitialized();
@@ -59,8 +59,9 @@ contract InflationaryCircles is ERC20InflationaryBalances, ERC1155Holder {
             // Must not be the zero address.
             revert CirclesAddressCannotBeZero(2);
         }
-        hub = _hub;
+        hub = IHubV2(_hub);
         avatar = _avatar;
+        nameRegistry = INameRegistry(_nameRegistry);
         // read inflation day zero from hub
         inflationDayZero = hub.inflationDayZero();
 

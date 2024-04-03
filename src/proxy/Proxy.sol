@@ -24,7 +24,7 @@ contract Proxy is ICirclesErrors {
     /// @dev Constructor function sets address of master copy contract.
     /// @param _masterCopy Master copy address.
     constructor(address _masterCopy) {
-        if (_masterCopy != address(0)) {
+        if (_masterCopy == address(0)) {
             // Invalid master copy address provided
             revert CirclesAddressCannotBeZero(0);
         }

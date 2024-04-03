@@ -39,7 +39,7 @@ contract MockDeployment {
         treasury = new StandardTreasury(IHubV2(address(hub)), address(masterCopyVault));
 
         // we don't care to set migration so leave that as 0x01
-        hub.setSiblings(address(1), INameRegistry(address(nameRegistry)), erc20Lift, address(treasury));
-        erc20Lift.setSiblings(IHubV2(address(hub)), INameRegistry(address(nameRegistry)));
+        hub.setSiblings(address(1), nameRegistry, erc20Lift, address(treasury));
+        erc20Lift.setSiblings(IHubV2(address(hub)), nameRegistry);
     }
 }
