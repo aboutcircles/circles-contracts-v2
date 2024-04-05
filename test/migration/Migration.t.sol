@@ -38,7 +38,7 @@ contract MigrationTest is Test, TimeCirclesSetup, Approximation {
 
         uint256 originalAmountV1 = uint256(7471193061687490000000);
         // at the constant `MOMENT_IN_TIME`
-        uint256 expectedAmountV2 = uint256(1809845 * 10 ** 16);
+        uint256 expectedAmountV2 = uint256(18098448482494472000000);
 
         // this is a crude first test. These tests should be redone more accurately
         // possibly even on-chain
