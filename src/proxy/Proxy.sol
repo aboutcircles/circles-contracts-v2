@@ -19,14 +19,14 @@ contract Proxy {
     // to which calls are delegated.
     // To reduce deployment costs this variable is internal
     // and needs to be retrieved via `getStorageAt`
-    address internal masterCopy;
+    address public masterCopy;
 
     /// @dev Constructor function sets address of master copy contract.
     /// @param _masterCopy Master copy address.
     constructor(address _masterCopy) {
         if (_masterCopy == address(0)) {
             // Invalid master copy address provided
-            revert() ;
+            revert();
         }
         masterCopy = _masterCopy;
     }
@@ -41,6 +41,20 @@ contract Proxy {
     }
 
     // -- internal functions
+
+    // /// @dev Fallback function forwards all transactions and
+    // ///      returns all received return data.
+    // function _fallback() internal {
+    //     // solium-disable-next-line security/no-inline-assembly
+    //     assembly {
+    //         let mc := sload(0)
+    //         calldatacopy(0, 0, calldatasize())
+    //         let success := delegatecall(gas(), mc, 0, calldatasize(), 0, 0)
+    //         returndatacopy(0, 0, returndatasize())
+    //         if eq(success, 0) { revert(0, returndatasize()) }
+    //         return(0, returndatasize())
+    //     }
+    // }
 
     /// @dev Fallback function forwards all transactions and
     ///      returns all received return data.

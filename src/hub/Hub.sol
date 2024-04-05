@@ -506,13 +506,15 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
 
     // Public functions
 
-    function wrap(address _avatar, uint256 _amount, CirclesType _type) public {
+    function wrap(address _avatar, uint256 _amount, CirclesType _type) public returns (address) {
         if (!isHuman(_avatar) && !isGroup(_avatar)) {
             // Avatar must be human or group.
             revert CirclesAvatarMustBeRegistered(_avatar, 2);
         }
         address erc20Wrapper = liftERC20.ensureERC20(_avatar, _type);
         safeTransferFrom(msg.sender, erc20Wrapper, toTokenId(_avatar), _amount, "");
+
+        return erc20Wrapper;
     }
 
     // todo: if we have space, possibly have a wrapBatch function

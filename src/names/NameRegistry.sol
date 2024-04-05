@@ -167,10 +167,10 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
         uint72 shortName = shortNames[_avatar];
         if (shortName == uint72(0)) {
             string memory base58FullAddress = toBase58(uint256(uint160(_avatar)));
-            return string(abi.encodePacked("DEFAULT_CIRCLES_NAME_PREFIX", base58FullAddress));
+            return string(abi.encodePacked(DEFAULT_CIRCLES_NAME_PREFIX, base58FullAddress));
         }
         string memory base58ShortName = toBase58(uint256(shortName));
-        return string(abi.encodePacked("DEFAULT_CIRCLES_NAME_PREFIX", base58ShortName));
+        return string(abi.encodePacked(DEFAULT_CIRCLES_NAME_PREFIX, base58ShortName));
     }
 
     function symbol(address _avatar) external view mustBeRegistered(_avatar, 2) returns (string memory) {

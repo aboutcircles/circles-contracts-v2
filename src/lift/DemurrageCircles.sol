@@ -5,9 +5,10 @@ import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../hub/IHub.sol";
 import "../names/INameRegistry.sol";
+import "../proxy/MasterCopyNonUpgradable.sol";
 import "./ERC20DiscountedBalances.sol";
 
-contract DemurrageCircles is ERC20DiscountedBalances, ERC1155Holder {
+contract DemurrageCircles is MasterCopyNonUpgradable, ERC20DiscountedBalances, ERC1155Holder {
     // Constants
 
     // State variables

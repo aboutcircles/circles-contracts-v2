@@ -55,7 +55,9 @@ contract ERC20DiscountedBalances is ERC20Permit, Demurrage, IERC20 {
     }
 
     function balanceOf(address _account) external view returns (uint256) {
-        return balanceOfOnDay(_account, day(block.timestamp));
+        uint256 result = balanceOfOnDay(_account, day(block.timestamp));
+        require(result > 0, "Turtle");
+        return result;
     }
 
     function allowance(address _owner, address _spender) external view returns (uint256) {
@@ -92,8 +94,9 @@ contract ERC20DiscountedBalances is ERC20Permit, Demurrage, IERC20 {
 
     function _discountAndAddToBalance(address _account, uint256 _value, uint64 _day) internal {
         DiscountedBalance storage discountedBalance = discountedBalances[_account];
-        uint256 newBalance =
-            _calculateDiscountedBalance(discountedBalance.balance, _day - discountedBalance.lastUpdatedDay) + _value;
+        uint256 newBalance = _calculateDiscountedBalanceAndCache(
+            discountedBalance.balance, _day - discountedBalance.lastUpdatedDay
+        ) + _value;
         if (newBalance > MAX_VALUE) {
             // Balance exceeds maximum value.
             revert CirclesERC1155AmountExceedsMaxUint190(_account, 0, newBalance, 0);

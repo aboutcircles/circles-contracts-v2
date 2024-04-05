@@ -121,10 +121,10 @@ contract Demurrage is ICirclesERC1155Errors {
      * See ../../specifications/TCIP009-demurrage.md for more details.
      */
     int128[15] internal R = [
-        int128(18446744073709551616),
-        int128(18443079296116538654),
-        int128(18439415246597529027),
-        int128(18435751925007877736),
+        int128(18446744073709551616), // 0, ONE_64x64
+        int128(18443079296116538654), // 1, GAMMA_64x64
+        int128(18439415246597529027), // 2, GAMMA_64x64^2
+        int128(18435751925007877736), // 3, etc.
         int128(18432089331202968517),
         int128(18428427465038213837),
         int128(18424766326369054888),
@@ -206,11 +206,41 @@ contract Demurrage is ICirclesERC1155Errors {
     function _calculateDiscountedBalance(uint256 _balance, uint256 _daysDifference) internal view returns (uint256) {
         if (_daysDifference == 0) {
             return _balance;
-        } else if (_daysDifference <= R_TABLE_LOOKUP) {
-            return Math64x64.mulu(R[_daysDifference], _balance);
+        }
+        int128 r = _calculateDemurrageFactor(_daysDifference);
+        return Math64x64.mulu(r, _balance);
+    }
+
+    function _calculateDiscountedBalanceAndCache(uint256 _balance, uint256 _daysDifference)
+        internal
+        returns (uint256)
+    {
+        if (_daysDifference == 0) {
+            return _balance;
+        }
+        int128 r = _calculateDemurrageFactorAndCache(_daysDifference);
+        return Math64x64.mulu(r, _balance);
+    }
+
+    function _calculateDemurrageFactor(uint256 _dayDifference) internal view returns (int128) {
+        if (_dayDifference <= R_TABLE_LOOKUP && R[_dayDifference] != 0) {
+            return R[_dayDifference];
         } else {
-            int128 r = Math64x64.pow(GAMMA_64x64, _daysDifference);
-            return Math64x64.mulu(r, _balance);
+            return Math64x64.pow(GAMMA_64x64, _dayDifference);
+        }
+    }
+
+    function _calculateDemurrageFactorAndCache(uint256 _dayDifference) internal returns (int128) {
+        if (_dayDifference <= R_TABLE_LOOKUP) {
+            if (R[_dayDifference] == 0) {
+                // for proxy ERC20 contracts, the storage does not contain the R table yet
+                // so compute it lazily and store it in the table
+                int128 r = Math64x64.pow(GAMMA_64x64, _dayDifference);
+                R[_dayDifference] = r;
+            }
+            return R[_dayDifference];
+        } else {
+            return Math64x64.pow(GAMMA_64x64, _dayDifference);
         }
     }
 

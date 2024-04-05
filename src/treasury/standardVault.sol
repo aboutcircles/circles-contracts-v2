@@ -4,9 +4,10 @@ pragma solidity >=0.8.13;
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "../errors/Errors.sol";
 import "../hub/IHub.sol";
+import "../proxy/MasterCopyNonUpgradable.sol";
 import "./IStandardVault.sol";
 
-contract StandardVault is ERC1155Holder, IStandardVault, ICirclesErrors {
+contract StandardVault is MasterCopyNonUpgradable, ERC1155Holder, IStandardVault, ICirclesErrors {
     // State variables
 
     /**

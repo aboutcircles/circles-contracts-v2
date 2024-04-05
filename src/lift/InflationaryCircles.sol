@@ -5,9 +5,10 @@ import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../hub/IHub.sol";
 import "../names/INameRegistry.sol";
+import "../proxy/MasterCopyNonUpgradable.sol";
 import "./ERC20InflationaryBalances.sol";
 
-contract InflationaryCircles is ERC20InflationaryBalances, ERC1155Holder {
+contract InflationaryCircles is MasterCopyNonUpgradable, ERC20InflationaryBalances, ERC1155Holder {
     // Constants
 
     // State variables
@@ -120,5 +121,9 @@ contract InflationaryCircles is ERC20InflationaryBalances, ERC1155Holder {
         returns (bytes4)
     {
         revert CirclesERC1155CannotReceiveBatch(0);
+    }
+
+    function circlesIdentifier() public view returns (uint256) {
+        return toTokenId(avatar);
     }
 }
