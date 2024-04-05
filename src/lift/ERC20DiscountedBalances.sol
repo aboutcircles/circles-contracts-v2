@@ -55,9 +55,7 @@ contract ERC20DiscountedBalances is ERC20Permit, Demurrage, IERC20 {
     }
 
     function balanceOf(address _account) external view returns (uint256) {
-        uint256 result = balanceOfOnDay(_account, day(block.timestamp));
-        require(result > 0, "Turtle");
-        return result;
+        return balanceOfOnDay(_account, day(block.timestamp));
     }
 
     function allowance(address _owner, address _spender) external view returns (uint256) {
