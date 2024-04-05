@@ -166,7 +166,7 @@ NONCE_USED=$((NONCE_USED + 1))
 
 MIGRATION=$(deploy_and_store_details "Migration" $MIGRATION_ADDRESS_02 \
   src/migration/Migration.sol:Migration $((NONCE_USED)) \
-  --constructor-args $V1_HUB_ADDRESS $HUB_ADDRESS_01)
+  --constructor-args $V1_HUB_ADDRESS $HUB_ADDRESS_01 $INFLATION_DAY_ZERO)
 
 NONCE_USED=$((NONCE_USED + 1))
 

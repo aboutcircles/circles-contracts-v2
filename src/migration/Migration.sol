@@ -20,10 +20,7 @@ contract Migration is ICirclesErrors {
 
     IHubV2 public hubV2;
 
-    /**
-     * @dev Deployment timestamp of Hub v1 contract
-     */
-    uint256 public immutable deployedAt;
+    uint256 public immutable inflationDayZero;
 
     /**
      * @dev Inflationary period of Hub v1 contract
@@ -32,7 +29,7 @@ contract Migration is ICirclesErrors {
 
     // Constructor
 
-    constructor(IHubV1 _hubV1, IHubV2 _hubV2) {
+    constructor(IHubV1 _hubV1, IHubV2 _hubV2, uint256 _inflationDayZero) {
         if (address(_hubV1) == address(0)) {
             // Hub v1 address can not be zero.
             revert CirclesAddressCannotBeZero(0);
@@ -45,9 +42,10 @@ contract Migration is ICirclesErrors {
         hubV1 = _hubV1;
         hubV2 = _hubV2;
 
-        // from deployed v1 contract SHOULD return deployedAt = 1602786330
-        // (for reference 6:25:30 pm UTC  |  Thursday, October 15, 2020)
-        deployedAt = hubV1.deployedAt();
+        // store the inflation day zero timestamp (should be set to the start
+        // of the day of deployment of hub v1)
+        inflationDayZero = _inflationDayZero;
+
         // from deployed v1 contract SHOULD return period = 31556952
         // (equivalent to 365 days 5 hours 49 minutes 12 seconds)
         // because the period is not a whole number of hours,
@@ -100,7 +98,7 @@ contract Migration is ICirclesErrors {
         uint256 nextPeriod = currentPeriod + 1;
 
         // calculate the start of the current period in unix time
-        uint256 startOfPeriod = deployedAt + currentPeriod * period;
+        uint256 startOfPeriod = inflationDayZero + currentPeriod * period;
 
         // number of seconds into the new period
         uint256 secondsIntoCurrentPeriod = block.timestamp - startOfPeriod;
