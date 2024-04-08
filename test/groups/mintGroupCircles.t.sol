@@ -9,9 +9,9 @@ import "./setup.sol";
 contract MintGroupCirclesTest is Test, GroupSetup {
     // State variables
     address group;
-    
+
     // Constructor
-    
+
     constructor() GroupSetup() {}
 
     // Setup

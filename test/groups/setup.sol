@@ -13,7 +13,7 @@ contract GroupSetup is TimeCirclesSetup, HumanRegistration {
     MockDeployment public mockDeployment;
     MockHub public hub;
     address public mintPolicy;
-    
+
     // Constructor
 
     constructor() HumanRegistration(40) {}

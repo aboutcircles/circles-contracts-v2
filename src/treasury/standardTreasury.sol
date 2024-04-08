@@ -99,6 +99,38 @@ contract StandardTreasury is
         onlyHub
         returns (bytes4)
     {
+        return _redeemGroupCircles(_operator, _from, _id, _value, _data);
+    }
+
+    /**
+     * @dev Exclusively use batch received for receiving collateral Circles
+     * from the hub contract during group minting
+     */
+    function onERC1155BatchReceived(
+        address, /*_operator*/
+        address, /*_from*/
+        uint256[] memory _ids,
+        uint256[] memory _values,
+        bytes calldata _data
+    ) public override onlyHub returns (bytes4) {
+        // decode the data to get the group address and user data
+        (address group, bytes memory userData) = _decodeMetadataForGroup(_data);
+        // ensure the vault exists
+        address vault = address(_ensureVault(group));
+        // forward the Circles to the vault
+        hub.safeBatchTransferFrom(address(this), vault, _ids, _values, userData);
+        return this.onERC1155BatchReceived.selector;
+    }
+
+    // Internal functions
+
+    // onReceived : either mint if data decodes or redeem
+    // onBatchReceived : only for minting if data matches
+
+    function _redeemGroupCircles(address _operator, address _from, uint256 _id, uint256 _value, bytes calldata _data)
+        internal
+        returns (bytes4)
+    {
         address group = _validateCirclesIdToGroup(_id);
         IStandardVault vault = vaults[group];
         if (address(vault) == address(0)) {
@@ -148,28 +180,6 @@ contract StandardTreasury is
         // return the ERC1155 selector for acceptance of the (redeemed) group Circles
         return this.onERC1155Received.selector;
     }
-
-    /**
-     * @dev Exclusively use batch received for receiving collateral Circles
-     * from the hub contract during group minting
-     */
-    function onERC1155BatchReceived(
-        address, /*_operator*/
-        address, /*_from*/
-        uint256[] memory _ids,
-        uint256[] memory _values,
-        bytes calldata _data
-    ) public override onlyHub returns (bytes4) {
-        // decode the data to get the group address and user data
-        (address group, bytes memory userData) = _decodeMetadataForGroup(_data);
-        // ensure the vault exists
-        address vault = address(_ensureVault(group));
-        // forward the Circles to the vault
-        hub.safeBatchTransferFrom(address(this), vault, _ids, _values, userData);
-        return this.onERC1155BatchReceived.selector;
-    }
-
-    // Internal functions
 
     /**
      * @dev Decode the metadata for the group mint and revert if the type does not match group mint
