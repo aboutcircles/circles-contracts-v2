@@ -156,7 +156,7 @@ contract StandardTreasury is
         address vault = address(_ensureVault(_group));
         // forward the Circles to the vault
         hub.safeTransferFrom(address(this), vault, _id, _value, _userData);
-        return this.onERC1155BatchReceived.selector;
+        return this.onERC1155Received.selector;
     }
 
     function _redeemGroupCircles(address _operator, address _from, uint256 _id, uint256 _value, bytes calldata _data)
