@@ -99,7 +99,15 @@ contract StandardTreasury is
         onlyHub
         returns (bytes4)
     {
-        return _redeemGroupCircles(_operator, _from, _id, _value, _data);
+        (bytes32 metadataType, address group, bytes memory userData) = _decodeMetadataForGroup(_data);
+        if (metadataType == METADATATYPE_GROUPMINT) {
+            return _mintGroupCircles(_id, _value, group, userData);
+        } else if (metadataType == METADATATYPE_GROUPREDEEM) {
+            return _redeemGroupCircles(_operator, _from, _id, _value, _data);
+        } else {
+            // Treasury: Invalid metadata type for received
+            revert CirclesStandardTreasuryInvalidMetadataType(metadataType, 0);
+        }
     }
 
     /**
@@ -113,19 +121,43 @@ contract StandardTreasury is
         uint256[] memory _values,
         bytes calldata _data
     ) public override onlyHub returns (bytes4) {
-        // decode the data to get the group address and user data
-        (address group, bytes memory userData) = _decodeMetadataForGroup(_data);
-        // ensure the vault exists
-        address vault = address(_ensureVault(group));
-        // forward the Circles to the vault
-        hub.safeBatchTransferFrom(address(this), vault, _ids, _values, userData);
-        return this.onERC1155BatchReceived.selector;
+        (bytes32 metadataType, address group, bytes memory userData) = _decodeMetadataForGroup(_data);
+        if (metadataType == METADATATYPE_GROUPMINT) {
+            return _mintBatchGroupCircles(_ids, _values, group, userData);
+        } else {
+            // Treasury: Invalid metadata type for batch received
+            revert CirclesStandardTreasuryInvalidMetadataType(metadataType, 1);
+        }
     }
 
     // Internal functions
 
     // onReceived : either mint if data decodes or redeem
     // onBatchReceived : only for minting if data matches
+
+    function _mintBatchGroupCircles(
+        uint256[] memory _ids,
+        uint256[] memory _values,
+        address _group,
+        bytes memory _userData
+    ) internal returns (bytes4) {
+        // ensure the vault exists
+        address vault = address(_ensureVault(_group));
+        // forward the Circles to the vault
+        hub.safeBatchTransferFrom(address(this), vault, _ids, _values, _userData);
+        return this.onERC1155BatchReceived.selector;
+    }
+
+    function _mintGroupCircles(uint256 _id, uint256 _value, address _group, bytes memory _userData)
+        internal
+        returns (bytes4)
+    {
+        // ensure the vault exists
+        address vault = address(_ensureVault(_group));
+        // forward the Circles to the vault
+        hub.safeTransferFrom(address(this), vault, _id, _value, _userData);
+        return this.onERC1155BatchReceived.selector;
+    }
 
     function _redeemGroupCircles(address _operator, address _from, uint256 _id, uint256 _value, bytes calldata _data)
         internal
@@ -185,14 +217,22 @@ contract StandardTreasury is
      * @dev Decode the metadata for the group mint and revert if the type does not match group mint
      * @param _data Metadata for the group mint
      */
-    function _decodeMetadataForGroup(bytes memory _data) internal pure returns (address, bytes memory) {
+    function _decodeMetadataForGroup(bytes memory _data) internal pure returns (bytes32, address, bytes memory) {
         Metadata memory metadata = abi.decode(_data, (Metadata));
-        if (!_isReservedGroupMint(metadata.metadataType)) {
+
+        if (metadata.metadataType == METADATATYPE_GROUPMINT) {
+            GroupMintMetadata memory groupMintMetadata = abi.decode(metadata.metadata, (GroupMintMetadata));
+            return (METADATATYPE_GROUPMINT, groupMintMetadata.group, metadata.erc1155UserData);
+        } else if (metadata.metadataType == METADATATYPE_GROUPREDEEM) {
+            if (metadata.metadata.length != 0) {
+                // Treasury: Invalid metadata for group redeem, must be empty
+                revert CirclesStandardTreasuryInvalidMetadata(metadata.metadata, 0);
+            }
+            return (METADATATYPE_GROUPREDEEM, address(0), metadata.erc1155UserData);
+        } else {
             // Treasury: Invalid metadata type
-            revert CirclesStandardTreasuryInvalidMetadataType(metadata.metadataType, 0);
+            revert CirclesStandardTreasuryInvalidMetadataType(metadata.metadataType, 2);
         }
-        GroupMintMetadata memory groupMintMetadata = abi.decode(metadata.metadata, (GroupMintMetadata));
-        return (groupMintMetadata.group, metadata.erc1155UserData);
     }
 
     /**
@@ -232,11 +272,5 @@ contract StandardTreasury is
         bytes memory vaultSetupData = abi.encodeWithSelector(STANDARD_VAULT_SETUP_CALLPREFIX, hub);
         IStandardVault vault = IStandardVault(address(_createProxy(mastercopyStandardVault, vaultSetupData)));
         return vault;
-    }
-
-    // private functions
-
-    function _isReservedGroupMint(bytes32 metadataType) private pure returns (bool) {
-        return metadataType == METADATATYPE_GROUPMINT;
     }
 }
