@@ -153,4 +153,30 @@ contract MintGroupCirclesTest is Test, GroupSetup, IHubErrors {
         vm.expectRevert();
         hub.groupMint(group, collateral, amounts, "");
     }
+
+    function testDirectSelfGroupMintFails() public {
+        // group trusts itself, but editing own trust relationship is not allowed
+        // and groups don't trust themselves by default
+        vm.prank(group);
+        vm.expectRevert();
+        hub.trust(group, INDEFINITE_FUTURE);
+
+        // mint to group
+        address[] memory collateral = new address[](1);
+        uint256[] memory amounts = new uint256[](1);
+        collateral[0] = addresses[0];
+        amounts[0] = 1 * CRC;
+        vm.prank(addresses[0]);
+        hub.groupMint(group, collateral, amounts, "");
+
+        // assert Alice has 1 group CRC
+        assertEq(hub.balanceOf(addresses[0], uint256(uint160(group))), 1 * CRC);
+
+        // now use this to mint to the Group again
+        // reverts because CirclesHubCirclesAreNotTrustedByReceiver
+        collateral[0] = group;
+        vm.prank(addresses[0]);
+        vm.expectRevert();
+        hub.groupMint(group, collateral, amounts, "");
+    }
 }
