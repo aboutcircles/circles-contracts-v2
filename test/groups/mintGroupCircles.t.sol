@@ -10,6 +10,7 @@ import "./setup.sol";
 contract MintGroupCirclesTest is Test, GroupSetup, IHubErrors {
     // State variables
     address group;
+    address group2;
 
     // Constructor
 
@@ -80,6 +81,63 @@ contract MintGroupCirclesTest is Test, GroupSetup, IHubErrors {
             // check that the personal CRC's are in the vault
             assertEq(hub.balanceOf(vault, uint256(uint160(addresses[i]))), 1 * CRC);
         }
+    }
+
+    function testGroupMintMultiCollateral() public {
+        // all send to Alice
+        for (uint256 i = 1; i < 5; i++) {
+            vm.prank(addresses[i]);
+            hub.safeTransferFrom(addresses[i], addresses[0], uint256(uint160(addresses[i])), (i + 1) * CRC, "");
+        }
+
+        // mint to group
+        address[] memory collateral = new address[](5);
+        uint256[] memory amounts = new uint256[](5);
+        for (uint256 i = 0; i < 5; i++) {
+            collateral[i] = addresses[i];
+            amounts[i] = (i + 1) * CRC;
+        }
+        vm.prank(addresses[0]);
+        hub.groupMint(group, collateral, amounts, "");
+
+        // check balances
+        StandardTreasury treasury = mockDeployment.treasury();
+        address vault = address(treasury.vaults(group));
+        assertEq(hub.balanceOf(addresses[0], uint256(uint160(group))), 15 * CRC);
+
+        // check that the personal CRC's are in the vault
+        for (uint256 i = 0; i < 5; i++) {
+            assertEq(hub.balanceOf(vault, uint256(uint160(addresses[i]))), (i + 1) * CRC);
+        }
+    }
+
+    function testSequentialGroupMint() public {
+        // mint to group
+        address[] memory collateral = new address[](1);
+        uint256[] memory amounts = new uint256[](1);
+        collateral[0] = addresses[0];
+        amounts[0] = 1 * CRC;
+        vm.prank(addresses[0]);
+        hub.groupMint(group, collateral, amounts, "");
+
+        // mint to group again
+        vm.prank(addresses[0]);
+        hub.groupMint(group, collateral, amounts, "");
+
+        // mint for Bob
+        collateral[0] = addresses[1];
+        vm.prank(addresses[1]);
+        hub.groupMint(group, collateral, amounts, "");
+
+        // check balances
+        StandardTreasury treasury = mockDeployment.treasury();
+        address vault = address(treasury.vaults(group));
+        assertEq(hub.balanceOf(addresses[0], uint256(uint160(group))), 2 * CRC);
+        assertEq(hub.balanceOf(addresses[1], uint256(uint160(group))), 1 * CRC);
+
+        // check that the personal CRC's are in the vault
+        assertEq(hub.balanceOf(vault, uint256(uint160(addresses[0]))), 2 * CRC);
+        assertEq(hub.balanceOf(vault, uint256(uint160(addresses[1]))), 1 * CRC);
     }
 
     // Negative Tests
