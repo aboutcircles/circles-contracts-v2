@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## latest
 
-- [PR132] initial test coverage for group mint
+- [PR132] bug fix in groupMint(); initial test coverage for group mint
 - [PR130] remove the code from the first draft proposal (December 2023)
 
 ## v0.3.2
