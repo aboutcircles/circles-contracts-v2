@@ -6,25 +6,21 @@ import {StdCheats} from "forge-std/StdCheats.sol";
 import "forge-std/console.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../../src/migration/IToken.sol";
-import "../migration/MockMigration.sol";
-import "../names/MockNameRegistry.sol";
+import "../../src/migration/Migration.sol";
+import "../../src/names/NameRegistry.sol";
 import "../setup/TimeCirclesSetup.sol";
 import "../setup/HumanRegistration.sol";
 import "../migration/MockHub.sol";
 import "./MockMigrationHub.sol";
 
 contract V1MintStatusUpdateTest is Test, TimeCirclesSetup, HumanRegistration {
-    // Constants
-
-    bytes32 private constant SALT = keccak256("CirclesV2:V1MintStatusUpdateTest");
-
     // State variables
 
     MockMigrationHub public mockHub;
     MockHubV1 public mockHubV1;
 
-    MockNameRegistry public nameRegistry;
-    MockMigration public migration;
+    NameRegistry public nameRegistry;
+    Migration public migration;
 
     // Constructor
 
@@ -36,14 +32,17 @@ contract V1MintStatusUpdateTest is Test, TimeCirclesSetup, HumanRegistration {
         // Set time in 2021
         startTime();
 
+        // Mock hub v1
         mockHubV1 = new MockHubV1();
-        // First deploy the contracts to know the addresses
-        migration = new MockMigration(mockHubV1, IHubV2(address(1)));
-        nameRegistry = new MockNameRegistry(IHubV2(address(1)));
+
+        // First deploy the mock hub v2 so that we have the address
         mockHub = new MockMigrationHub(mockHubV1, address(2), INFLATION_DAY_ZERO, 365 days);
-        // then set the addresses in the respective contracts
-        migration.setHubV2(IHubV2(address(mockHub)));
-        nameRegistry.setHubV2(IHubV2(address(mockHub)));
+
+        // Name registry and migration do not need to be mocked
+        nameRegistry = new NameRegistry(IHubV2(address(mockHub)));
+        migration = new Migration(mockHubV1, IHubV2(address(mockHub)));
+
+        // update hub v2 with the new addresses of the name registry and migration
         mockHub.setSiblings(address(migration), address(nameRegistry));
     }
 

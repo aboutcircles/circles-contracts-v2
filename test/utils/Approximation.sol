@@ -11,6 +11,11 @@ contract Approximation {
     // 1% in 64x64 fixed point: integer approximation of 2**64 / 100
     int128 internal constant ONE_PERCENT = int128(184467440737095516);
 
+    // Dust in 64x64 fixed point: integer approximation of 2**64 / 10**18
+    int128 internal constant DUST = int128(18);
+
+    // Public functions
+
     function approximatelyEqual(uint256 _a, uint256 _b, uint256 _epsilon) public pure returns (bool) {
         return _a > _b ? _a - _b <= _epsilon : _b - _a <= _epsilon;
     }

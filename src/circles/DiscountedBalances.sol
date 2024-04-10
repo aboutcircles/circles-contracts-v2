@@ -91,7 +91,7 @@ contract DiscountedBalances is Demurrage {
      * @dev stores the discounted balances of the accounts privately.
      * Mapping from Circles identifiers to accounts to the discounted balance.
      */
-    mapping(uint256 => mapping(address => DiscountedBalance)) private discountedBalances;
+    mapping(uint256 => mapping(address => DiscountedBalance)) public discountedBalances;
 
     // /**
     //  * @dev Store a lookup table T(n) for computing issuance.

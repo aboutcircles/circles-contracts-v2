@@ -92,8 +92,9 @@ contract ERC20DiscountedBalances is ERC20Permit, Demurrage, IERC20 {
 
     function _discountAndAddToBalance(address _account, uint256 _value, uint64 _day) internal {
         DiscountedBalance storage discountedBalance = discountedBalances[_account];
-        uint256 newBalance =
-            _calculateDiscountedBalance(discountedBalance.balance, _day - discountedBalance.lastUpdatedDay) + _value;
+        uint256 newBalance = _calculateDiscountedBalanceAndCache(
+            discountedBalance.balance, _day - discountedBalance.lastUpdatedDay
+        ) + _value;
         if (newBalance > MAX_VALUE) {
             // Balance exceeds maximum value.
             revert CirclesERC1155AmountExceedsMaxUint190(_account, 0, newBalance, 0);

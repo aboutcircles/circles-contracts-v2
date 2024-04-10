@@ -3,8 +3,8 @@ pragma solidity >=0.8.13;
 
 interface INameRegistry {
     function updateCidV0Digest(address avatar, bytes32 cidVoDigest) external;
-    function registerName(address avatar, string calldata name) external;
-    function registerSymbol(address avatar, string calldata symbol) external;
+    function registerCustomName(address avatar, string calldata name) external;
+    function registerCustomSymbol(address avatar, string calldata symbol) external;
 
     function name(address avatar) external view returns (string memory);
     function symbol(address avatar) external view returns (string memory);

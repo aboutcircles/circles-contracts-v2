@@ -5,9 +5,10 @@ import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../hub/IHub.sol";
 import "../names/INameRegistry.sol";
+import "../proxy/MasterCopyNonUpgradable.sol";
 import "./ERC20DiscountedBalances.sol";
 
-contract DemurrageCircles is ERC20DiscountedBalances, ERC1155Holder {
+contract DemurrageCircles is MasterCopyNonUpgradable, ERC20DiscountedBalances, ERC1155Holder {
     // Constants
 
     // State variables
@@ -42,7 +43,7 @@ contract DemurrageCircles is ERC20DiscountedBalances, ERC1155Holder {
 
     // Setup function
 
-    function setup(IHubV2 _hub, INameRegistry _nameRegistry, address _avatar) external {
+    function setup(address _hub, address _nameRegistry, address _avatar) external {
         if (address(hub) != address(0)) {
             revert CirclesProxyAlreadyInitialized();
         }
@@ -56,8 +57,9 @@ contract DemurrageCircles is ERC20DiscountedBalances, ERC1155Holder {
         if (_avatar == address(0)) {
             revert CirclesAddressCannotBeZero(2);
         }
-        hub = _hub;
+        hub = IHubV2(_hub);
         avatar = _avatar;
+        nameRegistry = INameRegistry(_nameRegistry);
         // read inflation day zero from hub
         inflationDayZero = hub.inflationDayZero();
 
