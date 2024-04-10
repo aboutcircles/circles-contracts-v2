@@ -73,6 +73,8 @@ contract ERC20Permit is EIP712, Nonces, IERC20Permit, IERC20Errors, ICirclesErro
         _approve(_owner, _spender, _value);
     }
 
+    // Public functions
+
     function nonces(address _owner) public view override(IERC20Permit, Nonces) returns (uint256) {
         return super.nonces(_owner);
     }
@@ -80,8 +82,6 @@ contract ERC20Permit is EIP712, Nonces, IERC20Permit, IERC20Errors, ICirclesErro
     function DOMAIN_SEPARATOR() public view override returns (bytes32) {
         return _domainSeparatorV4();
     }
-
-    // Public functions
 
     // Internal functions
 

@@ -6,7 +6,7 @@ import "../../src/migration/Migration.sol";
 contract MockMigration is Migration {
     // Constructor
 
-    constructor(IHubV1 _hubV1, IHubV2 _hubV2) Migration(_hubV1, _hubV2) {}
+    constructor(IHubV1 _hubV1, IHubV2 _hubV2, uint256 _inflationDayZero) Migration(_hubV1, _hubV2, _inflationDayZero) {}
 
     // External functions
 

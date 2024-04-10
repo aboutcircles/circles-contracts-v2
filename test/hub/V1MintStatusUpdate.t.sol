@@ -40,7 +40,7 @@ contract V1MintStatusUpdateTest is Test, TimeCirclesSetup, HumanRegistration {
 
         // Name registry and migration do not need to be mocked
         nameRegistry = new NameRegistry(IHubV2(address(mockHub)));
-        migration = new Migration(mockHubV1, IHubV2(address(mockHub)));
+        migration = new Migration(mockHubV1, IHubV2(address(mockHub)), INFLATION_DAY_ZERO);
 
         // update hub v2 with the new addresses of the name registry and migration
         mockHub.setSiblings(address(migration), address(nameRegistry));
@@ -93,20 +93,18 @@ contract V1MintStatusUpdateTest is Test, TimeCirclesSetup, HumanRegistration {
         // Bob can mint in V2, but calculateIssuance will still revert because V1 status not updated
         vm.expectRevert();
         mockHub.calculateIssuance(addresses[1]);
-        // however, sending a transaction to update the V1 status does calculate the issuance
-        (uint256 issuance, uint256 startPeriod, uint256 endPeriod) = mockHub.calculateIssuanceWithCheck(addresses[1]);
-        console.log("Bob can mint in V2:", issuance);
-        console.log("from", startPeriod, "to", endPeriod);
+        // however, sending a transaction to update the V1 status does calculate the issuance, and update status
+        mockHub.calculateIssuanceWithCheck(addresses[1]);
 
         // move time
         skipTime(5 days + 31 minutes);
-        (issuance, startPeriod, endPeriod) = mockHub.calculateIssuance(addresses[1]);
-        console.log("Bob can mint in V2:", issuance);
-        console.log("from", startPeriod, "to", endPeriod);
 
         // Bob can mint in V2
         vm.prank(addresses[1]);
         mockHub.personalMint();
+
+        // todo: split into proper unit tests
+        // and cover inflation and unwrap
     }
 
     // Private functions

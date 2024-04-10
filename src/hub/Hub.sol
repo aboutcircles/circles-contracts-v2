@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.8.13;
 
-// import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
-// import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-// import "@openzeppelin/contracts/utils/Create2.sol";
 import "../circles/Circles.sol";
 import "../errors/Errors.sol";
 import "../groups/IMintPolicy.sol";
@@ -519,34 +516,6 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
 
     // todo: if we have space, possibly have a wrapBatch function
 
-    // function getDeterministicAddress(uint256 _tokenId, bytes32 _bytecodeHash) public view returns (address) {
-    //     return Create2.computeAddress(keccak256(abi.encodePacked(_tokenId)), _bytecodeHash);
-    // }
-
-    // function createERC20InflationWrapper(uint256 _tokenId, string memory _name, string memory _symbol) public {
-    //     require(address(tokenIDToInfERC20[_tokenId]) == address(0), "Wrapper already exists");
-
-    //     bytes memory bytecode =
-    //         abi.encodePacked(type(WrappedERC20).creationCode, abi.encode(_name, _symbol, address(this), _tokenId));
-
-    //     //bytes32 bytecodeHash = keccak256(bytecode);
-    //     address wrappedToken = Create2.deploy(0, keccak256(abi.encodePacked(_tokenId)), bytecode);
-
-    //     tokenIDToInfERC20[_tokenId] = WrappedERC20(wrappedToken);
-    // }
-
-    // function wrapInflationaryERC20(uint256 _tokenId, uint256 _amount) public {
-    //     require(address(tokenIDToInfERC20[_tokenId]) != address(0), "Wrapper does not exist");
-    //     safeTransferFrom(msg.sender, address(tokenIDToInfERC20[_tokenId]), _tokenId, _amount, "");
-    //     tokenIDToInfERC20[_tokenId].mint(msg.sender, _amount);
-    // }
-
-    // function unwrapInflationaryERC20(uint256 _tokenId, uint256 _amount) public {
-    //     require(address(tokenIDToInfERC20[_tokenId]) != address(0), "Wrapper does not exist");
-    //     tokenIDToInfERC20[_tokenId].burn(msg.sender, _amount);
-    //     safeTransferFrom(address(tokenIDToInfERC20[_tokenId]), msg.sender, _tokenId, _amount, "");
-    // }
-
     function operateFlowMatrix(
         address[] calldata _flowVertices,
         FlowEdge[] calldata _flow,
@@ -629,67 +598,6 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
         // "https://fallback.aboutcircles.com/v1/profile/{id}.json"
         return super.uri(_id);
     }
-
-    // /**
-    //  * @dev checks whether string is a valid name by checking
-    //  * the length as max 32 bytes and the allowed characters: 0-9, A-Z, a-z, space,
-    //  * hyphen, underscore, period, parentheses, apostrophe,
-    //  * ampersand, plus and hash.
-    //  * This restricts the contract name to a subset of ASCII characters,
-    //  * and excludes unicode characters for other alphabets and emoticons.
-    //  * Instead the default ERC1155 metadata read from the IPFS CID registry,
-    //  * should provide the full display name with unicode characters.
-    //  * Names are not checked for uniqueness.
-    //  */
-    // function isValidName(string memory _name) public pure returns (bool) {
-    //     bytes memory nameBytes = bytes(_name);
-    //     if (nameBytes.length > 32 || nameBytes.length == 0) return false; // Check length
-
-    //     for (uint256 i = 0; i < nameBytes.length; i++) {
-    //         bytes1 char = nameBytes[i];
-    //         if (
-    //             !(char >= 0x30 && char <= 0x39) // 0-9
-    //                 && !(char >= 0x41 && char <= 0x5A) // A-Z
-    //                 && !(char >= 0x61 && char <= 0x7A) // a-z
-    //                 && !(char == 0x20) // Space
-    //                 && !(char == 0x2D || char == 0x5F) // Hyphen (-), Underscore (_)
-    //                 && !(char == 0x2E) // Period (.)
-    //                 && !(char == 0x28 || char == 0x29) // Parentheses ( () )
-    //                 && !(char == 0x27) // Apostrophe (')
-    //                 && !(char == 0x26) // Ampersand (&)
-    //                 && !(char == 0x2B || char == 0x23) // Plus (+), Hash (#)
-    //         ) {
-    //             return false;
-    //         }
-    //     }
-    //     return true;
-    // }
-
-    // /**
-    //  * @dev checks whether string is a valid symbol by checking
-    //  * the length as max 16 bytes and the allowed characters: 0-9, A-Z, a-z,
-    //  * hyphen, underscore.
-    //  */
-    // function isValidSymbol(string memory _symbol) public pure returns (bool) {
-    //     bytes memory symbolBytes = bytes(_symbol);
-    //     if (symbolBytes.length == 0 || symbolBytes.length > 16) {
-    //         return false; // Check length is within range
-    //     }
-
-    //     for (uint256 i = 0; i < symbolBytes.length; i++) {
-    //         bytes1 char = symbolBytes[i];
-    //         if (
-    //             // allowed ASCII characters 0-9, A-Z, a-z, Hyphen (-), Underscore (_)
-    //             !(
-    //                 (char >= 0x30 && char <= 0x39) || (char >= 0x41 && char <= 0x5A) || (char >= 0x61 && char <= 0x7A)
-    //                     || (char == 0x2D) || (char == 0x5F)
-    //             )
-    //         ) {
-    //             return false;
-    //         }
-    //     }
-    //     return true;
-    // }
 
     // Internal functions
 
@@ -1202,26 +1110,3 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
         trustMarker.expiry = _expiry;
     }
 }
-
-// contract WrappedERC20 is ERC20, ERC1155Holder {
-//     address public parentContract;
-//     uint256 public parentTokenId;
-
-//     constructor(string memory _name, string memory _symbol, address _parentContract, uint256 _parentTokenId)
-//         ERC20(_name, _symbol)
-//     {
-//         parentContract = _parentContract;
-//         parentTokenId = _parentTokenId;
-//     }
-
-//     //TODO - seems to not update total supply
-//     function mint(address _to, uint256 _amount) public {
-//         require(msg.sender == parentContract, "Only parent contract can mint");
-//         _mint(_to, _amount);
-//     }
-
-//     function burn(address _from, uint256 _amount) public {
-//         require(msg.sender == parentContract, "Only parent contract can burn");
-//         _burn(_from, _amount);
-//     }
-// }

@@ -10,7 +10,7 @@ contract MockDemurrage is Demurrage {
         inflationDayZero = _inflationDayZero;
     }
 
-    function gamma_64x64() external view returns (int128) {
+    function gamma_64x64() external pure returns (int128) {
         return GAMMA_64x64;
     }
 
@@ -18,7 +18,7 @@ contract MockDemurrage is Demurrage {
         return R[_i];
     }
 
-    function rLength() external view returns (uint256) {
+    function rLength() external pure returns (uint256) {
         return R_TABLE_LOOKUP;
     }
 }
