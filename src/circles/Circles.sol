@@ -149,6 +149,20 @@ contract Circles is ERC1155 {
         emit PersonalMint(_human, issuance, startPeriod, endPeriod);
     }
 
+    function _mintAndUpdateTotalSupply(address _account, uint256 _id, uint256 _value, bytes memory _data) internal {
+        _mint(_account, _id, _value, _data);
+        DiscountedBalance storage totalSupplyBalance = discountedTotalSupplies[_id];
+        uint64 today = day(block.timestamp);
+        uint256 newTotalSupply =
+            _calculateDiscountedBalance(totalSupplyBalance.balance, today - totalSupplyBalance.lastUpdatedDay) + _value;
+        if (newTotalSupply > MAX_VALUE) {
+            // DiscountedBalances: balance exceeds maximum value
+            revert CirclesERC1155AmountExceedsMaxUint190(_account, _id, newTotalSupply, 2);
+        }
+        totalSupplyBalance.balance = uint192(newTotalSupply);
+        totalSupplyBalance.lastUpdatedDay = today;
+    }
+
     // Private functions
 
     /**

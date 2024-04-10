@@ -13,6 +13,11 @@ contract DiscountedBalances is Demurrage {
      */
     mapping(uint256 => mapping(address => DiscountedBalance)) public discountedBalances;
 
+    /**
+     * @dev stores the total supply for each Circles identifier
+     */
+    mapping(uint256 => DiscountedBalance) internal discountedTotalSupplies;
+
     // Constructor
 
     /**
@@ -36,17 +41,17 @@ contract DiscountedBalances is Demurrage {
         return _calculateDiscountedBalance(discountedBalance.balance, _day - discountedBalance.lastUpdatedDay);
     }
 
-    // Internal functions
+    /**
+     * @notice Total supply of a Circles identifier.
+     * @param _id Circles identifier for which to calculate the total supply
+     */
+    function totalSupply(uint256 _id) public view returns (uint256) {
+        DiscountedBalance memory totalSupplyBalance = discountedTotalSupplies[_id];
+        uint64 today = day(block.timestamp);
+        return _calculateDiscountedBalance(totalSupplyBalance.balance, today - totalSupplyBalance.lastUpdatedDay);
+    }
 
-    // /**
-    //  * @dev Calculate the inflationary balance of a discounted balance
-    //  * @param _account Address of the account to calculate the balance of
-    //  * @param _id Circles identifier for which to calculate the balance
-    //  */
-    // function _inflationaryBalanceOf(address _account, uint256 _id) internal view returns (uint256) {
-    //     DiscountedBalance memory discountedBalance = discountedBalances[_id][_account];
-    //     return _calculateInflationaryBalance(discountedBalance.balance, discountedBalance.lastUpdatedDay);
-    // }
+    // Internal functions
 
     /**
      * @dev Update the balance of an account for a given Circles identifier

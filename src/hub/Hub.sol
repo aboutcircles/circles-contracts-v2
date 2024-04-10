@@ -66,6 +66,18 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
     // State variables
 
     /**
+     * @notice The global name of Circles.
+     * todo, change this to "Circles" for the production deployment
+     */
+    string public name = "Rings";
+
+    /**
+     * @notice The global symbol ticker for Circles.
+     * todo, change this to "CRC" for the production deployment
+     */
+    string public symbol = "RING";
+
+    /**
      * @notice The Hub v1 contract address.
      */
     IHubV1 public immutable hubV1;
@@ -252,7 +264,7 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
 
             // todo: re-discuss desired approach to welcome bonus vs migration
             // invited receives the welcome bonus in their personal Circles
-            _mint(_human, toTokenId(_human), WELCOME_BONUS, "");
+            _mintAndUpdateTotalSupply(_human, toTokenId(_human), WELCOME_BONUS, "");
         }
 
         // set trust to indefinite future, but avatar can edit this later
@@ -473,7 +485,7 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
 
         for (uint256 i = 0; i < _avatars.length; i++) {
             // mint the migrated balances to _owner
-            _mint(_owner, toTokenId(_avatars[i]), _amounts[i], "");
+            _mintAndUpdateTotalSupply(_owner, toTokenId(_avatars[i]), _amounts[i], "");
         }
     }
 
@@ -665,7 +677,7 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
         safeBatchTransferFrom(_sender, treasuries[_group], _collateral, _amounts, dataWithGroup);
 
         // mint group Circles to the sender and send the original _data onwards
-        _mint(_sender, toTokenId(_group), sumAmounts, _data);
+        _mintAndUpdateTotalSupply(_sender, toTokenId(_group), sumAmounts, _data);
     }
 
     function _verifyFlowMatrix(
