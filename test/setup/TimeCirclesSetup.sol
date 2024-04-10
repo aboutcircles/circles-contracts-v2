@@ -20,6 +20,8 @@ contract TimeCirclesSetup is Test {
 
     uint256 internal constant ONE_YEAR_BOOTSTRAP = uint256(31536000);
 
+    uint96 internal constant INDEFINITE_FUTURE = type(uint96).max;
+
     function startTime() public {
         // Earliest sensible start time is ZERO_TIME plus one second
         vm.warp(ZERO_TIME + 1);

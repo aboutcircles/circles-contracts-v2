@@ -79,6 +79,8 @@ interface IStandardTreasuryErrors {
     );
 
     error CirclesStandardTreasuryInvalidMetadataType(bytes32 metadataType, uint8 code);
+
+    error CirclesStandardTreasuryInvalidMetadata(bytes metadata, uint8 code);
 }
 
 interface INameRegistryErrors {
