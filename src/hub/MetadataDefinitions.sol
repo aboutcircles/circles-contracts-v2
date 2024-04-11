@@ -14,7 +14,10 @@ contract MetadataDefinitions {
         address group;
     }
 
+    // note: Redemption does not require Metadata
+
     // Constants
 
     bytes32 internal constant METADATATYPE_GROUPMINT = keccak256("CIRCLESv2:RESERVED_DATA:CirclesGroupMint");
+    bytes32 internal constant METADATATYPE_GROUPREDEEM = keccak256("CIRCLESv2:RESERVED_DATA:CirclesGroupRedeem");
 }
