@@ -96,6 +96,11 @@ contract Demurrage is ICirclesERC1155Errors {
 
     /**
      * @dev Store a lookup table T(n) for computing issuance.
+     * T is only accessed for minting in Hub.sol, so it is initialized in
+     * storage of Hub.sol during the constructor, by copying these values.
+     * (It is not properly intialized in a ERC20 Proxy contract, but we never need
+     * to access it there, so it is not a problem - it is only initialized in the
+     * storage of the mastercopy during deployment.)
      * See ../../specifications/TCIP009-demurrage.md for more details.
      */
     int128[15] internal T = [
@@ -117,26 +122,35 @@ contract Demurrage is ICirclesERC1155Errors {
     ];
 
     /**
-     * @dev Store a lookup table R(n) for computing issuance.
+     * @dev Store a lookup table R(n) for computing issuance and demurrage.
+     * This table is computed in the constructor of Hub.sol and mastercopy deployments,
+     * and lazily computed in the ERC20 Demurrage proxy contracts, then cached into their storage.
+     * The non-trivial situation for R(n) (vs T(n)) is that R is accessed
+     * from the ERC20 Demurrage proxy contracts, so their storage will not yet
+     * have been initialized with the constructor. (Counter to T which is only
+     * accessed for minting in Hub.sol, and as such initialized in the constructor
+     * of Hub.sol by Solidity by copying the python calculated values stored above.)
+     *
+     * Computing R in contract is done with .64bits precision, whereas the python computed
+     * table is slightly more accurate, but equal within dust (10^-18). See unit tests.
+     * However, we want to ensure that Hub.sol and the ERC20 Demurrage proxy contracts
+     * use the exact same R values (even if the difference would not matter).
+     * So for R we rely on the in-contract computed values.
+     * In the unit tests, the table of python computed values is stored in HIGHER_ACCURACY_R,
+     * and matched against the solidity computed values.
      * See ../../specifications/TCIP009-demurrage.md for more details.
      */
-    int128[15] internal R = [
-        int128(18446744073709551616),
-        int128(18443079296116538654),
-        int128(18439415246597529027),
-        int128(18435751925007877736),
-        int128(18432089331202968517),
-        int128(18428427465038213837),
-        int128(18424766326369054888),
-        int128(18421105915050961582),
-        int128(18417446230939432544),
-        int128(18413787273889995104),
-        int128(18410129043758205300),
-        int128(18406471540399647861),
-        int128(18402814763669936209),
-        int128(18399158713424712450),
-        int128(18395503389519647372)
-    ];
+    int128[15] internal R;
+
+    // Constructor
+
+    constructor() {
+        // we need to fill the R table upon construction so that
+        // in Hub.sol personalMint has the R table available
+        for (uint8 i = 0; i <= R_TABLE_LOOKUP; i++) {
+            R[i] = Math64x64.pow(GAMMA_64x64, i);
+        }
+    }
 
     // Public functions
 
@@ -206,11 +220,41 @@ contract Demurrage is ICirclesERC1155Errors {
     function _calculateDiscountedBalance(uint256 _balance, uint256 _daysDifference) internal view returns (uint256) {
         if (_daysDifference == 0) {
             return _balance;
-        } else if (_daysDifference <= R_TABLE_LOOKUP) {
-            return Math64x64.mulu(R[_daysDifference], _balance);
+        }
+        int128 r = _calculateDemurrageFactor(_daysDifference);
+        return Math64x64.mulu(r, _balance);
+    }
+
+    function _calculateDiscountedBalanceAndCache(uint256 _balance, uint256 _daysDifference)
+        internal
+        returns (uint256)
+    {
+        if (_daysDifference == 0) {
+            return _balance;
+        }
+        int128 r = _calculateDemurrageFactorAndCache(_daysDifference);
+        return Math64x64.mulu(r, _balance);
+    }
+
+    function _calculateDemurrageFactor(uint256 _dayDifference) internal view returns (int128) {
+        if (_dayDifference <= R_TABLE_LOOKUP && R[_dayDifference] != 0) {
+            return R[_dayDifference];
         } else {
-            int128 r = Math64x64.pow(GAMMA_64x64, _daysDifference);
-            return Math64x64.mulu(r, _balance);
+            return Math64x64.pow(GAMMA_64x64, _dayDifference);
+        }
+    }
+
+    function _calculateDemurrageFactorAndCache(uint256 _dayDifference) internal returns (int128) {
+        if (_dayDifference <= R_TABLE_LOOKUP) {
+            if (R[_dayDifference] == 0) {
+                // for proxy ERC20 contracts, the storage does not contain the R table yet
+                // so compute it lazily and store it in the table
+                int128 r = Math64x64.pow(GAMMA_64x64, _dayDifference);
+                R[_dayDifference] = r;
+            }
+            return R[_dayDifference];
+        } else {
+            return Math64x64.pow(GAMMA_64x64, _dayDifference);
         }
     }
 

@@ -277,8 +277,8 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
         _registerGroup(msg.sender, _mint, standardTreasury, _name, _symbol);
 
         // for groups register possible custom name and symbol
-        nameRegistry.registerName(msg.sender, _name);
-        nameRegistry.registerSymbol(msg.sender, _symbol);
+        nameRegistry.registerCustomName(msg.sender, _name);
+        nameRegistry.registerCustomSymbol(msg.sender, _symbol);
 
         // store the IPFS CIDv0 digest for the group metadata
         nameRegistry.updateCidV0Digest(msg.sender, _cidV0Digest);
@@ -304,8 +304,8 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
         _registerGroup(msg.sender, _mint, _treasury, _name, _symbol);
 
         // for groups register possible custom name and symbol
-        nameRegistry.registerName(msg.sender, _name);
-        nameRegistry.registerSymbol(msg.sender, _symbol);
+        nameRegistry.registerCustomName(msg.sender, _name);
+        nameRegistry.registerCustomSymbol(msg.sender, _symbol);
 
         // store the IPFS CIDv0 digest for the group metadata
         nameRegistry.updateCidV0Digest(msg.sender, _cidV0Digest);
@@ -322,7 +322,7 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
         _insertAvatar(msg.sender);
 
         // for organizations, only register possible custom name
-        nameRegistry.registerName(msg.sender, _name);
+        nameRegistry.registerCustomName(msg.sender, _name);
 
         // store the IPFS CIDv0 digest for the organization metadata
         nameRegistry.updateCidV0Digest(msg.sender, _cidV0Digest);
@@ -506,13 +506,15 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
 
     // Public functions
 
-    function wrap(address _avatar, uint256 _amount, CirclesType _type) public {
+    function wrap(address _avatar, uint256 _amount, CirclesType _type) public returns (address) {
         if (!isHuman(_avatar) && !isGroup(_avatar)) {
             // Avatar must be human or group.
             revert CirclesAvatarMustBeRegistered(_avatar, 2);
         }
         address erc20Wrapper = liftERC20.ensureERC20(_avatar, _type);
         safeTransferFrom(msg.sender, erc20Wrapper, toTokenId(_avatar), _amount, "");
+
+        return erc20Wrapper;
     }
 
     // todo: if we have space, possibly have a wrapBatch function

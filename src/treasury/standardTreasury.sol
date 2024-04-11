@@ -31,7 +31,7 @@ contract StandardTreasury is
     /**
      * @notice Address of the hub contract
      */
-    IHubV2 public immutable hub;
+    IHubV2 public hub;
 
     /**
      * @notice Address of the mastercopy standard vault contract

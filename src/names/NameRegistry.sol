@@ -4,8 +4,9 @@ pragma solidity >=0.8.13;
 import "../errors/Errors.sol";
 import "../hub/IHub.sol";
 import "./Base58Converter.sol";
+import "./INameRegistry.sol";
 
-contract NameRegistry is Base58Converter, INameRegistryErrors, ICirclesErrors {
+contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, ICirclesErrors {
     // Constants
 
     /**
@@ -166,10 +167,10 @@ contract NameRegistry is Base58Converter, INameRegistryErrors, ICirclesErrors {
         uint72 shortName = shortNames[_avatar];
         if (shortName == uint72(0)) {
             string memory base58FullAddress = toBase58(uint256(uint160(_avatar)));
-            return string(abi.encodePacked("DEFAULT_CIRCLES_NAME_PREFIX", base58FullAddress));
+            return string(abi.encodePacked(DEFAULT_CIRCLES_NAME_PREFIX, base58FullAddress));
         }
         string memory base58ShortName = toBase58(uint256(shortName));
-        return string(abi.encodePacked("DEFAULT_CIRCLES_NAME_PREFIX", base58ShortName));
+        return string(abi.encodePacked(DEFAULT_CIRCLES_NAME_PREFIX, base58ShortName));
     }
 
     function symbol(address _avatar) external view mustBeRegistered(_avatar, 2) returns (string memory) {
