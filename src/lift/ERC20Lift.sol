@@ -87,10 +87,6 @@ contract ERC20Lift is ProxyFactory, IERC20Lift, ICirclesErrors {
         return erc20Wrapper;
     }
 
-    // function getDeterministicAddress(uint256 _tokenId, bytes32 _bytecodeHash) public view returns (address) {
-    //     return Create2.computeAddress(keccak256(abi.encodePacked(_tokenId)), _bytecodeHash);
-    // }
-
     // Internal functions
 
     function _deployERC20(address _masterCopy, address _avatar) internal returns (address) {
