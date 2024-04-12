@@ -118,6 +118,12 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
     mapping(address => address) public treasuries;
 
     /**
+     * @notice By default the advanced usage flags should remain zero.
+     * Only for advanced purposes people can consider enabling two flags.
+     */
+    mapping(address => bytes32) public advancedUsageFlags;
+
+    /**
      * @notice The iterable mapping of directional trust relations between avatars and
      * their expiry times.
      */
