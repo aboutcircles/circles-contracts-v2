@@ -21,7 +21,7 @@ import "./MetadataDefinitions.sol";
  * It further allows to wrap any token into an inflationary or demurraged
  * ERC20 Circles contract.
  */
-contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
+contract Hub is Circles, MetadataDefinitions, IHubErrors {
     // Type declarations
 
     /**
@@ -260,7 +260,7 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
 
         if (block.timestamp > invitationOnlyTime) {
             // after the bootstrap period, the inviter must burn the invitation cost
-            _burn(msg.sender, toTokenId(msg.sender), INVITATION_COST);
+            _burnAndUpdateTotalSupply(msg.sender, toTokenId(msg.sender), INVITATION_COST);
 
             // todo: re-discuss desired approach to welcome bonus vs migration
             // invited receives the welcome bonus in their personal Circles
@@ -480,7 +480,7 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
                 // Only humans can migrate v1 tokens after the bootstrap period.
                 revert CirclesHubMustBeHuman(_owner, 4);
             }
-            _burn(_owner, toTokenId(_owner), cost);
+            _burnAndUpdateTotalSupply(_owner, toTokenId(_owner), cost);
         }
 
         for (uint256 i = 0; i < _avatars.length; i++) {
@@ -510,7 +510,7 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
                 revert CirclesHubGroupMintPolicyRejectedBurn(msg.sender, group, _amount, _data, 0);
             }
         }
-        _burn(msg.sender, _id, _amount);
+        _burnAndUpdateTotalSupply(msg.sender, _id, _amount);
     }
 
     // Public functions
