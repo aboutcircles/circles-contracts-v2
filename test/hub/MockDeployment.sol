@@ -6,7 +6,7 @@ import "../../src/lift/IERC20Lift.sol";
 import "../../src/migration/IHub.sol";
 import "../../src/names/INameRegistry.sol";
 import "../../src/names/NameRegistry.sol";
-import "../../src/treasury/standardVault.sol";
+import "../../src/treasury/StandardVault.sol";
 import "../../src/treasury/StandardTreasury.sol";
 import "../../src/lift/DemurrageCircles.sol";
 import "../../src/lift/InflationaryCircles.sol";
