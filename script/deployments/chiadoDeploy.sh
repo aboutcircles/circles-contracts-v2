@@ -137,7 +137,7 @@ HUB=$(deploy_and_store_details "Hub" $HUB_ADDRESS_01 \
 
 MIGRATION=$(deploy_and_store_details "Migration" $MIGRATION_ADDRESS_02 \
   src/migration/Migration.sol:Migration \
-  --constructor-args $V1_HUB_ADDRESS $HUB_ADDRESS_01)
+  --constructor-args $V1_HUB_ADDRESS $HUB_ADDRESS_01 $INFLATION_DAY_ZERO)
 
 NAME_REGISTRY=$(deploy_and_store_details "NameRegistry" $NAMEREGISTRY_ADDRESS_03 \
   src/names/NameRegistry.sol:NameRegistry \

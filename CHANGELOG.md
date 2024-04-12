@@ -4,11 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# v0.3.1
+## latest
 
-- [PR ]
-    - temporarilly rename "Circles" to "Rings" and "CRC" to "RING", so that pre-release deployments are easily recognizable from the later production deployment
-- [PR 123] 
+- [PR132] bug fix in groupMint(); initial test coverage for group mint
+- [PR130] remove the code from the first draft proposal (December 2023)
+
+## v0.3.2
+
+- [PR129] shift migration v1-v2 to match UI time circles more accurately
+- [PR127] several of bug fixes around proxy ERC20 (and groupmint/vault), and around name registry
+
+## v0.3.1
+
+- temporarilly rename "Circles" to "Rings" and "CRC" to "RING", so that pre-release deployments are easily recognizable from the later production deployment
+- [PR125] improve deployment scripts to a workable level
+- [PR123] 
     - fix: `personalMint` should not revert if issuance is zero;
     - add `calculateIssuanceWithCheck` to know issuance without minting (while possibly updating v1 mint status);
     - add testing for simple migration and invitation flows

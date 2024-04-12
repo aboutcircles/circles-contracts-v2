@@ -11,6 +11,9 @@ contract Approximation {
     // 1% in 64x64 fixed point: integer approximation of 2**64 / 100
     int128 internal constant ONE_PERCENT = int128(184467440737095516);
 
+    // 0.001% in 64x64 fixed point: integer approximation of 2**64 / 10**5
+    int128 internal constant ONE_IN_HUNDRED_THOUSAND = int128(184467440737096);
+
     // Dust in 64x64 fixed point: integer approximation of 2**64 / 10**18
     int128 internal constant DUST = int128(18);
 
