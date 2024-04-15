@@ -26,7 +26,7 @@ contract HubPathTransferTest is Test, TimeCirclesSetup, HumanRegistration, Appro
         // and 365 days as bootstrap time
         mockHub = new MockPathTransferHub(INFLATION_DAY_ZERO, 365 days);
 
-        // register 4 humans
+        // register 8 humans
         for (uint256 i = 0; i < N; i++) {
             vm.prank(addresses[i]);
             mockHub.registerHumanUnrestricted();
@@ -53,11 +53,24 @@ contract HubPathTransferTest is Test, TimeCirclesSetup, HumanRegistration, Appro
             assertEq(mockHub.isTrusted(addresses[i], addresses[i - 1]), true);
             assertEq(mockHub.isTrusted(addresses[i - 1], addresses[i]), false);
         }
+
+        // for consented flow, the origin of the Circles needs to trust the receiver too
+        // Alice trusts Bob, Bob trusts Charlie, Charlie trusts David
+        for (uint256 i = 0; i < 3; i++) {
+            vm.prank(addresses[i]);
+            mockHub.trust(addresses[i + 1], expiry);
+            assertEq(mockHub.isTrusted(addresses[i], addresses[i + 1]), true);
+            assertEq(mockHub.isTrusted(addresses[i + 1], addresses[i]), true);
+        }
     }
 
     // Tests
 
-    function testOperateFlowMatrix() public {
+    function testOperateFlowMatrixConsentedFlow() public {
+        // Alice <-> Bob <-> Charlie <-> David
+        // first four avatars have a linear bi-directional trust
+        uint256 M = 4;
+
         // Flow matrix for transferring Circles from Alice to David
         // with indication of which Circles are being sent
         //       A     B     C     D
@@ -65,14 +78,14 @@ contract HubPathTransferTest is Test, TimeCirclesSetup, HumanRegistration, Appro
         // B-C   .    -5B    5B    .
         // C-D   .     .    -5C    5C
 
-        address[] memory flowVertices = new address[](N);
-        Hub.FlowEdge[] memory flow = new Hub.FlowEdge[](N - 1);
+        address[] memory flowVertices = new address[](M);
+        Hub.FlowEdge[] memory flow = new Hub.FlowEdge[](M - 1);
 
         // allocate three coordinates per flow edge
-        uint16[] memory coordinates = new uint16[]((N - 1) * 3);
+        uint16[] memory coordinates = new uint16[]((M - 1) * 3);
 
         // the flow vertices need to be provided in ascending order\
-        for (uint256 i = 0; i < N; i++) {
+        for (uint256 i = 0; i < M; i++) {
             flowVertices[i] = sortedAddresses[i];
         }
 
@@ -81,7 +94,7 @@ contract HubPathTransferTest is Test, TimeCirclesSetup, HumanRegistration, Appro
         uint256 index = 0;
 
         // for each row in the flow matrix specify the coordinates and amount
-        for (uint256 i = 0; i < N - 1; i++) {
+        for (uint256 i = 0; i < M - 1; i++) {
             // flow is the amount of Circles to send, here constant for each edge
             flow[i].amount = uint240(5 * CRC);
             flow[i].streamSinkId = uint16(0);
