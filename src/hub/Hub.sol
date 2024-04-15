@@ -63,6 +63,8 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
      */
     address private constant SENTINEL = address(0x1);
 
+    bytes32 private constant ADVANCED_FLAG_OPTOUT_CONSENTEDFLOW = bytes32(uint256(1));
+
     // State variables
 
     /**
@@ -118,8 +120,8 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
     mapping(address => address) public treasuries;
 
     /**
-     * @notice By default the advanced usage flags should remain zero.
-     * Only for advanced purposes people can consider enabling two flags.
+     * @notice By default the advanced usage flags should remain set to zero.
+     * Only for advanced purposes people can consider enabling flags.
      */
     mapping(address => bytes32) public advancedUsageFlags;
 
@@ -593,6 +595,18 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
         return uint256(trustMarkers[_truster][_trustee].expiry) >= block.timestamp;
     }
 
+    function isPermittedFlow(address _to, address _circlesAvatar) public view returns (bool) {
+        // if receiver does not trust the Circles being sent, then the flow is not consented regardless
+        if (uint256(trustMarkers[_to][_circlesAvatar].expiry) < block.timestamp) return false;
+        // if the advanced usage flag is set to opt-out of consented flow,
+        // then the uni-directional trust is sufficient
+        if (advancedUsageFlags[_circlesAvatar] & ADVANCED_FLAG_OPTOUT_CONSENTEDFLOW != bytes32(0)) {
+            return true;
+        }
+        // however, by default the consented flow requires bi-directional trust from center to receiver
+        return uint256(trustMarkers[_circlesAvatar][_to].expiry) >= block.timestamp;
+    }
+
     /**
      * uri returns the IPFS URI for the ERC1155 token.
      * If the
@@ -645,7 +659,7 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
             // from an address, so we can cast here without checks.
             if (!isTrusted(_group, address(uint160(_collateral[i])))) {
                 // Group does not trust collateral.
-                revert CirclesHubCirclesAreNotTrustedByReceiver(_group, _collateral[i], 0);
+                revert CirclesHubFlowEdgeIsNotPermitted(_group, _collateral[i], 0);
             }
 
             if (_amounts[i] == 0) {
@@ -729,9 +743,10 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
                 int256 flow = int256(uint256(_flow[i].amount));
 
                 // check the receiver trusts the Circles being sent
-                if (!isTrusted(to, circlesId)) {
-                    // Receiver does not trust Circles being sent
-                    revert CirclesHubCirclesAreNotTrustedByReceiver(to, toTokenId(circlesId), 1);
+                // and that the center trusts the receiver (unless center opt-ed out)
+                if (!isPermittedFlow(to, circlesId)) {
+                    // Flow edge is not permitted.
+                    revert CirclesHubFlowEdgeIsNotPermitted(to, toTokenId(circlesId), 1);
                 }
                 if (_closedPath && (to != circlesId || isGroup(circlesId))) {
                     // Closed paths can only return personal Circles to source.
