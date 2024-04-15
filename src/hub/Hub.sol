@@ -509,9 +509,7 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
         _burn(msg.sender, _id, _amount);
     }
 
-    // Public functions
-
-    function wrap(address _avatar, uint256 _amount, CirclesType _type) public returns (address) {
+    function wrap(address _avatar, uint256 _amount, CirclesType _type) external returns (address) {
         if (!isHuman(_avatar) && !isGroup(_avatar)) {
             // Avatar must be human or group.
             revert CirclesAvatarMustBeRegistered(_avatar, 2);
@@ -556,6 +554,14 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
         int256[] memory streamsNettedFlow = _callAcceptanceChecks(_flowVertices, _flow, _streams, coordinates);
 
         _matchNettedFlows(streamsNettedFlow, matrixNettedFlow);
+    }
+
+    function setAdvancedUsageFlag(bytes32 _flag) external {
+        if (avatars[msg.sender] == address(0)) {
+            // Only registered avatars can set advanced usage flags.
+            revert CirclesAvatarMustBeRegistered(msg.sender, 3);
+        }
+        advancedUsageFlags[msg.sender] = _flag;
     }
 
     // Public functions
