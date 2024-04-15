@@ -657,7 +657,7 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
             // _groupMint is only called from the public groupMint function,
             // or from operateFlowMatrix, and both ensure the collateral ids are derived
             // from an address, so we can cast here without checks.
-            if (!isTrusted(_group, address(uint160(_collateral[i])))) {
+            if (!isPermittedFlow(_group, address(uint160(_collateral[i])))) {
                 // Group does not trust collateral.
                 revert CirclesHubFlowEdgeIsNotPermitted(_group, _collateral[i], 0);
             }

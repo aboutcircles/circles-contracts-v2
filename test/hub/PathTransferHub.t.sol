@@ -56,7 +56,7 @@ contract HubPathTransferTest is Test, TimeCirclesSetup, HumanRegistration, Appro
 
         // for consented flow, the origin of the Circles needs to trust the receiver too
         // Alice trusts Bob, Bob trusts Charlie, Charlie trusts David
-        for (uint256 i = 0; i < 3; i++) {
+        for (uint256 i = 0; i < N - 1; i++) {
             vm.prank(addresses[i]);
             mockHub.trust(addresses[i + 1], expiry);
             assertEq(mockHub.isTrusted(addresses[i], addresses[i + 1]), true);
@@ -69,7 +69,7 @@ contract HubPathTransferTest is Test, TimeCirclesSetup, HumanRegistration, Appro
     function testOperateFlowMatrixConsentedFlow() public {
         // Alice <-> Bob <-> Charlie <-> David
         // first four avatars have a linear bi-directional trust
-        uint256 M = 4;
+        uint256 M = N;
 
         // Flow matrix for transferring Circles from Alice to David
         // with indication of which Circles are being sent

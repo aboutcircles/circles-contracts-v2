@@ -28,8 +28,12 @@ contract MintGroupCirclesTest is Test, GroupSetup, IHubErrors {
 
         // G1 trusts first 5 humans
         for (uint256 i = 0; i < 5; i++) {
-            vm.prank(addresses[35]);
+            vm.prank(group);
             hub.trust(addresses[i], INDEFINITE_FUTURE);
+
+            // and each human trusts the group
+            vm.prank(addresses[i]);
+            hub.trust(group, INDEFINITE_FUTURE);
         }
     }
 
