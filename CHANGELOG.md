@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## latest
 
+- [PR136] totalSupply and name, symbol for ERC1155 (outside of specification)
+
+## v0.3.3
+
 - [PR132] bug fix in groupMint(); initial test coverage for group mint
 - [PR130] remove the code from the first draft proposal (December 2023)
 
