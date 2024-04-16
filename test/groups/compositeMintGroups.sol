@@ -39,6 +39,9 @@ contract CompositeMintGroupsTest is Test, GroupSetup, IHubErrors {
         for (uint256 i = 0; i < 5; i++) {
             vm.prank(group0);
             hub.trust(addresses[i], INDEFINITE_FUTURE);
+            // and each human trusts the group
+            vm.prank(addresses[i]);
+            hub.trust(group0, INDEFINITE_FUTURE);
 
             collateral[0] = addresses[i];
             amounts[0] = 1 * CRC;
@@ -50,6 +53,9 @@ contract CompositeMintGroupsTest is Test, GroupSetup, IHubErrors {
         for (uint256 i = 0; i < 35; i++) {
             vm.prank(group1);
             hub.trust(addresses[i], INDEFINITE_FUTURE);
+            // and each human trusts the group
+            vm.prank(addresses[i]);
+            hub.trust(group1, INDEFINITE_FUTURE);
 
             collateral[0] = addresses[i];
             amounts[0] = 1 * CRC;
@@ -61,6 +67,9 @@ contract CompositeMintGroupsTest is Test, GroupSetup, IHubErrors {
         for (uint256 i = 0; i < 15; i++) {
             vm.prank(group2);
             hub.trust(addresses[i], INDEFINITE_FUTURE);
+            // and each human trusts the group
+            vm.prank(addresses[i]);
+            hub.trust(group2, INDEFINITE_FUTURE);
 
             collateral[0] = addresses[i];
             amounts[0] = 1 * CRC;
@@ -74,8 +83,11 @@ contract CompositeMintGroupsTest is Test, GroupSetup, IHubErrors {
     function testCompositeGroupMint() public {
         // everyone already has some group Circles
         // now let G1 trust G0
-        vm.prank(addresses[36]);
-        hub.trust(addresses[35], INDEFINITE_FUTURE);
+        vm.prank(group1);
+        hub.trust(group0, INDEFINITE_FUTURE);
+        // reversly let G0 trust G1 for consented flow
+        vm.prank(group0);
+        hub.trust(group1, INDEFINITE_FUTURE);
 
         // now Alice mints with G0 as collateral for G1
         address[] memory collateral = new address[](1);

@@ -53,7 +53,6 @@ contract ERC20LiftTest is Test, TimeCirclesSetup, HumanRegistration {
         hub.personalMintWithoutV1Check();
 
         uint256 aliceBalance = hub.balanceOf(addresses[0], uint256(uint160(addresses[0])));
-        console.log("Alice balance: ", aliceBalance);
 
         // test the master contracts in Lift
         // ERC20Lift lift = mockDeployment.erc20Lift();
@@ -90,11 +89,6 @@ contract ERC20LiftTest is Test, TimeCirclesSetup, HumanRegistration {
 
         // somewhat cheekily test here that the demurrage works in ERC20 too
         // todo: split this out into proper unit tests, rather than stories
-
-        (uint192 balance, uint64 lastUpdatedDay) = aliceERC20.discountedBalances(addresses[0]);
-        console.log("ERC1155 balance: ", hub.balanceOf(addresses[0], uint256(uint160(addresses[0]))));
-        console.log("balance: ", balance);
-        console.log("lastUpdatedDay: ", lastUpdatedDay);
 
         // skip time
         skipTime(2 days);
