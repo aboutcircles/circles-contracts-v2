@@ -181,7 +181,7 @@ contract Circles is ERC1155, ICirclesErrors {
             // or wait a day for the total supply to be discounted to zero automatically.
             revert CirclesLogicAssertion(4);
         }
-        unchecked{
+        unchecked {
             totalSupplyBalance.balance = uint192(discountedTotalSupply - _value);
         }
         totalSupplyBalance.lastUpdatedDay = today;
