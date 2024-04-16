@@ -6,7 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## latest
 
-- [PR136] totalSupply and name, symbol for ERC1155 (outside of specification)
+- [PR141] consented flow with bi-directional trust, with opt-out to v1 protocol of uni-directional trust
+- [PR138] storage-based reentrency guard for operateFlowMatrix
+- [PR136] total supply, name and symbol for ERC1155 (out of specification)
 
 ## v0.3.3
 

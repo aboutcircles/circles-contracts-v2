@@ -67,17 +67,17 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors {
 
     // State variables
 
-    /**
-     * @notice The global name of Circles.
-     * todo, change this to "Circles" for the production deployment
-     */
-    string public name = "Rings";
+    // /**
+    //  * @notice The global name of Circles.
+    //  * todo, change this to "Circles" for the production deployment
+    //  */
+    // string public name = "Rings";
 
-    /**
-     * @notice The global symbol ticker for Circles.
-     * todo, change this to "CRC" for the production deployment
-     */
-    string public symbol = "RING";
+    // /**
+    //  * @notice The global symbol ticker for Circles.
+    //  * todo, change this to "CRC" for the production deployment
+    //  */
+    // string public symbol = "RING";
 
     /**
      * @notice The Hub v1 contract address.
@@ -193,23 +193,23 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors {
     modifier nonReentrant(uint8 _code) {
         // todo: this should use transient storage slot
         // but didn't compile; investigate
-        // assembly {
-        //     if tload(0) { revert(0, 0) }
-        //     tstore(0, 1)
-        // }
-        // _;
-        // assembly {
-        //     tstore(0, 0)
-        // }
+        assembly {
+            if tload(0) { revert(0, 0) }
+            tstore(0, 1)
+        }
+        _;
+        assembly {
+            tstore(0, 0)
+        }
 
         // for now, default to normal storage slot
         // replace this later with transient storage slot
-        if (_reentrancyGuard) {
-            revert CirclesReentrancyGuard(_code);
-        }
-        _reentrancyGuard = true;
-        _;
-        _reentrancyGuard = false;
+        // if (_reentrancyGuard) {
+        //     revert CirclesReentrancyGuard(_code);
+        // }
+        // _reentrancyGuard = true;
+        // _;
+        // _reentrancyGuard = false;
     }
 
     // Constructor
