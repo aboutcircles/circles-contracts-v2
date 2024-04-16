@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.8.13;
+pragma solidity >=0.8.24;
 
 interface IHubErrors {
     error CirclesHubOnlyDuringBootstrap(uint8 code);
@@ -69,6 +69,8 @@ interface ICirclesErrors {
     error CirclesLogicAssertion(uint8 code);
 
     error CirclesIdMustBeDerivedFromAddress(uint256 providedId, uint8 code);
+
+    error CirclesReentrancyGuard(uint8 code);
 }
 
 interface IStandardTreasuryErrors {
