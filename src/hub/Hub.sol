@@ -191,8 +191,8 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors {
      * see https://soliditylang.org/blog/2024/01/26/transient-storage/
      */
     modifier nonReentrant(uint8 _code) {
-        // todo: this should use transient storage slot
-        // but didn't compile; investigate
+        // todo: this should use a transient storage slot
+        // but doesn't compile through `forge build`, but does compile with solc directly
         // assembly {
         //     if tload(0) { revert(0, 0) }
         //     tstore(0, 1)
