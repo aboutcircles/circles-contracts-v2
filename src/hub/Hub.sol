@@ -191,25 +191,26 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors {
      * see https://soliditylang.org/blog/2024/01/26/transient-storage/
      */
     modifier nonReentrant(uint8 _code) {
-        // todo: this should use transient storage slot
-        // but didn't compile; investigate
-        assembly {
-            if tload(0) { revert(0, 0) }
-            tstore(0, 1)
-        }
-        _;
-        assembly {
-            tstore(0, 0)
-        }
+        // todo: this should use a transient storage slot
+        // but doesn't compile through `forge build`, but does compile with solc directly
+        // assembly {
+        //     if tload(0) { revert(0, 0) }
+        //     tstore(0, 1)
+        // }
+        // _;
+        // assembly {
+        //     tstore(0, 0)
+        // }
+
 
         // for now, default to normal storage slot
         // replace this later with transient storage slot
-        // if (_reentrancyGuard) {
-        //     revert CirclesReentrancyGuard(_code);
-        // }
-        // _reentrancyGuard = true;
-        // _;
-        // _reentrancyGuard = false;
+        if (_reentrancyGuard) {
+            revert CirclesReentrancyGuard(_code);
+        }
+        _reentrancyGuard = true;
+        _;
+        _reentrancyGuard = false;
     }
 
     // Constructor
