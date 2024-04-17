@@ -202,7 +202,6 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors {
         //     tstore(0, 0)
         // }
 
-
         // for now, default to normal storage slot
         // replace this later with transient storage slot
         if (_reentrancyGuard) {
