@@ -82,22 +82,22 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors {
     /**
      * @notice The Hub v1 contract address.
      */
-    IHubV1 public immutable hubV1;
+    IHubV1 internal immutable hubV1;
 
     /**
      * @notice The name registry contract address.
      */
-    INameRegistry public nameRegistry;
+    INameRegistry internal nameRegistry;
 
     /**
      * @notice The address of the migration contract for v1 Circles.
      */
-    address public migration;
+    address internal migration;
 
     /**
      * @notice The address of the Lift ERC20 contract.
      */
-    IERC20Lift public liftERC20;
+    IERC20Lift internal liftERC20;
 
     /**
      * @notice The timestamp of the start of the invitation-only period.
@@ -106,13 +106,13 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors {
      * new avatars can be invited by registered avatars. After this time
      * only registered avatars can invite new avatars.
      */
-    uint256 public immutable invitationOnlyTime;
+    uint256 internal immutable invitationOnlyTime;
 
     /**
      * @notice The standard treasury contract address used when
      * registering a (non-custom) group.
      */
-    address public standardTreasury;
+    address internal standardTreasury;
 
     /**
      * @notice The mapping of registered avatar addresses to the next avatar address,
