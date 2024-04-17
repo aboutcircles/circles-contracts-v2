@@ -27,6 +27,11 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
      */
     string public constant DEFAULT_CIRCLES_SYMBOL = "RING";
 
+    /**
+     * @dev The IPFS protocol prefix
+     */
+    string private constant IPFS_PROTOCOL = "ipfs://Qm";
+
     // State variables
 
     /**
@@ -125,10 +130,24 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
         emit RegisterShortName(msg.sender, shortName, _nonce);
     }
 
-    function updateCidV0Digest(address _avatar, bytes32 _cidV0Digest) external onlyHub(0) {
+    function setCidV0Digest(address _avatar, bytes32 _cidV0Digest) external onlyHub(0) {
         avatarToCidV0Digest[_avatar] = _cidV0Digest;
 
         emit CidV0(_avatar, _cidV0Digest);
+    }
+
+    function updateCidV0Digest(bytes32 _cidV0Digest) external mustBeRegistered(msg.sender, 2) {
+        avatarToCidV0Digest[msg.sender] = _cidV0Digest;
+
+        emit CidV0(msg.sender, _cidV0Digest);
+    }
+
+    function getIPFSUri(address _avatar) external view returns (string memory) {
+        bytes32 cidV0Digest = avatarToCidV0Digest[_avatar];
+        if (cidV0Digest == bytes32(0)) {
+            return "";
+        }
+        return string(abi.encodePacked(IPFS_PROTOCOL, toBase58WithPadding(uint256(cidV0Digest))));
     }
 
     function registerCustomName(address _avatar, string calldata _name) external onlyHub(1) {
@@ -153,7 +172,7 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
         customSymbols[_avatar] = _symbol;
     }
 
-    function name(address _avatar) external view mustBeRegistered(_avatar, 1) returns (string memory) {
+    function name(address _avatar) external view mustBeRegistered(_avatar, 3) returns (string memory) {
         if (!hub.isHuman(_avatar)) {
             // groups and organizations can have set a custom name
             string memory customName = customNames[_avatar];
@@ -173,7 +192,7 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
         return string(abi.encodePacked(DEFAULT_CIRCLES_NAME_PREFIX, base58ShortName));
     }
 
-    function symbol(address _avatar) external view mustBeRegistered(_avatar, 2) returns (string memory) {
+    function symbol(address _avatar) external view mustBeRegistered(_avatar, 4) returns (string memory) {
         if (hub.isOrganization(_avatar)) {
             revert CirclesNamesOrganizationHasNoSymbol(_avatar, 0);
         }

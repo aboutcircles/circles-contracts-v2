@@ -280,7 +280,7 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors {
         }
 
         // store the IPFS CIDv0 digest for the avatar metadata
-        nameRegistry.updateCidV0Digest(msg.sender, _cidV0Digest);
+        nameRegistry.setCidV0Digest(msg.sender, _cidV0Digest);
 
         emit RegisterHuman(msg.sender);
     }
@@ -332,7 +332,7 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors {
         nameRegistry.registerCustomSymbol(msg.sender, _symbol);
 
         // store the IPFS CIDv0 digest for the group metadata
-        nameRegistry.updateCidV0Digest(msg.sender, _cidV0Digest);
+        nameRegistry.setCidV0Digest(msg.sender, _cidV0Digest);
 
         emit RegisterGroup(msg.sender, _mint, standardTreasury, _name, _symbol);
     }
@@ -359,7 +359,7 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors {
         nameRegistry.registerCustomSymbol(msg.sender, _symbol);
 
         // store the IPFS CIDv0 digest for the group metadata
-        nameRegistry.updateCidV0Digest(msg.sender, _cidV0Digest);
+        nameRegistry.setCidV0Digest(msg.sender, _cidV0Digest);
 
         emit RegisterGroup(msg.sender, _mint, _treasury, _name, _symbol);
     }
@@ -376,7 +376,7 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors {
         nameRegistry.registerCustomName(msg.sender, _name);
 
         // store the IPFS CIDv0 digest for the organization metadata
-        nameRegistry.updateCidV0Digest(msg.sender, _cidV0Digest);
+        nameRegistry.setCidV0Digest(msg.sender, _cidV0Digest);
 
         emit RegisterOrganization(msg.sender, _name);
     }
@@ -661,12 +661,19 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors {
 
     /**
      * uri returns the IPFS URI for the ERC1155 token.
-     * If the
+     * If the a CID v0 is set in the name registry, it is used and returned as "ipfs://{cidV0}".
      * @param _id tokenId of the ERC1155 token
      */
     function uri(uint256 _id) public view override returns (string memory uri_) {
-        // todo: should fallback move into SDK rather than contract ?
-        // todo: we don't need to override this function if we keep this pattern
+        address group = _validateAddressFromId(_id, 1);
+
+        // if a CID v0 is set in the name registry, use it and return "ipfs://{cidV0}"
+        string memory ipfsUri = nameRegistry.getIPFSUri(group);
+        if (bytes(ipfsUri).length > 0) {
+            return ipfsUri;
+        }
+
+        // otherwise return a fallback constant URI
         // "https://fallback.aboutcircles.com/v1/profile/{id}.json"
         return super.uri(_id);
     }
@@ -709,7 +716,7 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors {
             // _groupMint is only called from the public groupMint function,
             // or from operateFlowMatrix, and both ensure the collateral ids are derived
             // from an address, so we can cast here without checks.
-            if (!isPermittedFlow(_group, address(uint160(_collateral[i])))) {
+            if (!isPermittedFlow(_group, _validateAddressFromId(_collateral[i], 2))) {
                 // Group does not trust collateral.
                 revert CirclesHubFlowEdgeIsNotPermitted(_group, _collateral[i], 0);
             }
@@ -1115,12 +1122,11 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors {
     }
 
     function _validateAddressFromId(uint256 _id, uint8 _code) internal pure returns (address) {
-        address avatar = address(uint160(_id));
-        if (uint256(uint160(avatar)) != _id) {
+        if (_id > type(uint160).max) {
             // Invalid Circles identifier, not derived from address
             revert CirclesIdMustBeDerivedFromAddress(_id, _code);
         }
-        return avatar;
+        return address(uint160(_id));
     }
 
     /**
