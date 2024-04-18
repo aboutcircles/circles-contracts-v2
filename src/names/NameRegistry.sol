@@ -28,7 +28,7 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
     string public constant DEFAULT_CIRCLES_SYMBOL = "RING";
 
     /**
-     * @dev The IPFS protocol prefix
+     * @dev The IPFS protocol prefix for cid v0 resolution
      */
     string private constant IPFS_PROTOCOL = "ipfs://Qm";
 
@@ -97,14 +97,7 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
      * @notice Register a short name for the avatar
      */
     function registerShortName() external mustBeRegistered(msg.sender, 0) {
-        (uint72 shortName, uint256 nonce) = searchShortName(msg.sender);
-
-        // assign the name to the address
-        shortNames[msg.sender] = shortName;
-        // assign the address to the name
-        shortNameToAvatar[shortName] = msg.sender;
-
-        emit RegisterShortName(msg.sender, shortName, nonce);
+        _registerShortName();
     }
 
     /**
@@ -112,42 +105,15 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
      * @param _nonce nonce to be used in the calculation
      */
     function registerShortNameWithNonce(uint256 _nonce) external mustBeRegistered(msg.sender, 1) {
-        if (shortNames[msg.sender] != uint72(0)) {
-            revert CirclesNamesShortNameAlreadyAssigned(msg.sender, shortNames[msg.sender], 0);
-        }
-
-        uint72 shortName = calculateShortNameWithNonce(msg.sender, _nonce);
-
-        if (shortNameToAvatar[shortName] != address(0)) {
-            revert CirclesNamesShortNameWithNonceTaken(msg.sender, _nonce, shortName, shortNameToAvatar[shortName]);
-        }
-
-        // assign the name to the address
-        shortNames[msg.sender] = shortName;
-        // assign the address to the name
-        shortNameToAvatar[shortName] = msg.sender;
-
-        emit RegisterShortName(msg.sender, shortName, _nonce);
+        _registerShortNameWithNonce(_nonce);
     }
 
     function setCidV0Digest(address _avatar, bytes32 _cidV0Digest) external onlyHub(0) {
-        avatarToCidV0Digest[_avatar] = _cidV0Digest;
-
-        emit CidV0(_avatar, _cidV0Digest);
+        _setCidV0Digest(_avatar, _cidV0Digest);
     }
 
     function updateCidV0Digest(bytes32 _cidV0Digest) external mustBeRegistered(msg.sender, 2) {
-        avatarToCidV0Digest[msg.sender] = _cidV0Digest;
-
-        emit CidV0(msg.sender, _cidV0Digest);
-    }
-
-    function getIPFSUri(address _avatar) external view returns (string memory) {
-        bytes32 cidV0Digest = avatarToCidV0Digest[_avatar];
-        if (cidV0Digest == bytes32(0)) {
-            return "";
-        }
-        return string(abi.encodePacked(IPFS_PROTOCOL, toBase58WithPadding(uint256(cidV0Digest))));
+        _setCidV0Digest(msg.sender, _cidV0Digest);
     }
 
     function registerCustomName(address _avatar, string calldata _name) external onlyHub(1) {
@@ -207,6 +173,14 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
         }
         // for all personal Circles use default symbol
         return DEFAULT_CIRCLES_SYMBOL;
+    }
+
+    function getIPFSUri(address _avatar) external view returns (string memory) {
+        bytes32 cidV0Digest = avatarToCidV0Digest[_avatar];
+        if (cidV0Digest == bytes32(0)) {
+            return "";
+        }
+        return string(abi.encodePacked(IPFS_PROTOCOL, toBase58WithPadding(uint256(cidV0Digest))));
     }
 
     // Public functions
@@ -307,5 +281,42 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
             }
         }
         return true;
+    }
+
+    // Internal functions
+
+    function _registerShortName() internal {
+        (uint72 shortName, uint256 nonce) = searchShortName(msg.sender);
+
+        _storeShortName(msg.sender, shortName, nonce);
+    }
+
+    function _registerShortNameWithNonce(uint256 _nonce) internal {
+        if (shortNames[msg.sender] != uint72(0)) {
+            revert CirclesNamesShortNameAlreadyAssigned(msg.sender, shortNames[msg.sender], 0);
+        }
+
+        uint72 shortName = calculateShortNameWithNonce(msg.sender, _nonce);
+
+        if (shortNameToAvatar[shortName] != address(0)) {
+            revert CirclesNamesShortNameWithNonceTaken(msg.sender, _nonce, shortName, shortNameToAvatar[shortName]);
+        }
+
+        _storeShortName(msg.sender, shortName, _nonce);
+    }
+
+    function _storeShortName(address _avatar, uint72 _shortName, uint256 _nonce) internal {
+        // assign the name to the address
+        shortNames[_avatar] = _shortName;
+        // assign the address to the name
+        shortNameToAvatar[_shortName] = _avatar;
+
+        emit RegisterShortName(_avatar, _shortName, _nonce);
+    }
+
+    function _setCidV0Digest(address _avatar, bytes32 _cidV0Digest) internal {
+        avatarToCidV0Digest[_avatar] = _cidV0Digest;
+
+        emit CidV0(_avatar, _cidV0Digest);
     }
 }
