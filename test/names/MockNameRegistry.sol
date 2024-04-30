@@ -47,4 +47,12 @@ contract MockNameRegistry is NameRegistry {
     function getShortOrLongName(address _avatar) external view returns (string memory) {
         return _getShortOrLongName(_avatar);
     }
+
+    function toBase58(uint256 _data) external pure returns (string memory) {
+        return _toBase58(_data);
+    }
+
+    function toBase58WithPadding(uint256 _data) external pure returns (string memory) {
+        return _toBase58WithPadding(_data);
+    }
 }

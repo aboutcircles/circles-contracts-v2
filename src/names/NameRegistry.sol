@@ -27,10 +27,10 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
      */
     string public constant DEFAULT_CIRCLES_SYMBOL = "RING";
 
-    /**
-     * @dev The IPFS protocol prefix for cid v0 resolution
-     */
-    string private constant IPFS_PROTOCOL = "ipfs://Qm";
+    // /**
+    //  * @dev The IPFS protocol prefix for cid v0 resolution
+    //  */
+    // string private constant IPFS_PROTOCOL = "ipfs://Qm";
 
     // State variables
 
@@ -209,7 +209,7 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
     function calculateShortNameWithNonce(address _avatar, uint256 _nonce) public pure returns (uint72 shortName_) {
         // use keccak256 to generate a pseudo-random number
         bytes32 digest = keccak256(abi.encodePacked(_avatar, _nonce));
-        // take the modulo of the digest to get a number between 0 and MAX_NAME
+        // take the modulo of the digest to get a number between 0 and MAX_SHORT_NAME
         shortName_ = uint72(uint256(digest) % (MAX_SHORT_NAME + 1));
     }
 
@@ -284,7 +284,7 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
 
     function _registerShortNameWithNonce(uint256 _nonce) internal {
         if (shortNames[msg.sender] != uint72(0)) {
-            revert CirclesNamesShortNameAlreadyAssigned(msg.sender, shortNames[msg.sender], 0);
+            revert CirclesNamesShortNameAlreadyAssigned(msg.sender, shortNames[msg.sender], 1);
         }
 
         uint72 shortName = calculateShortNameWithNonce(msg.sender, _nonce);
@@ -308,10 +308,10 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
     function _getShortOrLongName(address _avatar) internal view returns (string memory) {
         uint72 shortName = shortNames[_avatar];
         if (shortName == uint72(0)) {
-            string memory base58FullAddress = toBase58(uint256(uint160(_avatar)));
+            string memory base58FullAddress = _toBase58(uint256(uint160(_avatar)));
             return string(abi.encodePacked(DEFAULT_CIRCLES_NAME_PREFIX, base58FullAddress));
         }
-        string memory base58ShortName = toBase58(uint256(shortName));
+        string memory base58ShortName = _toBase58(uint256(shortName));
         return string(abi.encodePacked(DEFAULT_CIRCLES_NAME_PREFIX, base58ShortName));
     }
 

@@ -45,6 +45,41 @@ contract NamesTest is Test, HumanRegistration, Base58Decode {
         // and get the short name
         string memory shortName = mockNameRegistry.getShortOrLongName(addresses[0]);
         assertEq(shortName, "Rings-Q6sQpEYS9Dg1");
+
+        // can't register a second time
+        vm.expectRevert();
+        vm.prank(addresses[0]);
+        mockNameRegistry.registerShortNameWithNonceNoChecks(839892892);
+    }
+
+    function testShortNameWithNonce() public {
+        vm.prank(addresses[0]);
+        mockNameRegistry.registerShortNameWithNonceNoChecks(839892892);
+        string memory shortName = mockNameRegistry.getShortOrLongName(addresses[0]);
+        assertEq(shortName, "Rings-uNJGyf6sN6vY");
+    }
+
+    function testBase58Conversion() public {
+        assertEq(mockNameRegistry.toBase58(0), "1");
+        assertEq(mockNameRegistry.toBase58(mockNameRegistry.MAX_SHORT_NAME()), "zzzzzzzzzzzz");
+        // longer names are not possible as tha calculation takes modulo MAX_SHORT_NAME + 1
+        assertEq(mockNameRegistry.toBase58(mockNameRegistry.MAX_SHORT_NAME() + 1), "2111111111111");
+
+        assertEq(mockNameRegistry.toBase58(845156846445168), "7bmqZRAo1");
+        assertEq(mockNameRegistry.toBase58(912670482714768333), "37sj6xwGEtL");
+
+        assertEq(mockNameRegistry.toBase58WithPadding(0), "111111111111");
+        assertEq(mockNameRegistry.toBase58WithPadding(845156846445168), "1117bmqZRAo1");
+    }
+
+    function testCustomName() public {
+        mockNameRegistry.registerCustomNameNoChecks(addresses[0], "Circles");
+        assertEq(mockNameRegistry.customNames(addresses[0]), "Circles");
+    }
+
+    function testInvalidCustomNames() public {
+        vm.expectRevert();
+        mockNameRegistry.registerCustomNameNoChecks(addresses[0], "WeirdName=NotAllowed");
     }
 
     function testMetadataDigest() public {
