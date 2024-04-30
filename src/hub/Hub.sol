@@ -222,8 +222,8 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors {
      * or in unix time 1602786330 (deployment at 6:25:30 pm UTC) - 66330 (offset to midnight) = 1602720000.
      * @param _standardTreasury address of the standard treasury contract
      * @param _bootstrapTime duration of the bootstrap period (for v1 registration) in seconds
-     * @param _fallbackUri fallback URI string for the ERC1155 metadata,
-     * (todo: eg. "https://fallback.aboutcircles.com/v1/circles/{id}.json")
+     * @param _gatewayUrl gateway URL string for the ERC1155 metadata mirroring IPFS metadata storage
+     * (eg. "https://gateway.aboutcircles.com/v2/circles/{id}.json")
      */
     constructor(
         IHubV1 _hubV1,
@@ -233,8 +233,8 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors {
         address _standardTreasury,
         uint256 _inflationDayZero,
         uint256 _bootstrapTime,
-        string memory _fallbackUri
-    ) Circles(_inflationDayZero, _fallbackUri) {
+        string memory _gatewayUrl
+    ) Circles(_inflationDayZero, _gatewayUrl) {
         if (address(_hubV1) == address(0)) {
             revert CirclesAddressCannotBeZero(0);
         }
@@ -269,18 +269,20 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors {
     /**
      * @notice Register human allows to register an avatar for a human,
      * if they have a stopped v1 Circles contract, during the bootstrap period.
-     * @param _cidV0Digest (optional) IPFS CIDv0 digest for the avatar metadata
+     * @param _metatdataDigest (optional) sha256 metadata digest for the avatar metadata
      * should follow ERC1155 metadata standard.
      */
-    function registerHuman(bytes32 _cidV0Digest) external onlyDuringBootstrap(0) {
+    function registerHuman(bytes32 _metatdataDigest) external onlyDuringBootstrap(0) {
         // only available for v1 users with stopped v1 mint, for initial bootstrap period
         address v1CirclesStatus = _registerHuman(msg.sender);
         if (v1CirclesStatus != CIRCLES_STOPPED_V1) {
             revert CirclesHubRegisterAvatarV1MustBeStopped(msg.sender, 0);
         }
 
-        // store the IPFS CIDv0 digest for the avatar metadata
-        nameRegistry.setCidV0Digest(msg.sender, _cidV0Digest);
+        // store the metatdata digest for the avatar metadata
+        if (_metatdataDigest != bytes32(0)) {
+            nameRegistry.setMetadataDigest(msg.sender, _metatdataDigest);
+        }
 
         emit RegisterHuman(msg.sender);
     }
@@ -320,9 +322,9 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors {
      * @param _mint mint address will be called before minting group circles
      * @param _name immutable name of the group Circles
      * @param _symbol immutable symbol of the group Circles
-     * @param _cidV0Digest IPFS CIDv0 digest for the group metadata
+     * @param _metatdataDigest sha256 digest for the group metadata
      */
-    function registerGroup(address _mint, string calldata _name, string calldata _symbol, bytes32 _cidV0Digest)
+    function registerGroup(address _mint, string calldata _name, string calldata _symbol, bytes32 _metatdataDigest)
         external
     {
         _registerGroup(msg.sender, _mint, standardTreasury, _name, _symbol);
@@ -332,7 +334,7 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors {
         nameRegistry.registerCustomSymbol(msg.sender, _symbol);
 
         // store the IPFS CIDv0 digest for the group metadata
-        nameRegistry.setCidV0Digest(msg.sender, _cidV0Digest);
+        nameRegistry.setMetadataDigest(msg.sender, _metatdataDigest);
 
         emit RegisterGroup(msg.sender, _mint, standardTreasury, _name, _symbol);
     }
@@ -343,14 +345,14 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors {
      * @param _treasury treasury address for receiving collateral
      * @param _name immutable name of the group Circles
      * @param _symbol immutable symbol of the group Circles
-     * @param _cidV0Digest IPFS CIDv0 digest for the group metadata
+     * @param _metatdataDigest metadata digest for the group metadata
      */
     function registerCustomGroup(
         address _mint,
         address _treasury,
         string calldata _name,
         string calldata _symbol,
-        bytes32 _cidV0Digest
+        bytes32 _metatdataDigest
     ) external {
         _registerGroup(msg.sender, _mint, _treasury, _name, _symbol);
 
@@ -358,8 +360,8 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors {
         nameRegistry.registerCustomName(msg.sender, _name);
         nameRegistry.registerCustomSymbol(msg.sender, _symbol);
 
-        // store the IPFS CIDv0 digest for the group metadata
-        nameRegistry.setCidV0Digest(msg.sender, _cidV0Digest);
+        // store the metatdata digest for the group metadata
+        nameRegistry.setMetadataDigest(msg.sender, _metatdataDigest);
 
         emit RegisterGroup(msg.sender, _mint, _treasury, _name, _symbol);
     }
@@ -367,16 +369,16 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors {
     /**
      * @notice Register organization allows to register an organization avatar.
      * @param _name name of the organization
-     * @param _cidV0Digest IPFS CIDv0 digest for the organization metadata
+     * @param _metatdataDigest Metadata digest for the organization metadata
      */
-    function registerOrganization(string calldata _name, bytes32 _cidV0Digest) external {
+    function registerOrganization(string calldata _name, bytes32 _metatdataDigest) external {
         _insertAvatar(msg.sender);
 
         // for organizations, only register possible custom name
         nameRegistry.registerCustomName(msg.sender, _name);
 
         // store the IPFS CIDv0 digest for the organization metadata
-        nameRegistry.setCidV0Digest(msg.sender, _cidV0Digest);
+        nameRegistry.setMetadataDigest(msg.sender, _metatdataDigest);
 
         emit RegisterOrganization(msg.sender, _name);
     }
@@ -657,25 +659,6 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors {
         }
         // however, by default the consented flow requires bi-directional trust from center to receiver
         return uint256(trustMarkers[_circlesAvatar][_to].expiry) >= block.timestamp;
-    }
-
-    /**
-     * uri returns the IPFS URI for the ERC1155 token.
-     * If the a CID v0 is set in the name registry, it is used and returned as "ipfs://{cidV0}".
-     * @param _id tokenId of the ERC1155 token
-     */
-    function uri(uint256 _id) public view override returns (string memory uri_) {
-        address group = _validateAddressFromId(_id, 1);
-
-        // if a CID v0 is set in the name registry, use it and return "ipfs://{cidV0}"
-        string memory ipfsUri = nameRegistry.getIPFSUri(group);
-        if (bytes(ipfsUri).length > 0) {
-            return ipfsUri;
-        }
-
-        // otherwise return a fallback constant URI
-        // "https://fallback.aboutcircles.com/v1/profile/{id}.json"
-        return super.uri(_id);
     }
 
     // Internal functions

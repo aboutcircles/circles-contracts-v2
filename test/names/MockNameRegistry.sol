@@ -4,6 +4,8 @@ pragma solidity >=0.8.24;
 import "../../src/names/NameRegistry.sol";
 
 contract MockNameRegistry is NameRegistry {
+    // Constructor
+
     constructor() NameRegistry(IHubV2(address(1))) {}
 
     // External functions
@@ -38,7 +40,11 @@ contract MockNameRegistry is NameRegistry {
         customSymbols[_avatar] = _symbol;
     }
 
-    function setCidV0DigestNoChecks(address _avatar, bytes32 _dicV0Digest) external {
-        _setCidV0Digest(_avatar, _dicV0Digest);
+    function setMetadataDigestNoChecks(address _avatar, bytes32 _metadataDigest) external {
+        _setMetadataDigest(_avatar, _metadataDigest);
+    }
+
+    function getShortOrLongName(address _avatar) external view returns (string memory) {
+        return _getShortOrLongName(_avatar);
     }
 }

@@ -92,7 +92,7 @@ contract Demurrage is ICirclesERC1155Errors {
      * or midnight prior of the same day of deployment, marking the start of the first day
      * where there was no inflation on one CRC per hour.
      */
-    uint256 internal inflationDayZero;
+    uint256 public inflationDayZero;
 
     /**
      * @dev Store a lookup table T(n) for computing issuance.

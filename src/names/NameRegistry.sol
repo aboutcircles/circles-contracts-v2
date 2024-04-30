@@ -55,15 +55,16 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
     mapping(address => string) public customSymbols;
 
     /**
-     * @notice avatarToCidV0Digest is a mapping of avatar to the IPFS CIDv0 digest.
+     * @notice avatarToMetaDataDigest is a mapping of avatar to the sha256 digest
+     * of their latest ERC1155 metadata.
      */
-    mapping(address => bytes32) public avatarToCidV0Digest;
+    mapping(address => bytes32) public avatarToMetaDataDigest;
 
     // Events
 
     event RegisterShortName(address indexed avatar, uint72 shortName, uint256 nonce);
 
-    event CidV0(address indexed avatar, bytes32 cidV0Digest);
+    event UpdateMetadataDigest(address indexed avatar, bytes32 metadataDigest);
 
     // Modifiers
 
@@ -108,12 +109,12 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
         _registerShortNameWithNonce(_nonce);
     }
 
-    function setCidV0Digest(address _avatar, bytes32 _cidV0Digest) external onlyHub(0) {
-        _setCidV0Digest(_avatar, _cidV0Digest);
+    function setMetadataDigest(address _avatar, bytes32 _metadataDigest) external onlyHub(0) {
+        _setMetadataDigest(_avatar, _metadataDigest);
     }
 
-    function updateCidV0Digest(bytes32 _cidV0Digest) external mustBeRegistered(msg.sender, 2) {
-        _setCidV0Digest(msg.sender, _cidV0Digest);
+    function updateMetadataDigest(bytes32 _metadataDigest) external mustBeRegistered(msg.sender, 2) {
+        _setMetadataDigest(msg.sender, _metadataDigest);
     }
 
     function registerCustomName(address _avatar, string calldata _name) external onlyHub(1) {
@@ -149,13 +150,7 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
             // otherwise, use the default name for groups and organizations
         }
         // for personal Circles use default name
-        uint72 shortName = shortNames[_avatar];
-        if (shortName == uint72(0)) {
-            string memory base58FullAddress = toBase58(uint256(uint160(_avatar)));
-            return string(abi.encodePacked(DEFAULT_CIRCLES_NAME_PREFIX, base58FullAddress));
-        }
-        string memory base58ShortName = toBase58(uint256(shortName));
-        return string(abi.encodePacked(DEFAULT_CIRCLES_NAME_PREFIX, base58ShortName));
+        return _getShortOrLongName(_avatar);
     }
 
     function symbol(address _avatar) external view mustBeRegistered(_avatar, 4) returns (string memory) {
@@ -175,12 +170,8 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
         return DEFAULT_CIRCLES_SYMBOL;
     }
 
-    function getIPFSUri(address _avatar) external view returns (string memory) {
-        bytes32 cidV0Digest = avatarToCidV0Digest[_avatar];
-        if (cidV0Digest == bytes32(0)) {
-            return "";
-        }
-        return string(abi.encodePacked(IPFS_PROTOCOL, toBase58WithPadding(uint256(cidV0Digest))));
+    function getMetadataDigest(address _avatar) external view returns (bytes32) {
+        return avatarToMetaDataDigest[_avatar];
     }
 
     // Public functions
@@ -314,9 +305,19 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
         emit RegisterShortName(_avatar, _shortName, _nonce);
     }
 
-    function _setCidV0Digest(address _avatar, bytes32 _cidV0Digest) internal {
-        avatarToCidV0Digest[_avatar] = _cidV0Digest;
+    function _getShortOrLongName(address _avatar) internal view returns (string memory) {
+        uint72 shortName = shortNames[_avatar];
+        if (shortName == uint72(0)) {
+            string memory base58FullAddress = toBase58(uint256(uint160(_avatar)));
+            return string(abi.encodePacked(DEFAULT_CIRCLES_NAME_PREFIX, base58FullAddress));
+        }
+        string memory base58ShortName = toBase58(uint256(shortName));
+        return string(abi.encodePacked(DEFAULT_CIRCLES_NAME_PREFIX, base58ShortName));
+    }
 
-        emit CidV0(_avatar, _cidV0Digest);
+    function _setMetadataDigest(address _avatar, bytes32 _metadataDigest) internal {
+        avatarToMetaDataDigest[_avatar] = _metadataDigest;
+
+        emit UpdateMetadataDigest(_avatar, _metadataDigest);
     }
 }

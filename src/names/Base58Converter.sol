@@ -6,15 +6,19 @@ contract Base58Converter {
 
     string internal constant ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
-    uint256 internal constant IPFS_CIDV0_LENGTH = 46;
+    // uint256 internal constant IPFS_CIDV0_LENGTH = 46;
 
     uint256 internal constant ALPHABET_LENGTH = 58;
 
     // Internal functions
 
     function toBase58(uint256 _data) internal pure returns (string memory) {
-        bytes memory b58 = new bytes(64); // More than enough length
+        // Initialize enough length, only called in view functions
+        // so no need to optimize gas costs
+        bytes memory b58 = new bytes(64);
         uint256 i = 0;
+        // Ensure the loop runs at least once,
+        // even if the input is 0 return "1"
         while (_data > 0 || i == 0) {
             uint256 mod = _data % ALPHABET_LENGTH;
             b58[i++] = bytes(ALPHABET)[mod];
@@ -24,20 +28,20 @@ contract Base58Converter {
         return string(_reverse(b58, i));
     }
 
-    function toBase58WithPadding(uint256 _data) internal pure returns (string memory) {
-        bytes memory b58 = new bytes(IPFS_CIDV0_LENGTH); // Fixed length for CIDv0
-        uint256 i = 0;
-        while (_data > 0 || i == 0) {
-            uint256 mod = _data % ALPHABET_LENGTH;
-            b58[i++] = bytes(ALPHABET)[mod];
-            _data /= ALPHABET_LENGTH;
-        }
-        while (i < IPFS_CIDV0_LENGTH) {
-            // Ensure the output is exactly 46 characters
-            b58[i++] = bytes(ALPHABET)[0]; // '1' in base58 represents the value 0
-        }
-        return string(_reverse(b58, i));
-    }
+    // function toBase58WithPadding(uint256 _data) internal pure returns (string memory) {
+    //     bytes memory b58 = new bytes(IPFS_CIDV0_LENGTH); // Fixed length for CIDv0
+    //     uint256 i = 0;
+    //     while (_data > 0 || i == 0) {
+    //         uint256 mod = _data % ALPHABET_LENGTH;
+    //         b58[i++] = bytes(ALPHABET)[mod];
+    //         _data /= ALPHABET_LENGTH;
+    //     }
+    //     while (i < IPFS_CIDV0_LENGTH) {
+    //         // Ensure the output is exactly 46 characters
+    //         b58[i++] = bytes(ALPHABET)[0]; // '1' in base58 represents the value 0
+    //     }
+    //     return string(_reverse(b58, i));
+    // }
 
     function _reverse(bytes memory _b, uint256 _len) internal pure returns (bytes memory) {
         bytes memory reversed = new bytes(_len);

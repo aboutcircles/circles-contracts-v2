@@ -12,16 +12,14 @@ contract NamesTest is Test, HumanRegistration, Base58Decode {
     // Constants
 
     // IPFS hash for Ubuntu 20.04, random CIDv0
-    string constant IPFS_CID_V0 = "QmPK1s3pNYLi9ERiq3BDxKa4XosgWwFRQUydHUtz4YgpqB";
+    // string constant IPFS_CID_V0 = "ipfs://QmPK1s3pNYLi9ERiq3BDxKa4XosgWwFRQUydHUtz4YgpqB";
     // using https://cid.ipfs.tech/#QmPK1s3pNYLi9ERiq3BDxKa4XosgWwFRQUydHUtz4YgpqB
     // this is the 32 bytes hash digest
-    bytes32 constant DECODED_UINT = 0x0E7071C59DF3B9454D1D18A15270AA36D54F89606A576DC621757AFD44AD1D2E;
+    bytes32 constant SHA256_DIGEST = 0x0E7071C59DF3B9454D1D18A15270AA36D54F89606A576DC621757AFD44AD1D2E;
 
     // State variables
 
     MockNameRegistry mockNameRegistry;
-
-    bytes32 cidBytes;
 
     // Constructor
 
@@ -31,21 +29,28 @@ contract NamesTest is Test, HumanRegistration, Base58Decode {
 
     function setUp() public {
         mockNameRegistry = new MockNameRegistry();
-        // Convert CIDv0 to bytes32 (should be done off-chain in production)
-        console.log("CIDv0 length", bytes(IPFS_CID_V0).length);
-        cidBytes = convertCidV0ToBytes32(IPFS_CID_V0);
     }
 
     // Tests
 
-    function testCidV0Digest() public {
-        mockNameRegistry.setCidV0DigestNoChecks(addresses[0], cidBytes);
+    function testShortName() public {
+        // without a short name registered, first get the long name
+        string memory longName = mockNameRegistry.getShortOrLongName(addresses[0]);
+        assertEq(longName, "Rings-3fNX29VBXc9WSxAT2dG3RYSfj6uX");
+
+        // now register a short name
+        vm.prank(addresses[0]);
+        mockNameRegistry.registerShortNameNoChecks();
+
+        // and get the short name
+        string memory shortName = mockNameRegistry.getShortOrLongName(addresses[0]);
+        assertEq(shortName, "Rings-Q6sQpEYS9Dg1");
     }
 
-    // Helper functions
+    function testMetadataDigest() public {
+        mockNameRegistry.setMetadataDigestNoChecks(addresses[0], SHA256_DIGEST);
+        bytes32 digest = mockNameRegistry.getMetadataDigest(addresses[0]);
 
-    function convertCidV0ToBytes32(string memory _cidV0) internal view returns (bytes32) {
-        bytes memory decodedBytes = base58Decode(_cidV0);
-        console.log("CIDv0 length:", decodedBytes.length);
+        assertEq(digest, SHA256_DIGEST);
     }
 }
