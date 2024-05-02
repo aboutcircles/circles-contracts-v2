@@ -311,7 +311,7 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
             string memory base58FullAddress = _toBase58(uint256(uint160(_avatar)));
             return string(abi.encodePacked(DEFAULT_CIRCLES_NAME_PREFIX, base58FullAddress));
         }
-        string memory base58ShortName = _toBase58(uint256(shortName));
+        string memory base58ShortName = _toBase58WithPadding(uint256(shortName));
         return string(abi.encodePacked(DEFAULT_CIRCLES_NAME_PREFIX, base58ShortName));
     }
 

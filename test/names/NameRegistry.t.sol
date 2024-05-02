@@ -59,6 +59,16 @@ contract NamesTest is Test, HumanRegistration, Base58Decode {
         assertEq(shortName, "Rings-uNJGyf6sN6vY");
     }
 
+    function testShortNameWithPadding() public {
+        // 42 converts to "j" in base58
+        assertEq(mockNameRegistry.toBase58(42), "j");
+
+        // but as a short name it shold be padded to 12 characters
+        mockNameRegistry.storeShortName(addresses[0], 42);
+        string memory shortName = mockNameRegistry.getShortOrLongName(addresses[0]);
+        assertEq(shortName, "Rings-11111111111j");
+    }
+
     function testBase58Conversion() public {
         assertEq(mockNameRegistry.toBase58(0), "1");
         assertEq(mockNameRegistry.toBase58(mockNameRegistry.MAX_SHORT_NAME()), "zzzzzzzzzzzz");

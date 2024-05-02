@@ -55,4 +55,8 @@ contract MockNameRegistry is NameRegistry {
     function toBase58WithPadding(uint256 _data) external pure returns (string memory) {
         return _toBase58WithPadding(_data);
     }
+
+    function storeShortName(address _avatar, uint72 _shortName) external {
+        _storeShortName(_avatar, _shortName, 0);
+    }
 }
