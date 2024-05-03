@@ -6,9 +6,8 @@ import {StdCheats} from "forge-std/StdCheats.sol";
 import "forge-std/console.sol";
 import "../setup/HumanRegistration.sol";
 import "./MockNameRegistry.sol";
-import "./base58Helper.sol";
 
-contract NamesTest is Test, HumanRegistration, Base58Decode {
+contract NamesTest is Test, HumanRegistration {
     // Constants
 
     // IPFS hash for Ubuntu 20.04, random CIDv0
