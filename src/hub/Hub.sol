@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity >=0.8.13;
+pragma solidity >=0.8.24;
 
 import "../circles/Circles.sol";
 import "../errors/Errors.sol";
@@ -131,6 +131,14 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
      */
     mapping(address => mapping(address => TrustMarker)) public trustMarkers;
 
+    /**
+     * @dev Normal storage slot for the reentrancy guard.
+     * todo: the original task was to use a transient storage slot,
+     * but solc v0.8.24 still didn't recognize the tload/tstore assembly.
+     * see
+     */
+    bool private _reentrancyGuard;
+
     // Events
 
     event RegisterHuman(address indexed avatar);
@@ -164,6 +172,32 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
             revert CirclesInvalidFunctionCaller(msg.sender, migration, 0);
         }
         _;
+    }
+
+    /**
+     * @dev Reentrancy guard for nonReentrant functions.
+     * see https://soliditylang.org/blog/2024/01/26/transient-storage/
+     */
+    modifier nonReentrant(uint8 _code) {
+        // todo: this should use transient storage slot
+        // but didn't compile; investigate
+        // assembly {
+        //     if tload(0) { revert(0, 0) }
+        //     tstore(0, 1)
+        // }
+        // _;
+        // assembly {
+        //     tstore(0, 0)
+        // }
+
+        // for now, default to normal storage slot
+        // replace this later with transient storage slot
+        if (_reentrancyGuard) {
+            revert CirclesReentrancyGuard(_code);
+        }
+        _reentrancyGuard = true;
+        _;
+        _reentrancyGuard = false;
     }
 
     // Constructor
@@ -527,7 +561,7 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
         FlowEdge[] calldata _flow,
         Stream[] calldata _streams,
         bytes calldata _packedCoordinates
-    ) external {
+    ) external nonReentrant(0) {
         // first unpack the coordinates to array of uint16
         uint16[] memory coordinates = _unpackCoordinates(_packedCoordinates, _flow.length);
 
