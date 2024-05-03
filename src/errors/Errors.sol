@@ -39,6 +39,10 @@ interface ICirclesERC1155Errors {
     error CirclesERC1155MintBlocked(address human, address mintV1Status);
 
     error CirclesERC1155AmountExceedsMaxUint190(address account, uint256 circlesId, uint256 amount, uint8 code);
+
+    error CirclesERC1155DayBeforeLastUpdatedDay(
+        address account, uint256 circlesId, uint64 day, uint64 lastUpdatedDay, uint8 code
+    );
 }
 
 interface ICirclesErrors {

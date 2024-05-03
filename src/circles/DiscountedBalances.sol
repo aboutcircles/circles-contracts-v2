@@ -13,6 +13,10 @@ contract DiscountedBalances is Demurrage {
      */
     mapping(uint256 => mapping(address => DiscountedBalance)) public discountedBalances;
 
+    // Events
+
+    event DiscountCost(address indexed account, uint256 indexed id, uint256 discountCost);
+
     // Constructor
 
     /**
@@ -30,10 +34,30 @@ contract DiscountedBalances is Demurrage {
      * @param _account Address of the account to calculate the balance of
      * @param _id Circles identifier for which to calculate the balance
      * @param _day Day since inflation_day_zero to calculate the balance for
+     * @return balance_ The discounted balance of the account for the Circles identifier
+     * @return discountCost_ The discount cost of the demurrage of the balance since the last update
      */
-    function balanceOfOnDay(address _account, uint256 _id, uint64 _day) public view returns (uint256) {
+    function balanceOfOnDay(address _account, uint256 _id, uint64 _day)
+        public
+        view
+        returns (uint256 balance_, uint256 discountCost_)
+    {
         DiscountedBalance memory discountedBalance = discountedBalances[_id][_account];
-        return _calculateDiscountedBalance(discountedBalance.balance, _day - discountedBalance.lastUpdatedDay);
+        if (_day < discountedBalance.lastUpdatedDay) {
+            // DiscountedBalances: day is before last updated day
+            revert CirclesERC1155DayBeforeLastUpdatedDay(_account, _id, _day, discountedBalance.lastUpdatedDay, 0);
+        }
+        uint256 dayDifference;
+        unchecked {
+            dayDifference = _day - discountedBalance.lastUpdatedDay;
+        }
+        // Calculate the discounted balance
+        balance_ = _calculateDiscountedBalance(discountedBalance.balance, dayDifference);
+        // Calculate the discount cost; this can be unchecked as cost is strict positive
+        unchecked {
+            discountCost_ = discountedBalance.balance - balance_;
+        }
+        return (balance_, discountCost_);
     }
 
     // Internal functions
@@ -74,8 +98,22 @@ contract DiscountedBalances is Demurrage {
      */
     function _discountAndAddToBalance(address _account, uint256 _id, uint256 _value, uint64 _day) internal {
         DiscountedBalance storage discountedBalance = discountedBalances[_id][_account];
-        uint256 discountedBalanceValue =
-            _calculateDiscountedBalance(discountedBalance.balance, _day - discountedBalance.lastUpdatedDay);
+        if (_day < discountedBalance.lastUpdatedDay) {
+            // DiscountedBalances: day is before last updated day
+            revert CirclesERC1155DayBeforeLastUpdatedDay(_account, _id, _day, discountedBalance.lastUpdatedDay, 1);
+        }
+        uint256 dayDifference;
+        unchecked {
+            dayDifference = _day - discountedBalance.lastUpdatedDay;
+        }
+        uint256 discountedBalanceValue = _calculateDiscountedBalance(discountedBalance.balance, dayDifference);
+        // Calculate the discount cost; this can be unchecked as cost is strict positive
+        unchecked {
+            uint256 discountCost_ = discountedBalance.balance - discountedBalanceValue;
+            if (discountCost_ > 0) {
+                emit DiscountCost(_account, _id, discountCost_);
+            }
+        }
         uint256 newBalance = discountedBalanceValue + _value;
         if (newBalance > MAX_VALUE) {
             // DiscountedBalances: balance exceeds maximum value

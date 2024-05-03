@@ -74,8 +74,6 @@ contract Circles is ERC1155 {
         DiscountedBalances(_inflation_day_zero)
     {}
 
-    // External functions
-
     // Public functions
 
     /**

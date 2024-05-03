@@ -66,7 +66,7 @@ contract CirclesTest is Test, TimeCirclesSetup, Approximation {
             previousEndPeriod = endPeriod;
 
             // Generate a pseudo-random number between 1 and 4
-            uint256 hoursSkip = uint256(keccak256(abi.encodePacked(block.timestamp, i, uint256(0)))) % 4 + 1;
+            uint256 hoursSkip = uint256(keccak256(abi.encodePacked(block.timestamp, i, uint256(0)))) % 34 + 1;
             uint256 secondsSkip = uint256(keccak256(abi.encodePacked(block.timestamp, i, uint256(1)))) % 3600;
 
             // Simulate passing of time variable windows of time (1-5 hours)
@@ -98,23 +98,17 @@ contract CirclesTest is Test, TimeCirclesSetup, Approximation {
             assertEq(balance, expectedIssuance);
         }
 
+        skipTime(26 hours);
+
         // send 5 CRC from alice to bob
         uint256 aliceBalance = circles.balanceOf(addresses[0], circlesIdentifiers[0]);
         uint256 bobBalance = circles.balanceOf(addresses[1], circlesIdentifiers[0]);
-        // uint256 aliceInflationaryBalance = circles.inflationaryBalanceOf(addresses[0], circlesIdentifiers[0]);
-        // uint256 bobInflationaryBalance = circles.inflationaryBalanceOf(addresses[1], circlesIdentifiers[0]);
         vm.prank(addresses[0]);
         circles.safeTransferFrom(addresses[0], addresses[1], circlesIdentifiers[0], 5 * CRC, "");
         uint256 aliceBalanceAfter = circles.balanceOf(addresses[0], circlesIdentifiers[0]);
         uint256 bobBalanceAfter = circles.balanceOf(addresses[1], circlesIdentifiers[0]);
-        // uint256 aliceInflationaryBalanceAfter = circles.inflationaryBalanceOf(addresses[0], circlesIdentifiers[0]);
-        // uint256 bobInflationaryBalanceAfter = circles.inflationaryBalanceOf(addresses[1], circlesIdentifiers[0]);
         assertEq(aliceBalance - 5 * CRC, aliceBalanceAfter);
         assertEq(bobBalance + 5 * CRC, bobBalanceAfter);
-        // assertEq(
-        //     aliceInflationaryBalance - aliceInflationaryBalanceAfter,
-        //     bobInflationaryBalanceAfter - bobInflationaryBalance
-        // );
     }
 
     // Private functions
