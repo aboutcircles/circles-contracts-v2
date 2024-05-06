@@ -30,13 +30,13 @@ contract DiscountedBalances is Demurrage {
      * @param _account Address of the account to calculate the balance of
      * @param _id Circles identifier for which to calculate the balance
      * @param _day Day since inflation_day_zero to calculate the balance for
-     * @return balance_ The discounted balance of the account for the Circles identifier
+     * @return balanceOnDay_ The discounted balance of the account for the Circles identifier on specified day
      * @return discountCost_ The discount cost of the demurrage of the balance since the last update
      */
     function balanceOfOnDay(address _account, uint256 _id, uint64 _day)
         public
         view
-        returns (uint256 balance_, uint256 discountCost_)
+        returns (uint256 balanceOnDay_, uint256 discountCost_)
     {
         DiscountedBalance memory discountedBalance = discountedBalances[_id][_account];
         if (_day < discountedBalance.lastUpdatedDay) {
@@ -48,12 +48,12 @@ contract DiscountedBalances is Demurrage {
             dayDifference = _day - discountedBalance.lastUpdatedDay;
         }
         // Calculate the discounted balance
-        balance_ = _calculateDiscountedBalance(discountedBalance.balance, dayDifference);
+        balanceOnDay_ = _calculateDiscountedBalance(discountedBalance.balance, dayDifference);
         // Calculate the discount cost; this can be unchecked as cost is strict positive
         unchecked {
-            discountCost_ = discountedBalance.balance - balance_;
+            discountCost_ = discountedBalance.balance - balanceOnDay_;
         }
-        return (balance_, discountCost_);
+        return (balanceOnDay_, discountCost_);
     }
 
     // Internal functions
@@ -102,20 +102,20 @@ contract DiscountedBalances is Demurrage {
         unchecked {
             dayDifference = _day - discountedBalance.lastUpdatedDay;
         }
-        uint256 discountedBalanceValue = _calculateDiscountedBalance(discountedBalance.balance, dayDifference);
+        uint256 discountedBalanceOnDay = _calculateDiscountedBalance(discountedBalance.balance, dayDifference);
         // Calculate the discount cost; this can be unchecked as cost is strict positive
         unchecked {
-            uint256 discountCost_ = discountedBalance.balance - discountedBalanceValue;
-            if (discountCost_ > 0) {
-                emit DiscountCost(_account, _id, discountCost_);
+            uint256 discountCost = discountedBalance.balance - discountedBalanceOnDay;
+            if (discountCost > 0) {
+                emit DiscountCost(_account, _id, discountCost);
             }
         }
-        uint256 newBalance = discountedBalanceValue + _value;
-        if (newBalance > MAX_VALUE) {
+        uint256 updatedBalance = discountedBalanceOnDay + _value;
+        if (updatedBalance > MAX_VALUE) {
             // DiscountedBalances: balance exceeds maximum value
-            revert CirclesDemurrageAmountExceedsMaxUint190(_account, _id, newBalance, 1);
+            revert CirclesDemurrageAmountExceedsMaxUint190(_account, _id, updatedBalance, 1);
         }
-        discountedBalance.balance = uint192(newBalance);
+        discountedBalance.balance = uint192(updatedBalance);
         discountedBalance.lastUpdatedDay = _day;
     }
 }
