@@ -70,6 +70,9 @@ contract ERC20DiscountedBalances is ERC20Permit, Demurrage, IERC20 {
 
     function balanceOfOnDay(address _account, uint64 _day) public view returns (uint256) {
         DiscountedBalance memory discountedBalance = discountedBalances[_account];
+        if (_day < discountedBalance.lastUpdatedDay) {
+            // ERC20 DiscountedBalances: day is before last updated day
+        }
         return _calculateDiscountedBalance(discountedBalance.balance, _day - discountedBalance.lastUpdatedDay);
     }
 
@@ -83,7 +86,7 @@ contract ERC20DiscountedBalances is ERC20Permit, Demurrage, IERC20 {
     function _updateBalance(address _account, uint256 _balance, uint64 _day) internal {
         if (_balance > MAX_VALUE) {
             // Balance exceeds maximum value.
-            revert CirclesERC1155AmountExceedsMaxUint190(_account, 0, _balance, 0);
+            revert CirclesDemurrageAmountExceedsMaxUint190(_account, 0, _balance, 0);
         }
         DiscountedBalance storage discountedBalance = discountedBalances[_account];
         discountedBalance.balance = uint192(_balance);
@@ -97,7 +100,7 @@ contract ERC20DiscountedBalances is ERC20Permit, Demurrage, IERC20 {
         ) + _value;
         if (newBalance > MAX_VALUE) {
             // Balance exceeds maximum value.
-            revert CirclesERC1155AmountExceedsMaxUint190(_account, 0, newBalance, 0);
+            revert CirclesDemurrageAmountExceedsMaxUint190(_account, 0, newBalance, 0);
         }
         discountedBalance.balance = uint192(newBalance);
         discountedBalance.lastUpdatedDay = _day;

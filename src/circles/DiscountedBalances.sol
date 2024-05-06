@@ -13,10 +13,6 @@ contract DiscountedBalances is Demurrage {
      */
     mapping(uint256 => mapping(address => DiscountedBalance)) public discountedBalances;
 
-    // Events
-
-    event DiscountCost(address indexed account, uint256 indexed id, uint256 discountCost);
-
     // Constructor
 
     /**
@@ -45,7 +41,7 @@ contract DiscountedBalances is Demurrage {
         DiscountedBalance memory discountedBalance = discountedBalances[_id][_account];
         if (_day < discountedBalance.lastUpdatedDay) {
             // DiscountedBalances: day is before last updated day
-            revert CirclesERC1155DayBeforeLastUpdatedDay(_account, _id, _day, discountedBalance.lastUpdatedDay, 0);
+            revert CirclesDemurrageDayBeforeLastUpdatedDay(_account, _id, _day, discountedBalance.lastUpdatedDay, 0);
         }
         uint256 dayDifference;
         unchecked {
@@ -82,7 +78,7 @@ contract DiscountedBalances is Demurrage {
     function _updateBalance(address _account, uint256 _id, uint256 _balance, uint64 _day) internal {
         if (_balance > MAX_VALUE) {
             // DiscountedBalances: balance exceeds maximum value
-            revert CirclesERC1155AmountExceedsMaxUint190(_account, _id, _balance, 0);
+            revert CirclesDemurrageAmountExceedsMaxUint190(_account, _id, _balance, 0);
         }
         DiscountedBalance storage discountedBalance = discountedBalances[_id][_account];
         discountedBalance.balance = uint192(_balance);
@@ -100,7 +96,7 @@ contract DiscountedBalances is Demurrage {
         DiscountedBalance storage discountedBalance = discountedBalances[_id][_account];
         if (_day < discountedBalance.lastUpdatedDay) {
             // DiscountedBalances: day is before last updated day
-            revert CirclesERC1155DayBeforeLastUpdatedDay(_account, _id, _day, discountedBalance.lastUpdatedDay, 1);
+            revert CirclesDemurrageDayBeforeLastUpdatedDay(_account, _id, _day, discountedBalance.lastUpdatedDay, 1);
         }
         uint256 dayDifference;
         unchecked {
@@ -117,7 +113,7 @@ contract DiscountedBalances is Demurrage {
         uint256 newBalance = discountedBalanceValue + _value;
         if (newBalance > MAX_VALUE) {
             // DiscountedBalances: balance exceeds maximum value
-            revert CirclesERC1155AmountExceedsMaxUint190(_account, _id, newBalance, 1);
+            revert CirclesDemurrageAmountExceedsMaxUint190(_account, _id, newBalance, 1);
         }
         discountedBalance.balance = uint192(newBalance);
         discountedBalance.lastUpdatedDay = _day;
