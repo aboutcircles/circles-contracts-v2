@@ -54,18 +54,6 @@ contract ERC20LiftTest is Test, TimeCirclesSetup, HumanRegistration {
 
         uint256 aliceBalance = hub.balanceOf(addresses[0], uint256(uint160(addresses[0])));
 
-        // test the master contracts in Lift
-        // ERC20Lift lift = mockDeployment.erc20Lift();
-        // DemurrageCircles demurrage = mockDeployment.mastercopyDemurrageCircles();
-        // address demurrageMasterCopy = lift.masterCopyERC20Wrapper(uint256(CirclesType.Demurrage));
-        // assertEq(demurrageMasterCopy, address(demurrage));
-
-        // console.log("hub address: ", address(hub));
-
-        // DemurrageCircles proxyERC20D = DemurrageCircles(lift.ensureERC20(addresses[0], CirclesType.Demurrage));
-        // console.log("proxyERC20D address: ", address(proxyERC20D));
-        // assertEq(IProxy(payable(address(proxyERC20D))).masterCopy(), address(demurrage));
-
         // wrap some into demurrage ERC20 of Alice by Alice
         vm.prank(addresses[0]);
         DemurrageCircles aliceERC20 = DemurrageCircles(hub.wrap(addresses[0], 10 * CRC, CirclesType.Demurrage));

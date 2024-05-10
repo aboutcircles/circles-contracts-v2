@@ -35,10 +35,16 @@ interface IHubErrors {
     error CirclesHubNettedFlowMismatch(uint16 vertexPosition, int256 matrixNettedFlow, int256 streamNettedFlow);
 }
 
-interface ICirclesERC1155Errors {
+interface ICirclesDemurrageErrors {
     error CirclesERC1155MintBlocked(address human, address mintV1Status);
 
-    error CirclesERC1155AmountExceedsMaxUint190(address account, uint256 circlesId, uint256 amount, uint8 code);
+    error CirclesDemurrageAmountExceedsMaxUint190(address account, uint256 circlesId, uint256 amount, uint8 code);
+
+    error CirclesDemurrageDayBeforeLastUpdatedDay(
+        address account, uint256 circlesId, uint64 day, uint64 lastUpdatedDay, uint8 code
+    );
+
+    error CirclesERC1155CannotReceiveBatch(uint8 code);
 }
 
 interface ICirclesErrors {
@@ -53,8 +59,6 @@ interface ICirclesErrors {
     error CirclesInvalidString(string str, uint8 code);
 
     error CirclesInvalidParameter(uint256 parameter, uint8 code);
-
-    error CirclesERC1155CannotReceiveBatch(uint8 code);
 
     error CirclesAmountOverflow(uint256 amount, uint8 code);
 

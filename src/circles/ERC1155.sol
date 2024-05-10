@@ -32,10 +32,6 @@ abstract contract ERC1155 is DiscountedBalances, Context, ERC165, IERC1155, IERC
     // Used as the URI for all token types by relying on ID substitution, e.g. https://token-cdn-domain/{id}.json
     string private _uri;
 
-    // Events
-
-    event ConvertInflation(uint256 inflationValue, uint256 demurrageValue, uint64 day);
-
     // Constructor
 
     /**
@@ -73,7 +69,8 @@ abstract contract ERC1155 is DiscountedBalances, Context, ERC165, IERC1155, IERC
      * @dev See {IERC1155-balanceOf}.
      */
     function balanceOf(address _account, uint256 _id) public view returns (uint256) {
-        return balanceOfOnDay(_account, _id, day(block.timestamp));
+        (uint256 balance,) = balanceOfOnDay(_account, _id, day(block.timestamp));
+        return balance;
     }
 
     /**
@@ -93,7 +90,7 @@ abstract contract ERC1155 is DiscountedBalances, Context, ERC165, IERC1155, IERC
         uint256[] memory batchBalances = new uint256[](_accounts.length);
 
         for (uint256 i = 0; i < _accounts.length; ++i) {
-            batchBalances[i] = balanceOfOnDay(_accounts.unsafeMemoryAccess(i), _ids.unsafeMemoryAccess(i), today);
+            (batchBalances[i],) = balanceOfOnDay(_accounts.unsafeMemoryAccess(i), _ids.unsafeMemoryAccess(i), today);
         }
 
         return batchBalances;
@@ -171,9 +168,12 @@ abstract contract ERC1155 is DiscountedBalances, Context, ERC165, IERC1155, IERC
             uint256 value = values.unsafeMemoryAccess(i);
 
             if (from != address(0)) {
-                uint256 fromBalance = balanceOfOnDay(from, id, today);
+                (uint256 fromBalance, uint256 discountCost) = balanceOfOnDay(from, id, today);
                 if (fromBalance < value) {
                     revert ERC1155InsufficientBalance(from, fromBalance, value, id);
+                }
+                if (discountCost > 0) {
+                    emit DiscountCost(from, id, discountCost);
                 }
                 unchecked {
                     // Overflow not possible: value <= fromBalance
@@ -341,12 +341,12 @@ abstract contract ERC1155 is DiscountedBalances, Context, ERC165, IERC1155, IERC
      * - If `to` refers to a smart contract, it must implement {IERC1155Receiver-onERC1155BatchReceived} and return the
      * acceptance magic value.
      */
-    function _mintBatch(address to, uint256[] memory ids, uint256[] memory values, bytes memory data) internal {
-        if (to == address(0)) {
-            revert ERC1155InvalidReceiver(address(0));
-        }
-        _updateWithAcceptanceCheck(address(0), to, ids, values, data);
-    }
+    // function _mintBatch(address to, uint256[] memory ids, uint256[] memory values, bytes memory data) internal {
+    //     if (to == address(0)) {
+    //         revert ERC1155InvalidReceiver(address(0));
+    //     }
+    //     _updateWithAcceptanceCheck(address(0), to, ids, values, data);
+    // }
 
     /**
      * @dev Destroys a `value` amount of tokens of type `id` from `from`
@@ -376,13 +376,14 @@ abstract contract ERC1155 is DiscountedBalances, Context, ERC165, IERC1155, IERC
      * - `from` cannot be the zero address.
      * - `from` must have at least `value` amount of tokens of type `id`.
      * - `ids` and `values` must have the same length.
+     * //
      */
-    function _burnBatch(address from, uint256[] memory ids, uint256[] memory values) internal {
-        if (from == address(0)) {
-            revert ERC1155InvalidSender(address(0));
-        }
-        _updateWithAcceptanceCheck(from, address(0), ids, values, "");
-    }
+    // function _burnBatch(address from, uint256[] memory ids, uint256[] memory values) internal {
+    //     if (from == address(0)) {
+    //         revert ERC1155InvalidSender(address(0));
+    //     }
+    //     _updateWithAcceptanceCheck(from, address(0), ids, values, "");
+    // }
 
     /**
      * @dev Approve `operator` to operate on all of `owner` tokens

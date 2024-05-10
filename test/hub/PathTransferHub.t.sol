@@ -71,6 +71,9 @@ contract HubPathTransferTest is Test, TimeCirclesSetup, HumanRegistration, Appro
         // first four avatars have a linear bi-directional trust
         uint256 M = N;
 
+        // induce demurrage for the path transfer of the balances
+        skipTime(2 days);
+
         // Flow matrix for transferring Circles from Alice to David
         // with indication of which Circles are being sent
         //       A     B     C     D
