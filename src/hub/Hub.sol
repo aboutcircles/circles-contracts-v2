@@ -8,7 +8,7 @@ import "../lift/IERC20Lift.sol";
 import "../migration/IHub.sol";
 import "../migration/IToken.sol";
 import "../names/INameRegistry.sol";
-import "./MetadataDefinitions.sol";
+import "./TypeDefinitions.sol";
 
 /**
  * @title Hub v2 contract for Circles
@@ -21,31 +21,7 @@ import "./MetadataDefinitions.sol";
  * It further allows to wrap any token into an inflationary or demurraged
  * ERC20 Circles contract.
  */
-contract Hub is Circles, MetadataDefinitions, IHubErrors {
-    // Type declarations
-
-    /**
-     * @notice TrustMarker stores the expiry of a trust relation as uint96,
-     * and is iterable as a linked list of trust markers.
-     * @dev This is used to store the directional trust relation between two avatars,
-     * and the expiry of the trust relation as uint96 in unix time.
-     */
-    struct TrustMarker {
-        address previous;
-        uint96 expiry;
-    }
-
-    struct FlowEdge {
-        uint16 streamSinkId;
-        uint240 amount; // todo: set this to uint192 (align with demurrage), and leave it to compiler to pad
-    }
-
-    struct Stream {
-        uint16 sourceCoordinate;
-        uint16[] flowEdgeIds; // todo: this can possible be packed more compactly manually, evaluate
-        bytes data;
-    }
-
+contract Hub is Circles, TypeDefinitions, IHubErrors {
     // Constants
 
     /**
