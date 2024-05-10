@@ -119,14 +119,6 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      */
     mapping(address => mapping(address => TrustMarker)) public trustMarkers;
 
-    /**
-     * @dev Normal storage slot for the reentrancy guard.
-     * todo: the original task was to use a transient storage slot,
-     * but solc v0.8.24 still didn't recognize the tload/tstore assembly.
-     * see
-     */
-    bool private _reentrancyGuard;
-
     // Events
 
     event RegisterHuman(address indexed avatar);
@@ -167,25 +159,14 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * see https://soliditylang.org/blog/2024/01/26/transient-storage/
      */
     modifier nonReentrant(uint8 _code) {
-        // todo: this should use a transient storage slot
-        // but doesn't compile through `forge build`, but does compile with solc directly
-        // assembly {
-        //     if tload(0) { revert(0, 0) }
-        //     tstore(0, 1)
-        // }
-        // _;
-        // assembly {
-        //     tstore(0, 0)
-        // }
-
-        // for now, default to normal storage slot
-        // replace this later with transient storage slot
-        if (_reentrancyGuard) {
-            revert CirclesReentrancyGuard(_code);
+        assembly {
+            if tload(0) { revert(0, 0) }
+            tstore(0, 1)
         }
-        _reentrancyGuard = true;
         _;
-        _reentrancyGuard = false;
+        assembly {
+            tstore(0, 0)
+        }
     }
 
     // Constructor
