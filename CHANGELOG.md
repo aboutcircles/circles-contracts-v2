@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## latest
+
+- [PR141] consented flow with bi-directional trust, with opt-out to v1 protocol of uni-directional trust
+- [PR138] storage-based reentrency guard for operateFlowMatrix
+- [PR136] total supply, name and symbol for ERC1155 (out of specification)
+
 ## v0.3.3
 
 - [PR132] bug fix in groupMint(); initial test coverage for group mint

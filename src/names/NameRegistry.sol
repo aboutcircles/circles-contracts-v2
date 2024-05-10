@@ -27,6 +27,11 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
      */
     string public constant DEFAULT_CIRCLES_SYMBOL = "RING";
 
+    // /**
+    //  * @dev The IPFS protocol prefix for cid v0 resolution
+    //  */
+    // string private constant IPFS_PROTOCOL = "ipfs://Qm";
+
     // State variables
 
     /**
@@ -50,15 +55,16 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
     mapping(address => string) public customSymbols;
 
     /**
-     * @notice avatarToCidV0Digest is a mapping of avatar to the IPFS CIDv0 digest.
+     * @notice avatarToMetaDataDigest is a mapping of avatar to the sha256 digest
+     * of their latest ERC1155 metadata.
      */
-    mapping(address => bytes32) public avatarToCidV0Digest;
+    mapping(address => bytes32) public avatarToMetaDataDigest;
 
     // Events
 
     event RegisterShortName(address indexed avatar, uint72 shortName, uint256 nonce);
 
-    event CidV0(address indexed avatar, bytes32 cidV0Digest);
+    event UpdateMetadataDigest(address indexed avatar, bytes32 metadataDigest);
 
     // Modifiers
 
@@ -92,14 +98,7 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
      * @notice Register a short name for the avatar
      */
     function registerShortName() external mustBeRegistered(msg.sender, 0) {
-        (uint72 shortName, uint256 nonce) = searchShortName(msg.sender);
-
-        // assign the name to the address
-        shortNames[msg.sender] = shortName;
-        // assign the address to the name
-        shortNameToAvatar[shortName] = msg.sender;
-
-        emit RegisterShortName(msg.sender, shortName, nonce);
+        _registerShortName();
     }
 
     /**
@@ -107,28 +106,15 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
      * @param _nonce nonce to be used in the calculation
      */
     function registerShortNameWithNonce(uint256 _nonce) external mustBeRegistered(msg.sender, 1) {
-        if (shortNames[msg.sender] != uint72(0)) {
-            revert CirclesNamesShortNameAlreadyAssigned(msg.sender, shortNames[msg.sender], 0);
-        }
-
-        uint72 shortName = calculateShortNameWithNonce(msg.sender, _nonce);
-
-        if (shortNameToAvatar[shortName] != address(0)) {
-            revert CirclesNamesShortNameWithNonceTaken(msg.sender, _nonce, shortName, shortNameToAvatar[shortName]);
-        }
-
-        // assign the name to the address
-        shortNames[msg.sender] = shortName;
-        // assign the address to the name
-        shortNameToAvatar[shortName] = msg.sender;
-
-        emit RegisterShortName(msg.sender, shortName, _nonce);
+        _registerShortNameWithNonce(_nonce);
     }
 
-    function updateCidV0Digest(address _avatar, bytes32 _cidV0Digest) external onlyHub(0) {
-        avatarToCidV0Digest[_avatar] = _cidV0Digest;
+    function setMetadataDigest(address _avatar, bytes32 _metadataDigest) external onlyHub(0) {
+        _setMetadataDigest(_avatar, _metadataDigest);
+    }
 
-        emit CidV0(_avatar, _cidV0Digest);
+    function updateMetadataDigest(bytes32 _metadataDigest) external mustBeRegistered(msg.sender, 2) {
+        _setMetadataDigest(msg.sender, _metadataDigest);
     }
 
     function registerCustomName(address _avatar, string calldata _name) external onlyHub(1) {
@@ -153,7 +139,7 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
         customSymbols[_avatar] = _symbol;
     }
 
-    function name(address _avatar) external view mustBeRegistered(_avatar, 1) returns (string memory) {
+    function name(address _avatar) external view mustBeRegistered(_avatar, 3) returns (string memory) {
         if (!hub.isHuman(_avatar)) {
             // groups and organizations can have set a custom name
             string memory customName = customNames[_avatar];
@@ -164,16 +150,10 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
             // otherwise, use the default name for groups and organizations
         }
         // for personal Circles use default name
-        uint72 shortName = shortNames[_avatar];
-        if (shortName == uint72(0)) {
-            string memory base58FullAddress = toBase58(uint256(uint160(_avatar)));
-            return string(abi.encodePacked(DEFAULT_CIRCLES_NAME_PREFIX, base58FullAddress));
-        }
-        string memory base58ShortName = toBase58(uint256(shortName));
-        return string(abi.encodePacked(DEFAULT_CIRCLES_NAME_PREFIX, base58ShortName));
+        return _getShortOrLongName(_avatar);
     }
 
-    function symbol(address _avatar) external view mustBeRegistered(_avatar, 2) returns (string memory) {
+    function symbol(address _avatar) external view mustBeRegistered(_avatar, 4) returns (string memory) {
         if (hub.isOrganization(_avatar)) {
             revert CirclesNamesOrganizationHasNoSymbol(_avatar, 0);
         }
@@ -188,6 +168,10 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
         }
         // for all personal Circles use default symbol
         return DEFAULT_CIRCLES_SYMBOL;
+    }
+
+    function getMetadataDigest(address _avatar) external view returns (bytes32) {
+        return avatarToMetaDataDigest[_avatar];
     }
 
     // Public functions
@@ -225,7 +209,7 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
     function calculateShortNameWithNonce(address _avatar, uint256 _nonce) public pure returns (uint72 shortName_) {
         // use keccak256 to generate a pseudo-random number
         bytes32 digest = keccak256(abi.encodePacked(_avatar, _nonce));
-        // take the modulo of the digest to get a number between 0 and MAX_NAME
+        // take the modulo of the digest to get a number between 0 and MAX_SHORT_NAME
         shortName_ = uint72(uint256(digest) % (MAX_SHORT_NAME + 1));
     }
 
@@ -288,5 +272,52 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
             }
         }
         return true;
+    }
+
+    // Internal functions
+
+    function _registerShortName() internal {
+        (uint72 shortName, uint256 nonce) = searchShortName(msg.sender);
+
+        _storeShortName(msg.sender, shortName, nonce);
+    }
+
+    function _registerShortNameWithNonce(uint256 _nonce) internal {
+        if (shortNames[msg.sender] != uint72(0)) {
+            revert CirclesNamesShortNameAlreadyAssigned(msg.sender, shortNames[msg.sender], 1);
+        }
+
+        uint72 shortName = calculateShortNameWithNonce(msg.sender, _nonce);
+
+        if (shortNameToAvatar[shortName] != address(0)) {
+            revert CirclesNamesShortNameWithNonceTaken(msg.sender, _nonce, shortName, shortNameToAvatar[shortName]);
+        }
+
+        _storeShortName(msg.sender, shortName, _nonce);
+    }
+
+    function _storeShortName(address _avatar, uint72 _shortName, uint256 _nonce) internal {
+        // assign the name to the address
+        shortNames[_avatar] = _shortName;
+        // assign the address to the name
+        shortNameToAvatar[_shortName] = _avatar;
+
+        emit RegisterShortName(_avatar, _shortName, _nonce);
+    }
+
+    function _getShortOrLongName(address _avatar) internal view returns (string memory) {
+        uint72 shortName = shortNames[_avatar];
+        if (shortName == uint72(0)) {
+            string memory base58FullAddress = _toBase58(uint256(uint160(_avatar)));
+            return string(abi.encodePacked(DEFAULT_CIRCLES_NAME_PREFIX, base58FullAddress));
+        }
+        string memory base58ShortName = _toBase58WithPadding(uint256(shortName));
+        return string(abi.encodePacked(DEFAULT_CIRCLES_NAME_PREFIX, base58ShortName));
+    }
+
+    function _setMetadataDigest(address _avatar, bytes32 _metadataDigest) internal {
+        avatarToMetaDataDigest[_avatar] = _metadataDigest;
+
+        emit UpdateMetadataDigest(_avatar, _metadataDigest);
     }
 }
