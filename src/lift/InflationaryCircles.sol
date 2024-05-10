@@ -21,9 +21,9 @@ contract InflationaryCircles is MasterCopyNonUpgradable, ERC20InflationaryBalanc
 
     // Events
 
-    event Deposit(address indexed account, uint256 amount, uint256 demurragedAmount);
+    event DepositInflationary(address indexed account, uint256 amount, uint256 demurragedAmount);
 
-    event Withdraw(address indexed account, uint256 amount, uint256 demurragedAmount);
+    event WithdrawInflationary(address indexed account, uint256 amount, uint256 demurragedAmount);
 
     // Modifiers
 
@@ -80,7 +80,7 @@ contract InflationaryCircles is MasterCopyNonUpgradable, ERC20InflationaryBalanc
 
         hub.safeTransferFrom(address(this), msg.sender, toTokenId(avatar), demurragedAmount, "");
 
-        emit Withdraw(msg.sender, _amount, demurragedAmount);
+        emit WithdrawInflationary(msg.sender, _amount, demurragedAmount);
     }
 
     function name() external view returns (string memory) {
@@ -108,7 +108,7 @@ contract InflationaryCircles is MasterCopyNonUpgradable, ERC20InflationaryBalanc
         // calculate inflationary amount to mint to sender
         uint256 inflationaryAmount = _mintFromDemurragedAmount(_from, _amount);
 
-        emit Deposit(_from, inflationaryAmount, _amount);
+        emit DepositInflationary(_from, inflationaryAmount, _amount);
 
         return this.onERC1155Received.selector;
     }

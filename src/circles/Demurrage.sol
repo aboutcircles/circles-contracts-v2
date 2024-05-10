@@ -4,7 +4,7 @@ pragma solidity >=0.8.24;
 import "../errors/Errors.sol";
 import "../lib/Math64x64.sol";
 
-contract Demurrage is ICirclesERC1155Errors {
+contract Demurrage is ICirclesDemurrageErrors {
     // Type declarations
 
     /**
@@ -141,6 +141,10 @@ contract Demurrage is ICirclesERC1155Errors {
      * See ../../specifications/TCIP009-demurrage.md for more details.
      */
     int128[15] internal R;
+
+    // Events
+
+    event DiscountCost(address indexed account, uint256 indexed id, uint256 discountCost);
 
     // Constructor
 

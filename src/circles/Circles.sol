@@ -157,7 +157,7 @@ contract Circles is ERC1155, ICirclesErrors {
             _calculateDiscountedBalance(totalSupplyBalance.balance, today - totalSupplyBalance.lastUpdatedDay) + _value;
         if (newTotalSupply > MAX_VALUE) {
             // DiscountedBalances: balance exceeds maximum value
-            revert CirclesERC1155AmountExceedsMaxUint190(_account, _id, newTotalSupply, 2);
+            revert CirclesDemurrageAmountExceedsMaxUint190(_account, _id, newTotalSupply, 2);
         }
         totalSupplyBalance.balance = uint192(newTotalSupply);
         totalSupplyBalance.lastUpdatedDay = today;

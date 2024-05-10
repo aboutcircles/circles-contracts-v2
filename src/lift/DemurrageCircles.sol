@@ -17,13 +17,11 @@ contract DemurrageCircles is MasterCopyNonUpgradable, ERC20DiscountedBalances, E
 
     INameRegistry public nameRegistry;
 
-    address public avatar;
-
     // Events
 
-    event Deposit(address indexed account, uint256 amount, uint256 inflationaryAmount);
+    event DepositDemurraged(address indexed account, uint256 amount, uint256 inflationaryAmount);
 
-    event Withdraw(address indexed account, uint256 amount, uint256 inflationaryAmount);
+    event WithdrawDemurraged(address indexed account, uint256 amount, uint256 inflationaryAmount);
 
     // Modifiers
 
@@ -74,7 +72,7 @@ contract DemurrageCircles is MasterCopyNonUpgradable, ERC20DiscountedBalances, E
 
         uint256 inflationaryAmount = _calculateInflationaryBalance(_amount, day(block.timestamp));
 
-        emit Withdraw(msg.sender, _amount, inflationaryAmount);
+        emit WithdrawDemurraged(msg.sender, _amount, inflationaryAmount);
     }
 
     function totalSupply() external view override returns (uint256) {
@@ -107,7 +105,7 @@ contract DemurrageCircles is MasterCopyNonUpgradable, ERC20DiscountedBalances, E
 
         uint256 inflationaryAmount = _calculateInflationaryBalance(_amount, day(block.timestamp));
 
-        emit Deposit(_from, _amount, inflationaryAmount);
+        emit DepositDemurraged(_from, _amount, inflationaryAmount);
 
         return this.onERC1155Received.selector;
     }

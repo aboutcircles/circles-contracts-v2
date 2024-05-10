@@ -35,10 +35,30 @@ contract DiscountedBalances is Demurrage {
      * @param _account Address of the account to calculate the balance of
      * @param _id Circles identifier for which to calculate the balance
      * @param _day Day since inflation_day_zero to calculate the balance for
+     * @return balanceOnDay_ The discounted balance of the account for the Circles identifier on specified day
+     * @return discountCost_ The discount cost of the demurrage of the balance since the last update
      */
-    function balanceOfOnDay(address _account, uint256 _id, uint64 _day) public view returns (uint256) {
+    function balanceOfOnDay(address _account, uint256 _id, uint64 _day)
+        public
+        view
+        returns (uint256 balanceOnDay_, uint256 discountCost_)
+    {
         DiscountedBalance memory discountedBalance = discountedBalances[_id][_account];
-        return _calculateDiscountedBalance(discountedBalance.balance, _day - discountedBalance.lastUpdatedDay);
+        if (_day < discountedBalance.lastUpdatedDay) {
+            // DiscountedBalances: day is before last updated day
+            revert CirclesDemurrageDayBeforeLastUpdatedDay(_account, _id, _day, discountedBalance.lastUpdatedDay, 0);
+        }
+        uint256 dayDifference;
+        unchecked {
+            dayDifference = _day - discountedBalance.lastUpdatedDay;
+        }
+        // Calculate the discounted balance
+        balanceOnDay_ = _calculateDiscountedBalance(discountedBalance.balance, dayDifference);
+        // Calculate the discount cost; this can be unchecked as cost is strict positive
+        unchecked {
+            discountCost_ = discountedBalance.balance - balanceOnDay_;
+        }
+        return (balanceOnDay_, discountCost_);
     }
 
     /**
@@ -63,7 +83,7 @@ contract DiscountedBalances is Demurrage {
     function _updateBalance(address _account, uint256 _id, uint256 _balance, uint64 _day) internal {
         if (_balance > MAX_VALUE) {
             // DiscountedBalances: balance exceeds maximum value
-            revert CirclesERC1155AmountExceedsMaxUint190(_account, _id, _balance, 0);
+            revert CirclesDemurrageAmountExceedsMaxUint190(_account, _id, _balance, 0);
         }
         DiscountedBalance storage discountedBalance = discountedBalances[_id][_account];
         discountedBalance.balance = uint192(_balance);
@@ -79,14 +99,28 @@ contract DiscountedBalances is Demurrage {
      */
     function _discountAndAddToBalance(address _account, uint256 _id, uint256 _value, uint64 _day) internal {
         DiscountedBalance storage discountedBalance = discountedBalances[_id][_account];
-        uint256 discountedBalanceValue =
-            _calculateDiscountedBalance(discountedBalance.balance, _day - discountedBalance.lastUpdatedDay);
-        uint256 newBalance = discountedBalanceValue + _value;
-        if (newBalance > MAX_VALUE) {
-            // DiscountedBalances: balance exceeds maximum value
-            revert CirclesERC1155AmountExceedsMaxUint190(_account, _id, newBalance, 1);
+        if (_day < discountedBalance.lastUpdatedDay) {
+            // DiscountedBalances: day is before last updated day
+            revert CirclesDemurrageDayBeforeLastUpdatedDay(_account, _id, _day, discountedBalance.lastUpdatedDay, 1);
         }
-        discountedBalance.balance = uint192(newBalance);
+        uint256 dayDifference;
+        unchecked {
+            dayDifference = _day - discountedBalance.lastUpdatedDay;
+        }
+        uint256 discountedBalanceOnDay = _calculateDiscountedBalance(discountedBalance.balance, dayDifference);
+        // Calculate the discount cost; this can be unchecked as cost is strict positive
+        unchecked {
+            uint256 discountCost = discountedBalance.balance - discountedBalanceOnDay;
+            if (discountCost > 0) {
+                emit DiscountCost(_account, _id, discountCost);
+            }
+        }
+        uint256 updatedBalance = discountedBalanceOnDay + _value;
+        if (updatedBalance > MAX_VALUE) {
+            // DiscountedBalances: balance exceeds maximum value
+            revert CirclesDemurrageAmountExceedsMaxUint190(_account, _id, updatedBalance, 1);
+        }
+        discountedBalance.balance = uint192(updatedBalance);
         discountedBalance.lastUpdatedDay = _day;
     }
 }
