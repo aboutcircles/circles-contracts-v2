@@ -21,7 +21,7 @@ import "./MetadataDefinitions.sol";
  * It further allows to wrap any token into an inflationary or demurraged
  * ERC20 Circles contract.
  */
-contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
+contract Hub is Circles, MetadataDefinitions, IHubErrors {
     // Type declarations
 
     /**
@@ -67,25 +67,37 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
 
     // State variables
 
+    // /**
+    //  * @notice The global name of Circles.
+    //  * todo, change this to "Circles" for the production deployment
+    //  */
+    // string public name = "Rings";
+
+    // /**
+    //  * @notice The global symbol ticker for Circles.
+    //  * todo, change this to "CRC" for the production deployment
+    //  */
+    // string public symbol = "RING";
+
     /**
      * @notice The Hub v1 contract address.
      */
-    IHubV1 public immutable hubV1;
+    IHubV1 internal immutable hubV1;
 
     /**
      * @notice The name registry contract address.
      */
-    INameRegistry public nameRegistry;
+    INameRegistry internal nameRegistry;
 
     /**
      * @notice The address of the migration contract for v1 Circles.
      */
-    address public migration;
+    address internal migration;
 
     /**
      * @notice The address of the Lift ERC20 contract.
      */
-    IERC20Lift public liftERC20;
+    IERC20Lift internal liftERC20;
 
     /**
      * @notice The timestamp of the start of the invitation-only period.
@@ -94,13 +106,13 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
      * new avatars can be invited by registered avatars. After this time
      * only registered avatars can invite new avatars.
      */
-    uint256 public immutable invitationOnlyTime;
+    uint256 internal immutable invitationOnlyTime;
 
     /**
      * @notice The standard treasury contract address used when
      * registering a (non-custom) group.
      */
-    address public standardTreasury;
+    address internal standardTreasury;
 
     /**
      * @notice The mapping of registered avatar addresses to the next avatar address,
@@ -179,8 +191,8 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
      * see https://soliditylang.org/blog/2024/01/26/transient-storage/
      */
     modifier nonReentrant(uint8 _code) {
-        // todo: this should use transient storage slot
-        // but didn't compile; investigate
+        // todo: this should use a transient storage slot
+        // but doesn't compile through `forge build`, but does compile with solc directly
         // assembly {
         //     if tload(0) { revert(0, 0) }
         //     tstore(0, 1)
@@ -210,8 +222,8 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
      * or in unix time 1602786330 (deployment at 6:25:30 pm UTC) - 66330 (offset to midnight) = 1602720000.
      * @param _standardTreasury address of the standard treasury contract
      * @param _bootstrapTime duration of the bootstrap period (for v1 registration) in seconds
-     * @param _fallbackUri fallback URI string for the ERC1155 metadata,
-     * (todo: eg. "https://fallback.aboutcircles.com/v1/circles/{id}.json")
+     * @param _gatewayUrl gateway URL string for the ERC1155 metadata mirroring IPFS metadata storage
+     * (eg. "https://gateway.aboutcircles.com/v2/circles/{id}.json")
      */
     constructor(
         IHubV1 _hubV1,
@@ -221,8 +233,8 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
         address _standardTreasury,
         uint256 _inflationDayZero,
         uint256 _bootstrapTime,
-        string memory _fallbackUri
-    ) Circles(_inflationDayZero, _fallbackUri) {
+        string memory _gatewayUrl
+    ) Circles(_inflationDayZero, _gatewayUrl) {
         if (address(_hubV1) == address(0)) {
             revert CirclesAddressCannotBeZero(0);
         }
@@ -257,18 +269,20 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
     /**
      * @notice Register human allows to register an avatar for a human,
      * if they have a stopped v1 Circles contract, during the bootstrap period.
-     * @param _cidV0Digest (optional) IPFS CIDv0 digest for the avatar metadata
+     * @param _metatdataDigest (optional) sha256 metadata digest for the avatar metadata
      * should follow ERC1155 metadata standard.
      */
-    function registerHuman(bytes32 _cidV0Digest) external onlyDuringBootstrap(0) {
+    function registerHuman(bytes32 _metatdataDigest) external onlyDuringBootstrap(0) {
         // only available for v1 users with stopped v1 mint, for initial bootstrap period
         address v1CirclesStatus = _registerHuman(msg.sender);
         if (v1CirclesStatus != CIRCLES_STOPPED_V1) {
             revert CirclesHubRegisterAvatarV1MustBeStopped(msg.sender, 0);
         }
 
-        // store the IPFS CIDv0 digest for the avatar metadata
-        nameRegistry.updateCidV0Digest(msg.sender, _cidV0Digest);
+        // store the metatdata digest for the avatar metadata
+        if (_metatdataDigest != bytes32(0)) {
+            nameRegistry.setMetadataDigest(msg.sender, _metatdataDigest);
+        }
 
         emit RegisterHuman(msg.sender);
     }
@@ -290,11 +304,11 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
 
         if (block.timestamp > invitationOnlyTime) {
             // after the bootstrap period, the inviter must burn the invitation cost
-            _burn(msg.sender, toTokenId(msg.sender), INVITATION_COST);
+            _burnAndUpdateTotalSupply(msg.sender, toTokenId(msg.sender), INVITATION_COST);
 
             // todo: re-discuss desired approach to welcome bonus vs migration
             // invited receives the welcome bonus in their personal Circles
-            _mint(_human, toTokenId(_human), WELCOME_BONUS, "");
+            _mintAndUpdateTotalSupply(_human, toTokenId(_human), WELCOME_BONUS, "");
         }
 
         // set trust to indefinite future, but avatar can edit this later
@@ -308,9 +322,9 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
      * @param _mint mint address will be called before minting group circles
      * @param _name immutable name of the group Circles
      * @param _symbol immutable symbol of the group Circles
-     * @param _cidV0Digest IPFS CIDv0 digest for the group metadata
+     * @param _metatdataDigest sha256 digest for the group metadata
      */
-    function registerGroup(address _mint, string calldata _name, string calldata _symbol, bytes32 _cidV0Digest)
+    function registerGroup(address _mint, string calldata _name, string calldata _symbol, bytes32 _metatdataDigest)
         external
     {
         _registerGroup(msg.sender, _mint, standardTreasury, _name, _symbol);
@@ -320,7 +334,7 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
         nameRegistry.registerCustomSymbol(msg.sender, _symbol);
 
         // store the IPFS CIDv0 digest for the group metadata
-        nameRegistry.updateCidV0Digest(msg.sender, _cidV0Digest);
+        nameRegistry.setMetadataDigest(msg.sender, _metatdataDigest);
 
         emit RegisterGroup(msg.sender, _mint, standardTreasury, _name, _symbol);
     }
@@ -331,14 +345,14 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
      * @param _treasury treasury address for receiving collateral
      * @param _name immutable name of the group Circles
      * @param _symbol immutable symbol of the group Circles
-     * @param _cidV0Digest IPFS CIDv0 digest for the group metadata
+     * @param _metatdataDigest metadata digest for the group metadata
      */
     function registerCustomGroup(
         address _mint,
         address _treasury,
         string calldata _name,
         string calldata _symbol,
-        bytes32 _cidV0Digest
+        bytes32 _metatdataDigest
     ) external {
         _registerGroup(msg.sender, _mint, _treasury, _name, _symbol);
 
@@ -346,8 +360,8 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
         nameRegistry.registerCustomName(msg.sender, _name);
         nameRegistry.registerCustomSymbol(msg.sender, _symbol);
 
-        // store the IPFS CIDv0 digest for the group metadata
-        nameRegistry.updateCidV0Digest(msg.sender, _cidV0Digest);
+        // store the metatdata digest for the group metadata
+        nameRegistry.setMetadataDigest(msg.sender, _metatdataDigest);
 
         emit RegisterGroup(msg.sender, _mint, _treasury, _name, _symbol);
     }
@@ -355,16 +369,16 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
     /**
      * @notice Register organization allows to register an organization avatar.
      * @param _name name of the organization
-     * @param _cidV0Digest IPFS CIDv0 digest for the organization metadata
+     * @param _metatdataDigest Metadata digest for the organization metadata
      */
-    function registerOrganization(string calldata _name, bytes32 _cidV0Digest) external {
+    function registerOrganization(string calldata _name, bytes32 _metatdataDigest) external {
         _insertAvatar(msg.sender);
 
         // for organizations, only register possible custom name
         nameRegistry.registerCustomName(msg.sender, _name);
 
         // store the IPFS CIDv0 digest for the organization metadata
-        nameRegistry.updateCidV0Digest(msg.sender, _cidV0Digest);
+        nameRegistry.setMetadataDigest(msg.sender, _metatdataDigest);
 
         emit RegisterOrganization(msg.sender, _name);
     }
@@ -510,12 +524,12 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
                 // Only humans can migrate v1 tokens after the bootstrap period.
                 revert CirclesHubMustBeHuman(_owner, 4);
             }
-            _burn(_owner, toTokenId(_owner), cost);
+            _burnAndUpdateTotalSupply(_owner, toTokenId(_owner), cost);
         }
 
         for (uint256 i = 0; i < _avatars.length; i++) {
             // mint the migrated balances to _owner
-            _mint(_owner, toTokenId(_avatars[i]), _amounts[i], "");
+            _mintAndUpdateTotalSupply(_owner, toTokenId(_avatars[i]), _amounts[i], "");
         }
     }
 
@@ -540,7 +554,7 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
                 revert CirclesHubGroupMintPolicyRejectedBurn(msg.sender, group, _amount, _data, 0);
             }
         }
-        _burn(msg.sender, _id, _amount);
+        _burnAndUpdateTotalSupply(msg.sender, _id, _amount);
     }
 
     function wrap(address _avatar, uint256 _amount, CirclesType _type) external returns (address) {
@@ -647,18 +661,6 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
         return uint256(trustMarkers[_circlesAvatar][_to].expiry) >= block.timestamp;
     }
 
-    /**
-     * uri returns the IPFS URI for the ERC1155 token.
-     * If the
-     * @param _id tokenId of the ERC1155 token
-     */
-    function uri(uint256 _id) public view override returns (string memory uri_) {
-        // todo: should fallback move into SDK rather than contract ?
-        // todo: we don't need to override this function if we keep this pattern
-        // "https://fallback.aboutcircles.com/v1/profile/{id}.json"
-        return super.uri(_id);
-    }
-
     // Internal functions
 
     /**
@@ -697,7 +699,7 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
             // _groupMint is only called from the public groupMint function,
             // or from operateFlowMatrix, and both ensure the collateral ids are derived
             // from an address, so we can cast here without checks.
-            if (!isPermittedFlow(_group, address(uint160(_collateral[i])))) {
+            if (!isPermittedFlow(_group, _validateAddressFromId(_collateral[i], 2))) {
                 // Group does not trust collateral.
                 revert CirclesHubFlowEdgeIsNotPermitted(_group, _collateral[i], 0);
             }
@@ -725,7 +727,7 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
         safeBatchTransferFrom(_sender, treasuries[_group], _collateral, _amounts, dataWithGroup);
 
         // mint group Circles to the sender and send the original _data onwards
-        _mint(_sender, toTokenId(_group), sumAmounts, _data);
+        _mintAndUpdateTotalSupply(_sender, toTokenId(_group), sumAmounts, _data);
     }
 
     function _verifyFlowMatrix(
@@ -1103,12 +1105,11 @@ contract Hub is Circles, MetadataDefinitions, IHubErrors, ICirclesErrors {
     }
 
     function _validateAddressFromId(uint256 _id, uint8 _code) internal pure returns (address) {
-        address avatar = address(uint160(_id));
-        if (uint256(uint160(avatar)) != _id) {
+        if (_id > type(uint160).max) {
             // Invalid Circles identifier, not derived from address
             revert CirclesIdMustBeDerivedFromAddress(_id, _code);
         }
-        return avatar;
+        return address(uint160(_id));
     }
 
     /**
