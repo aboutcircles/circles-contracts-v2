@@ -25,7 +25,7 @@ contract SignedPathOperator is BaseOperator, TypeDefinitions {
         bytes calldata _packedCoordinates,
         uint256 _sourceIndex
     ) external {
-        // Extract the alleged source vertex
+        // Extract the alleged source vertex from the flow vertices
         uint16 sourceCoordinate = _extractSource(_packedCoordinates, _sourceIndex);
         address source = _flowVertices[sourceCoordinate];
         // Ensure the source is the caller
@@ -39,6 +39,9 @@ contract SignedPathOperator is BaseOperator, TypeDefinitions {
                 revert CirclesOperatorInvalidStreamSource(i, sourceCoordinate, _streams[i].sourceCoordinate);
             }
         }
+
+        // Call the hub to operate the flow matrix
+        hub.operateFlowMatrix(_flowVertices, _flow, _streams, _packedCoordinates);
     }
 
     // Internal functions
