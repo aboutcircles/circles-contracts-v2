@@ -15,6 +15,8 @@ contract HubPathTransferTest is Test, TimeCirclesSetup, HumanRegistration, Appro
 
     MockPathTransferHub public mockHub;
 
+    // Constructor
+
     constructor() HumanRegistration(4) {}
 
     // Setup
