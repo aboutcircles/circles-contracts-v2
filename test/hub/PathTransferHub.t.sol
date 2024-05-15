@@ -5,6 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {StdCheats} from "forge-std/StdCheats.sol";
 import "forge-std/console.sol";
 import "../../src/hub/Hub.sol";
+import "../../src/hub/TypeDefinitions.sol";
 import "../setup/TimeCirclesSetup.sol";
 import "../setup/HumanRegistration.sol";
 import "../utils/Approximation.sol";
@@ -14,6 +15,8 @@ contract HubPathTransferTest is Test, TimeCirclesSetup, HumanRegistration, Appro
     // State variables
 
     MockPathTransferHub public mockHub;
+
+    // Constructor
 
     constructor() HumanRegistration(4) {}
 
@@ -82,12 +85,12 @@ contract HubPathTransferTest is Test, TimeCirclesSetup, HumanRegistration, Appro
         // C-D   .     .    -5C    5C
 
         address[] memory flowVertices = new address[](M);
-        Hub.FlowEdge[] memory flow = new Hub.FlowEdge[](M - 1);
+        TypeDefinitions.FlowEdge[] memory flow = new Hub.FlowEdge[](M - 1);
 
         // allocate three coordinates per flow edge
         uint16[] memory coordinates = new uint16[]((M - 1) * 3);
 
-        // the flow vertices need to be provided in ascending order\
+        // the flow vertices need to be provided in ascending order
         for (uint256 i = 0; i < M; i++) {
             flowVertices[i] = sortedAddresses[i];
         }
@@ -119,7 +122,7 @@ contract HubPathTransferTest is Test, TimeCirclesSetup, HumanRegistration, Appro
         bytes memory packedCoordinates = packCoordinates(coordinates);
 
         // Lastly we need to define the streams (only one from Alice to David)
-        Hub.Stream[] memory streams = new Hub.Stream[](1);
+        TypeDefinitions.Stream[] memory streams = new Hub.Stream[](1);
         // the source coordinate for Alice
         streams[0].sourceCoordinate = lookupMap[0];
         // the flow edges that constitute the termination of this stream

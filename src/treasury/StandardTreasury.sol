@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "../errors/Errors.sol";
-import "../hub/MetadataDefinitions.sol";
+import "../hub/TypeDefinitions.sol";
 import "../hub/IHub.sol";
 import "../groups/IMintPolicy.sol";
 import "../proxy/ProxyFactory.sol";
@@ -14,7 +14,7 @@ import "./IStandardVault.sol";
 contract StandardTreasury is
     ERC165,
     ProxyFactory,
-    MetadataDefinitions,
+    TypeDefinitions,
     IERC1155Receiver,
     ICirclesErrors,
     IStandardTreasuryErrors
