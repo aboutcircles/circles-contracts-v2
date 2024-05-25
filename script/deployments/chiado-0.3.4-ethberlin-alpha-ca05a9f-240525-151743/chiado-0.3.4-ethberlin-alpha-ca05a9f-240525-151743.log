@@ -1,0 +1,18 @@
+Chiado deployment
+=================
+Deployment Date: 2024-05-25 15:17:43
+Version: 0.3.4-ethberlin-alpha
+Git Commit: ca05a9f98c512b994a00228e7fb89265917195c2
+Deployer Address: 0x7619F26728Ced663E50E578EB6ff42430931564c, Intitial nonce: 117
+Compiler Version: v0.8.23+commit.f704f362
+
+Deployed Contracts:
+Hub: 0x5b96ea253eE82a4Fb068197812D2bD1879C6956b
+Migration: 0xfd8ADE821Bfe0bFeFe47142ddd4dC6D81dA1C9d9
+NameRegistry: 0x998Bd8EE1FF9fbf12dC92F4a8A1DB302a97129Ad
+ERC20Lift: 0x995Ca4AC961C0f0A526EC44B61Ba484d71f2BEae
+StandardTreasury: 0x18f8dEe77cE352Ec1d1536ac152964EcE25cA814
+BaseGroupMintPolicy: 0xD292a29bb64baF915529c8c77Fe886a6e4Eba09c
+MastercopyDemurrageERC20: 0x6bb84643DFa095121bC3d573a320cEdf07dC427A
+MastercopyInflationaryERC20: 0xa1e5ef53Bd6A50012593e38333F13e1CD05cF085
+MastercopyStandardVault: 0x03F78A1964E960D58860eEF4abF63efD2BA63213
