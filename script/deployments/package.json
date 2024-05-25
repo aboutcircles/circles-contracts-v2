@@ -1,6 +1,6 @@
 {
     "name": "deploy-circles",
-    "version": "0.3.4-alpha",
+    "version": "0.3.4-ethberlin-alpha",
     "type": "module",
     "dependencies": {
         "dotenv": "^16.4.5",

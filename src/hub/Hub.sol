@@ -233,7 +233,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         // only available for v1 users with stopped v1 mint, for initial bootstrap period
         address v1CirclesStatus = _registerHuman(msg.sender);
         if (v1CirclesStatus != CIRCLES_STOPPED_V1) {
-            revert CirclesHubRegisterAvatarV1MustBeStopped(msg.sender, 0);
+            // RINGS: allow anyone to register during bootstrap period
+            // revert CirclesHubRegisterAvatarV1MustBeStopped(msg.sender, 0);
         }
 
         // store the metatdata digest for the avatar metadata
