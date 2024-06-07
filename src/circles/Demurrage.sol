@@ -189,7 +189,8 @@ contract Demurrage is ICirclesDemurrageErrors {
         // calculate the demurrage value by multiplying the value by GAMMA^days
         // note: GAMMA < 1, so multiplying by a power of it, returns a smaller number,
         //       so we lose the least significant bits, but our ground truth is the demurrage value,
-        //       and the inflationary value the numerical approximation.
+        //       and the inflationary value is a numerical approximation (where the least significant digits
+        //       are not reliable).
         int128 r = Math64x64.pow(GAMMA_64x64, uint256(_day));
         return Math64x64.mulu(r, _inflationaryValue);
     }
@@ -270,7 +271,7 @@ contract Demurrage is ICirclesDemurrageErrors {
     function _calculateInflationaryBalance(uint256 _balance, uint256 _dayUpdated) internal pure returns (uint256) {
         // calculate the inflationary balance by dividing the balance by GAMMA^days
         // note: GAMMA < 1, so dividing by a power of it, returns a bigger number,
-        //       so the numerical inprecision is in the least significant bits.
+        //       so the numerical imprecision is in the least significant bits.
         int128 i = Math64x64.pow(BETA_64x64, _dayUpdated);
         return Math64x64.mulu(i, _balance);
     }
