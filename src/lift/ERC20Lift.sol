@@ -26,6 +26,10 @@ contract ERC20Lift is ProxyFactory, IERC20Lift, ICirclesErrors {
 
     mapping(CirclesType => mapping(address => address)) public erc20Circles;
 
+    // Events
+
+    event ERC20WrapperDeployed(address indexed avatar, address indexed erc20Wrapper, CirclesType circlesType);
+
     // Constructor
 
     constructor(
@@ -83,6 +87,8 @@ contract ERC20Lift is ProxyFactory, IERC20Lift, ICirclesErrors {
         if (erc20Wrapper == address(0)) {
             erc20Wrapper = _deployERC20(masterCopyERC20Wrapper[uint256(_circlesType)], _avatar);
             erc20Circles[_circlesType][_avatar] = erc20Wrapper;
+
+            emit ERC20WrapperDeployed(_avatar, erc20Wrapper, _circlesType);
         }
         return erc20Wrapper;
     }
