@@ -23,11 +23,10 @@ contract SignedPathOperator is BaseOperator, TypeDefinitions {
         FlowEdge[] calldata _flow,
         Stream[] calldata _streams,
         bytes calldata _packedCoordinates,
-        uint256 _sourceIndex
+        uint256 _sourceCoordinate
     ) external {
         // Extract the alleged source vertex from the flow vertices
-        uint16 sourceCoordinate = _extractSource(_packedCoordinates, _sourceIndex);
-        address source = _flowVertices[sourceCoordinate];
+        address source = _flowVertices[_sourceCoordinate];
         // Ensure the source is the caller
         if (msg.sender != source) {
             revert CirclesInvalidFunctionCaller(msg.sender, source, 0);
@@ -35,8 +34,8 @@ contract SignedPathOperator is BaseOperator, TypeDefinitions {
 
         // check that for every stream the source of the stream matches the alleged single source
         for (uint256 i = 0; i < _streams.length; i++) {
-            if (_streams[i].sourceCoordinate != sourceCoordinate) {
-                revert CirclesOperatorInvalidStreamSource(i, sourceCoordinate, _streams[i].sourceCoordinate);
+            if (_streams[i].sourceCoordinate != _sourceCoordinate) {
+                revert CirclesOperatorInvalidStreamSource(i, _sourceCoordinate, _streams[i].sourceCoordinate);
             }
         }
 
@@ -46,8 +45,8 @@ contract SignedPathOperator is BaseOperator, TypeDefinitions {
 
     // Internal functions
 
-    function _extractSource(bytes calldata _packedCoordinates, uint256 _sourceIndex) internal pure returns (uint16) {
-        return
-            uint16(uint8(_packedCoordinates[_sourceIndex])) << 8 | uint16(uint8(_packedCoordinates[_sourceIndex + 1]));
-    }
+    // function _extractSource(bytes calldata _packedCoordinates, uint256 _sourceIndex) internal pure returns (uint16) {
+    //     return
+    //         uint16(uint8(_packedCoordinates[_sourceIndex])) << 8 | uint16(uint8(_packedCoordinates[_sourceIndex + 1]));
+    // }
 }

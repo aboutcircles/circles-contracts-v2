@@ -102,7 +102,7 @@ contract HubPathTransferTest is Test, TimeCirclesSetup, HumanRegistration, Appro
         // for each row in the flow matrix specify the coordinates and amount
         for (uint256 i = 0; i < M - 1; i++) {
             // flow is the amount of Circles to send, here constant for each edge
-            flow[i].amount = uint240(5 * CRC);
+            flow[i].amount = uint192(5 * CRC);
             flow[i].streamSinkId = uint16(0);
             // first index indicates which Circles to use
             // for our example, we use the Circles of the sender
