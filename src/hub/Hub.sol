@@ -517,6 +517,13 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         _burnAndUpdateTotalSupply(msg.sender, _id, _amount);
     }
 
+    /**
+     * @notice Wrap allows to wrap any token into an inflationary or demurraged ERC20 Circles contract.
+     * @param _avatar address of the avatar to wrap the token for
+     * @param _amount amount of the token to wrap
+     * @param _type type of Circles to wrap the token into (CirclesType.Demurrage: 0, CirclesType.Inflation: 1)
+     * @return erc20Wrapper address of the ERC20 Circles contract the token was wrapped into
+     */
     function wrap(address _avatar, uint256 _amount, CirclesType _type) external returns (address) {
         if (!isHuman(_avatar) && !isGroup(_avatar)) {
             // Avatar must be human or group.
