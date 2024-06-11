@@ -174,6 +174,9 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     /**
      * @notice Constructor for the Hub contract.
      * @param _hubV1 address of the Hub v1 contract
+     * @param _nameRegistry address of the name registry contract
+     * @param _migration address of the migration contract
+     * @param _liftERC20 address of the Lift ERC20 contract to wrap ERC1155 Circles into ERC20 Circles
      * @param _inflationDayZero timestamp of the start of the global inflation curve.
      * For deployment on Gnosis Chain this parameter should be set to midnight 15 October 2020,
      * or in unix time 1602786330 (deployment at 6:25:30 pm UTC) - 66330 (offset to midnight) = 1602720000.
