@@ -1,0 +1,452 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Demurrage</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../../favicon.svg">
+        <link rel="shortcut icon" href="../../../favicon.png">
+        <link rel="stylesheet" href="../../../css/variables.css">
+        <link rel="stylesheet" href="../../../css/general.css">
+        <link rel="stylesheet" href="../../../css/chrome.css">
+        <link rel="stylesheet" href="../../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../../highlight.css">
+        <link rel="stylesheet" href="../../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../../book.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item "><a href="../../../index.html">Home</a></li><li class="chapter-item affix "><li class="part-title">src</li><li class="chapter-item expanded "><a href="../../../src/circles/index.html">❱ circles</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/circles/Circles.sol/contract.Circles.html">Circles</a></li><li class="chapter-item expanded "><a href="../../../src/circles/Demurrage.sol/contract.Demurrage.html" class="active">Demurrage</a></li><li class="chapter-item "><a href="../../../src/circles/DiscountedBalances.sol/contract.DiscountedBalances.html">DiscountedBalances</a></li><li class="chapter-item "><a href="../../../src/circles/ERC1155.sol/abstract.ERC1155.html">ERC1155</a></li><li class="chapter-item "><a href="../../../src/circles/ICircles.sol/interface.ICircles.html">ICircles</a></li><li class="chapter-item "><a href="../../../src/circles/IDemurrage.sol/interface.IDemurrage.html">IDemurrage</a></li></ol></li><li class="chapter-item "><a href="../../../src/errors/index.html">❱ errors</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/errors/Errors.sol/interface.IHubErrors.html">IHubErrors</a></li><li class="chapter-item "><a href="../../../src/errors/Errors.sol/interface.ICirclesDemurrageErrors.html">ICirclesDemurrageErrors</a></li><li class="chapter-item "><a href="../../../src/errors/Errors.sol/interface.ICirclesErrors.html">ICirclesErrors</a></li><li class="chapter-item "><a href="../../../src/errors/Errors.sol/interface.IStandardTreasuryErrors.html">IStandardTreasuryErrors</a></li><li class="chapter-item "><a href="../../../src/errors/Errors.sol/interface.INameRegistryErrors.html">INameRegistryErrors</a></li></ol></li><li class="chapter-item "><a href="../../../src/groups/index.html">❱ groups</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/groups/BaseMintPolicy.sol/contract.MintPolicy.html">MintPolicy</a></li><li class="chapter-item "><a href="../../../src/groups/Definitions.sol/contract.BaseMintPolicyDefinitions.html">BaseMintPolicyDefinitions</a></li><li class="chapter-item "><a href="../../../src/groups/IMintPolicy.sol/interface.IMintPolicy.html">IMintPolicy</a></li></ol></li><li class="chapter-item "><a href="../../../src/hub/index.html">❱ hub</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/hub/Hub.sol/contract.Hub.html">Hub</a></li><li class="chapter-item "><a href="../../../src/hub/IHub.sol/interface.IHubV2.html">IHubV2</a></li><li class="chapter-item "><a href="../../../src/hub/TypeDefinitions.sol/contract.TypeDefinitions.html">TypeDefinitions</a></li></ol></li><li class="chapter-item "><a href="../../../src/lib/index.html">❱ lib</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/lib/Math64x64.sol/library.Math64x64.html">Math64x64</a></li></ol></li><li class="chapter-item "><a href="../../../src/lift/index.html">❱ lift</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/lift/DemurrageCircles.sol/contract.DemurrageCircles.html">DemurrageCircles</a></li><li class="chapter-item "><a href="../../../src/lift/EIP712.sol/abstract.EIP712.html">EIP712</a></li><li class="chapter-item "><a href="../../../src/lift/ERC20DiscountedBalances.sol/contract.ERC20DiscountedBalances.html">ERC20DiscountedBalances</a></li><li class="chapter-item "><a href="../../../src/lift/ERC20InflationaryBalances.sol/contract.ERC20InflationaryBalances.html">ERC20InflationaryBalances</a></li><li class="chapter-item "><a href="../../../src/lift/ERC20Lift.sol/contract.ERC20Lift.html">ERC20Lift</a></li><li class="chapter-item "><a href="../../../src/lift/ERC20Permit.sol/contract.ERC20Permit.html">ERC20Permit</a></li><li class="chapter-item "><a href="../../../src/lift/IERC20Lift.sol/enum.CirclesType.html">CirclesType</a></li><li class="chapter-item "><a href="../../../src/lift/IERC20Lift.sol/interface.IERC20Lift.html">IERC20Lift</a></li><li class="chapter-item "><a href="../../../src/lift/InflationaryCircles.sol/contract.InflationaryCircles.html">InflationaryCircles</a></li></ol></li><li class="chapter-item "><a href="../../../src/migration/index.html">❱ migration</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/migration/IHub.sol/interface.IHubV1.html">IHubV1</a></li><li class="chapter-item "><a href="../../../src/migration/IToken.sol/interface.ITokenV1.html">ITokenV1</a></li><li class="chapter-item "><a href="../../../src/migration/Migration.sol/contract.Migration.html">Migration</a></li></ol></li><li class="chapter-item "><a href="../../../src/names/index.html">❱ names</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/names/Base58Converter.sol/contract.Base58Converter.html">Base58Converter</a></li><li class="chapter-item "><a href="../../../src/names/INameRegistry.sol/interface.INameRegistry.html">INameRegistry</a></li><li class="chapter-item "><a href="../../../src/names/NameRegistry.sol/contract.NameRegistry.html">NameRegistry</a></li></ol></li><li class="chapter-item "><a href="../../../src/operators/index.html">❱ operators</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/operators/BaseOperator.sol/contract.BaseOperator.html">BaseOperator</a></li><li class="chapter-item "><a href="../../../src/operators/SignedPathOperator.sol/contract.SignedPathOperator.html">SignedPathOperator</a></li></ol></li><li class="chapter-item "><a href="../../../src/proxy/index.html">❱ proxy</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/proxy/MasterCopyNonUpgradable.sol/contract.MasterCopyNonUpgradable.html">MasterCopyNonUpgradable</a></li><li class="chapter-item "><a href="../../../src/proxy/Proxy.sol/interface.IProxy.html">IProxy</a></li><li class="chapter-item "><a href="../../../src/proxy/Proxy.sol/contract.Proxy.html">Proxy</a></li><li class="chapter-item "><a href="../../../src/proxy/ProxyFactory.sol/contract.ProxyFactory.html">ProxyFactory</a></li></ol></li><li class="chapter-item "><a href="../../../src/treasury/index.html">❱ treasury</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/treasury/IStandardVault.sol/interface.IStandardVault.html">IStandardVault</a></li><li class="chapter-item "><a href="../../../src/treasury/StandardTreasury.sol/contract.StandardTreasury.html">StandardTreasury</a></li><li class="chapter-item "><a href="../../../src/treasury/StandardVault.sol/contract.StandardVault.html">StandardVault</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title"></h1>
+
+                    <div class="right-buttons">
+                        <a href="../../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/aboutcircles/circles-contracts-v2" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="demurrage"><a class="header" href="#demurrage">Demurrage</a></h1>
+<p><a href="https://github.com/aboutcircles/circles-contracts-v2/blob/9fbbffb44eda7934ea8adf9354e5f09f6b15b8b2/src/circles/Demurrage.sol">Git Source</a></p>
+<p><strong>Inherits:</strong>
+<a href="/src/errors/Errors.sol/interface.ICirclesDemurrageErrors.html">ICirclesDemurrageErrors</a></p>
+<h2 id="state-variables"><a class="header" href="#state-variables">State Variables</a></h2>
+<h3 id="demurrage_window"><a class="header" href="#demurrage_window">DEMURRAGE_WINDOW</a></h3>
+<p>Demurrage window reduces the resolution for calculating
+the demurrage of balances from once per second (block.timestamp)
+to once per day.</p>
+<pre><code class="language-solidity">uint256 private constant DEMURRAGE_WINDOW = 1 days;
+</code></pre>
+<h3 id="max_value"><a class="header" href="#max_value">MAX_VALUE</a></h3>
+<p><em>Maximum value that can be stored or transferred</em></p>
+<pre><code class="language-solidity">uint256 internal constant MAX_VALUE = type(uint192).max;
+</code></pre>
+<h3 id="gamma_64x64"><a class="header" href="#gamma_64x64">GAMMA_64x64</a></h3>
+<p><em>Reduction factor GAMMA for applying demurrage to balances
+demurrage_balance(d) = GAMMA^d * inflationary_balance
+where 'd' is expressed in days (DEMURRAGE_WINDOW) since demurrage_day_zero,
+and GAMMA &lt; 1.
+GAMMA_64x64 stores the numerator for the signed 128bit 64.64
+fixed decimal point expression:
+GAMMA = GAMMA_64x64 / 2**64.
+To obtain GAMMA for a daily accounting of 7% p.a. demurrage
+=&gt; GAMMA = (0.93)^(1/365.25)
+= 0.99980133200859895743...
+and expressed in 64.64 fixed point representation:
+=&gt; GAMMA_64x64 = 18443079296116538654
+For more details, see ./specifications/TCIP009-demurrage.md</em></p>
+<pre><code class="language-solidity">int128 internal constant GAMMA_64x64 = int128(18443079296116538654);
+</code></pre>
+<h3 id="beta_64x64"><a class="header" href="#beta_64x64">BETA_64x64</a></h3>
+<p><em>For calculating the inflationary mint amount on day <code>d</code>
+since demurrage_day_zero, a person can mint
+(1/GAMMA)^d CRC / hour
+As GAMMA is a constant, to save gas costs store the inverse
+as BETA = 1 / GAMMA.
+BETA_64x64 is the 64.64 fixed point representation:
+BETA_64x64 = 2**64 / ((0.93)^(1/365.25))
+= 18450409579521241655
+For more details, see ./specifications/TCIP009-demurrage.md</em></p>
+<pre><code class="language-solidity">int128 internal constant BETA_64x64 = int128(18450409579521241655);
+</code></pre>
+<h3 id="decimals"><a class="header" href="#decimals">DECIMALS</a></h3>
+<p><em>ERC1155 tokens MUST be 18 decimals.</em></p>
+<pre><code class="language-solidity">uint8 internal constant DECIMALS = uint8(18);
+</code></pre>
+<h3 id="exa"><a class="header" href="#exa">EXA</a></h3>
+<p><em>EXA factor as 10^18</em></p>
+<pre><code class="language-solidity">uint256 internal constant EXA = uint256(10 ** DECIMALS);
+</code></pre>
+<h3 id="one_64x64"><a class="header" href="#one_64x64">ONE_64x64</a></h3>
+<p><em>Store the signed 128-bit 64.64 representation of 1 as a constant</em></p>
+<pre><code class="language-solidity">int128 internal constant ONE_64x64 = int128(2 ** 64);
+</code></pre>
+<h3 id="r_table_lookup"><a class="header" href="#r_table_lookup">R_TABLE_LOOKUP</a></h3>
+<pre><code class="language-solidity">uint8 internal constant R_TABLE_LOOKUP = uint8(14);
+</code></pre>
+<h3 id="inflationdayzero"><a class="header" href="#inflationdayzero">inflationDayZero</a></h3>
+<p>Inflation day zero stores the start of the global inflation curve
+As Circles Hub v1 was deployed on Thursday 15th October 2020 at 6:25:30 pm UTC,
+or 1602786330 unix time, in production this value MUST be set to 1602720000 unix time,
+or midnight prior of the same day of deployment, marking the start of the first day
+where there was no inflation on one CRC per hour.</p>
+<pre><code class="language-solidity">uint256 public inflationDayZero;
+</code></pre>
+<h3 id="t"><a class="header" href="#t">T</a></h3>
+<p><em>Store a lookup table T(n) for computing issuance.
+T is only accessed for minting in Hub.sol, so it is initialized in
+storage of Hub.sol during the constructor, by copying these values.
+(It is not properly intialized in a ERC20 Proxy contract, but we never need
+to access it there, so it is not a problem - it is only initialized in the
+storage of the mastercopy during deployment.)
+See ../../specifications/TCIP009-demurrage.md for more details.</em></p>
+<pre><code class="language-solidity">int128[15] internal T = [
+    int128(442721857769029238784),
+    int128(885355760875826166476),
+    int128(1327901726794166863126),
+    int128(1770359772994355928788),
+    int128(2212729916943227173193),
+    int128(2655012176104144305282),
+    int128(3097206567937001622606),
+    int128(3539313109898224700583),
+    int128(3981331819440771081628),
+    int128(4423262714014130964135),
+    int128(4865105811064327891331),
+    int128(5306861128033919439986),
+    int128(5748528682361997908993),
+    int128(6190108491484191007805),
+    int128(6631600572832662544739)
+];
+</code></pre>
+<h3 id="r"><a class="header" href="#r">R</a></h3>
+<p><em>Store a lookup table R(n) for computing issuance and demurrage.
+This table is computed in the constructor of Hub.sol and mastercopy deployments,
+and lazily computed in the ERC20 Demurrage proxy contracts, then cached into their storage.
+The non-trivial situation for R(n) (vs T(n)) is that R is accessed
+from the ERC20 Demurrage proxy contracts, so their storage will not yet
+have been initialized with the constructor. (Counter to T which is only
+accessed for minting in Hub.sol, and as such initialized in the constructor
+of Hub.sol by Solidity by copying the python calculated values stored above.)
+Computing R in contract is done with .64bits precision, whereas the python computed
+table is slightly more accurate, but equal within dust (10^-18). See unit tests.
+However, we want to ensure that Hub.sol and the ERC20 Demurrage proxy contracts
+use the exact same R values (even if the difference would not matter).
+So for R we rely on the in-contract computed values.
+In the unit tests, the table of python computed values is stored in HIGHER_ACCURACY_R,
+and matched against the solidity computed values.
+See ../../specifications/TCIP009-demurrage.md for more details.</em></p>
+<pre><code class="language-solidity">int128[15] internal R;
+</code></pre>
+<h2 id="functions"><a class="header" href="#functions">Functions</a></h2>
+<h3 id="constructor"><a class="header" href="#constructor">constructor</a></h3>
+<pre><code class="language-solidity">constructor();
+</code></pre>
+<h3 id="day"><a class="header" href="#day">day</a></h3>
+<p>Calculate the day since inflation_day_zero for a given timestamp.</p>
+<pre><code class="language-solidity">function day(uint256 _timestamp) public view returns (uint64);
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>_timestamp</code></td><td><code>uint256</code></td><td>Timestamp for which to calculate the day since inflation_day_zero.</td></tr>
+</tbody></table>
+</div>
+<h3 id="totokenid"><a class="header" href="#totokenid">toTokenId</a></h3>
+<p>Casts an avatar address to a tokenId uint256.</p>
+<pre><code class="language-solidity">function toTokenId(address _avatar) public pure returns (uint256);
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>_avatar</code></td><td><code>address</code></td><td>avatar address to convert to tokenId</td></tr>
+</tbody></table>
+</div>
+<h3 id="convertinflationarytodemurragevalue"><a class="header" href="#convertinflationarytodemurragevalue">convertInflationaryToDemurrageValue</a></h3>
+<p>Converts an inflationary value to a demurrage value for a given day since inflation_day_zero.</p>
+<pre><code class="language-solidity">function convertInflationaryToDemurrageValue(uint256 _inflationaryValue, uint64 _day) public pure returns (uint256);
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>_inflationaryValue</code></td><td><code>uint256</code></td><td>Inflationary value to convert to demurrage value.</td></tr>
+<tr><td><code>_day</code></td><td><code>uint64</code></td><td>Day since inflation_day_zero to convert the inflationary value to a demurrage value.</td></tr>
+</tbody></table>
+</div>
+<h3 id="convertbatchinflationarytodemurragevalues"><a class="header" href="#convertbatchinflationarytodemurragevalues">convertBatchInflationaryToDemurrageValues</a></h3>
+<p>Converts a batch of inflationary values to demurrage values for a given day since inflation_day_zero.</p>
+<pre><code class="language-solidity">function convertBatchInflationaryToDemurrageValues(uint256[] memory _inflationaryValues, uint64 _day)
+    public
+    pure
+    returns (uint256[] memory);
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>_inflationaryValues</code></td><td><code>uint256[]</code></td><td>Batch of inflationary values to convert to demurrage values.</td></tr>
+<tr><td><code>_day</code></td><td><code>uint64</code></td><td>Day since inflation_day_zero to convert the inflationary values to demurrage values.</td></tr>
+</tbody></table>
+</div>
+<h3 id="_calculatediscountedbalance"><a class="header" href="#_calculatediscountedbalance">_calculateDiscountedBalance</a></h3>
+<p><em>Calculates the discounted balance given a number of days to discount</em></p>
+<pre><code class="language-solidity">function _calculateDiscountedBalance(uint256 _balance, uint256 _daysDifference) internal view returns (uint256);
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>_balance</code></td><td><code>uint256</code></td><td>balance to calculate the discounted balance of</td></tr>
+<tr><td><code>_daysDifference</code></td><td><code>uint256</code></td><td>days of difference between the last updated day and the day of interest</td></tr>
+</tbody></table>
+</div>
+<h3 id="_calculatediscountedbalanceandcache"><a class="header" href="#_calculatediscountedbalanceandcache">_calculateDiscountedBalanceAndCache</a></h3>
+<pre><code class="language-solidity">function _calculateDiscountedBalanceAndCache(uint256 _balance, uint256 _daysDifference) internal returns (uint256);
+</code></pre>
+<h3 id="_calculatedemurragefactor"><a class="header" href="#_calculatedemurragefactor">_calculateDemurrageFactor</a></h3>
+<pre><code class="language-solidity">function _calculateDemurrageFactor(uint256 _dayDifference) internal view returns (int128);
+</code></pre>
+<h3 id="_calculatedemurragefactorandcache"><a class="header" href="#_calculatedemurragefactorandcache">_calculateDemurrageFactorAndCache</a></h3>
+<pre><code class="language-solidity">function _calculateDemurrageFactorAndCache(uint256 _dayDifference) internal returns (int128);
+</code></pre>
+<h3 id="_calculateinflationarybalance"><a class="header" href="#_calculateinflationarybalance">_calculateInflationaryBalance</a></h3>
+<p>Calculate the inflationary balance of a demurraged balance</p>
+<pre><code class="language-solidity">function _calculateInflationaryBalance(uint256 _balance, uint256 _dayUpdated) internal pure returns (uint256);
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>_balance</code></td><td><code>uint256</code></td><td>Demurraged balance to calculate the inflationary balance of</td></tr>
+<tr><td><code>_dayUpdated</code></td><td><code>uint256</code></td><td>The day the balance was last updated</td></tr>
+</tbody></table>
+</div>
+<h2 id="events"><a class="header" href="#events">Events</a></h2>
+<h3 id="discountcost"><a class="header" href="#discountcost">DiscountCost</a></h3>
+<pre><code class="language-solidity">event DiscountCost(address indexed account, uint256 indexed id, uint256 discountCost);
+</code></pre>
+<h2 id="structs"><a class="header" href="#structs">Structs</a></h2>
+<h3 id="discountedbalance"><a class="header" href="#discountedbalance">DiscountedBalance</a></h3>
+<p><em>Discounted balance with a last updated timestamp.
+Note: The balance is stored as a 192-bit unsigned integer.
+The last updated timestamp is stored as a 64-bit unsigned integer counting the days
+since <code>inflation_day_zero</code> (for elegance, to not start the clock in 1970 with unix time).
+We ensure that they combine to 32 bytes for a single Ethereum storage slot.
+Note: The maximum total supply of CRC is <del>10^5 per human, with 10<strong>10 humans,
+so even if all humans would pool all their tokens into a single group and then a single account
+the total resolution required is 10^(10 + 5 + 18) = 10^33 &lt;&lt; 10</strong>57 (</del> max uint192).</em></p>
+<pre><code class="language-solidity">struct DiscountedBalance {
+    uint192 balance;
+    uint64 lastUpdatedDay;
+}
+</code></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../../src/circles/Circles.sol/contract.Circles.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../../src/circles/DiscountedBalances.sol/contract.DiscountedBalances.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../../src/circles/Circles.sol/contract.Circles.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../../src/circles/DiscountedBalances.sol/contract.DiscountedBalances.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../../elasticlunr.min.js"></script>
+        <script src="../../../mark.min.js"></script>
+        <script src="../../../searcher.js"></script>
+
+        <script src="../../../clipboard.min.js"></script>
+        <script src="../../../highlight.js"></script>
+        <script src="../../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../../../solidity.min.js"></script>
+
+
+    </div>
+    </body>
+</html>

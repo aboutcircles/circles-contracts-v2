@@ -1,0 +1,478 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>ERC1155</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../../favicon.svg">
+        <link rel="shortcut icon" href="../../../favicon.png">
+        <link rel="stylesheet" href="../../../css/variables.css">
+        <link rel="stylesheet" href="../../../css/general.css">
+        <link rel="stylesheet" href="../../../css/chrome.css">
+        <link rel="stylesheet" href="../../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../../highlight.css">
+        <link rel="stylesheet" href="../../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../../book.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item "><a href="../../../index.html">Home</a></li><li class="chapter-item affix "><li class="part-title">src</li><li class="chapter-item expanded "><a href="../../../src/circles/index.html">❱ circles</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/circles/Circles.sol/contract.Circles.html">Circles</a></li><li class="chapter-item "><a href="../../../src/circles/Demurrage.sol/contract.Demurrage.html">Demurrage</a></li><li class="chapter-item "><a href="../../../src/circles/DiscountedBalances.sol/contract.DiscountedBalances.html">DiscountedBalances</a></li><li class="chapter-item expanded "><a href="../../../src/circles/ERC1155.sol/abstract.ERC1155.html" class="active">ERC1155</a></li><li class="chapter-item "><a href="../../../src/circles/ICircles.sol/interface.ICircles.html">ICircles</a></li><li class="chapter-item "><a href="../../../src/circles/IDemurrage.sol/interface.IDemurrage.html">IDemurrage</a></li></ol></li><li class="chapter-item "><a href="../../../src/errors/index.html">❱ errors</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/errors/Errors.sol/interface.IHubErrors.html">IHubErrors</a></li><li class="chapter-item "><a href="../../../src/errors/Errors.sol/interface.ICirclesDemurrageErrors.html">ICirclesDemurrageErrors</a></li><li class="chapter-item "><a href="../../../src/errors/Errors.sol/interface.ICirclesErrors.html">ICirclesErrors</a></li><li class="chapter-item "><a href="../../../src/errors/Errors.sol/interface.IStandardTreasuryErrors.html">IStandardTreasuryErrors</a></li><li class="chapter-item "><a href="../../../src/errors/Errors.sol/interface.INameRegistryErrors.html">INameRegistryErrors</a></li></ol></li><li class="chapter-item "><a href="../../../src/groups/index.html">❱ groups</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/groups/BaseMintPolicy.sol/contract.MintPolicy.html">MintPolicy</a></li><li class="chapter-item "><a href="../../../src/groups/Definitions.sol/contract.BaseMintPolicyDefinitions.html">BaseMintPolicyDefinitions</a></li><li class="chapter-item "><a href="../../../src/groups/IMintPolicy.sol/interface.IMintPolicy.html">IMintPolicy</a></li></ol></li><li class="chapter-item "><a href="../../../src/hub/index.html">❱ hub</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/hub/Hub.sol/contract.Hub.html">Hub</a></li><li class="chapter-item "><a href="../../../src/hub/IHub.sol/interface.IHubV2.html">IHubV2</a></li><li class="chapter-item "><a href="../../../src/hub/TypeDefinitions.sol/contract.TypeDefinitions.html">TypeDefinitions</a></li></ol></li><li class="chapter-item "><a href="../../../src/lib/index.html">❱ lib</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/lib/Math64x64.sol/library.Math64x64.html">Math64x64</a></li></ol></li><li class="chapter-item "><a href="../../../src/lift/index.html">❱ lift</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/lift/DemurrageCircles.sol/contract.DemurrageCircles.html">DemurrageCircles</a></li><li class="chapter-item "><a href="../../../src/lift/EIP712.sol/abstract.EIP712.html">EIP712</a></li><li class="chapter-item "><a href="../../../src/lift/ERC20DiscountedBalances.sol/contract.ERC20DiscountedBalances.html">ERC20DiscountedBalances</a></li><li class="chapter-item "><a href="../../../src/lift/ERC20InflationaryBalances.sol/contract.ERC20InflationaryBalances.html">ERC20InflationaryBalances</a></li><li class="chapter-item "><a href="../../../src/lift/ERC20Lift.sol/contract.ERC20Lift.html">ERC20Lift</a></li><li class="chapter-item "><a href="../../../src/lift/ERC20Permit.sol/contract.ERC20Permit.html">ERC20Permit</a></li><li class="chapter-item "><a href="../../../src/lift/IERC20Lift.sol/enum.CirclesType.html">CirclesType</a></li><li class="chapter-item "><a href="../../../src/lift/IERC20Lift.sol/interface.IERC20Lift.html">IERC20Lift</a></li><li class="chapter-item "><a href="../../../src/lift/InflationaryCircles.sol/contract.InflationaryCircles.html">InflationaryCircles</a></li></ol></li><li class="chapter-item "><a href="../../../src/migration/index.html">❱ migration</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/migration/IHub.sol/interface.IHubV1.html">IHubV1</a></li><li class="chapter-item "><a href="../../../src/migration/IToken.sol/interface.ITokenV1.html">ITokenV1</a></li><li class="chapter-item "><a href="../../../src/migration/Migration.sol/contract.Migration.html">Migration</a></li></ol></li><li class="chapter-item "><a href="../../../src/names/index.html">❱ names</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/names/Base58Converter.sol/contract.Base58Converter.html">Base58Converter</a></li><li class="chapter-item "><a href="../../../src/names/INameRegistry.sol/interface.INameRegistry.html">INameRegistry</a></li><li class="chapter-item "><a href="../../../src/names/NameRegistry.sol/contract.NameRegistry.html">NameRegistry</a></li></ol></li><li class="chapter-item "><a href="../../../src/operators/index.html">❱ operators</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/operators/BaseOperator.sol/contract.BaseOperator.html">BaseOperator</a></li><li class="chapter-item "><a href="../../../src/operators/SignedPathOperator.sol/contract.SignedPathOperator.html">SignedPathOperator</a></li></ol></li><li class="chapter-item "><a href="../../../src/proxy/index.html">❱ proxy</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/proxy/MasterCopyNonUpgradable.sol/contract.MasterCopyNonUpgradable.html">MasterCopyNonUpgradable</a></li><li class="chapter-item "><a href="../../../src/proxy/Proxy.sol/interface.IProxy.html">IProxy</a></li><li class="chapter-item "><a href="../../../src/proxy/Proxy.sol/contract.Proxy.html">Proxy</a></li><li class="chapter-item "><a href="../../../src/proxy/ProxyFactory.sol/contract.ProxyFactory.html">ProxyFactory</a></li></ol></li><li class="chapter-item "><a href="../../../src/treasury/index.html">❱ treasury</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/treasury/IStandardVault.sol/interface.IStandardVault.html">IStandardVault</a></li><li class="chapter-item "><a href="../../../src/treasury/StandardTreasury.sol/contract.StandardTreasury.html">StandardTreasury</a></li><li class="chapter-item "><a href="../../../src/treasury/StandardVault.sol/contract.StandardVault.html">StandardVault</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title"></h1>
+
+                    <div class="right-buttons">
+                        <a href="../../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/aboutcircles/circles-contracts-v2" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="erc1155"><a class="header" href="#erc1155">ERC1155</a></h1>
+<p><a href="https://github.com/aboutcircles/circles-contracts-v2/blob/9fbbffb44eda7934ea8adf9354e5f09f6b15b8b2/src/circles/ERC1155.sol">Git Source</a></p>
+<p><strong>Inherits:</strong>
+<a href="/src/circles/DiscountedBalances.sol/contract.DiscountedBalances.html">DiscountedBalances</a>, Context, ERC165, IERC1155, IERC1155MetadataURI, IERC1155Errors</p>
+<p><em>Implementation of the basic standard multi-token for demurraged and inflationary balances.
+See https://eips.ethereum.org/EIPS/eip-1155
+This code is modified from the open-zeppelin implementation v5.0.0:
+https://github.com/OpenZeppelin/openzeppelin-contracts/
+Originally based on code by Enjin: https://github.com/enjin/erc-1155</em></p>
+<h2 id="state-variables"><a class="header" href="#state-variables">State Variables</a></h2>
+<h3 id="_operatorapprovals"><a class="header" href="#_operatorapprovals">_operatorApprovals</a></h3>
+<pre><code class="language-solidity">mapping(address account =&gt; mapping(address operator =&gt; bool)) private _operatorApprovals;
+</code></pre>
+<h3 id="_uri"><a class="header" href="#_uri">_uri</a></h3>
+<pre><code class="language-solidity">string private _uri;
+</code></pre>
+<h2 id="functions"><a class="header" href="#functions">Functions</a></h2>
+<h3 id="constructor"><a class="header" href="#constructor">constructor</a></h3>
+<p><em>See <a href="/src/circles/ERC1155.sol/abstract.ERC1155.html#_seturi">_setURI</a>.</em></p>
+<pre><code class="language-solidity">constructor(string memory _newuri);
+</code></pre>
+<h3 id="supportsinterface"><a class="header" href="#supportsinterface">supportsInterface</a></h3>
+<p><em>See <a href="/src/treasury/StandardTreasury.sol/contract.StandardTreasury.html#supportsinterface">IERC165-supportsInterface</a>.</em></p>
+<pre><code class="language-solidity">function supportsInterface(bytes4 _interfaceId) public view virtual override(ERC165, IERC165) returns (bool);
+</code></pre>
+<h3 id="uri"><a class="header" href="#uri">uri</a></h3>
+<p><em>See <a href="/lib/openzeppelin-contracts/contracts/token/ERC1155/ERC1155.sol/abstract.ERC1155.html#uri">IERC1155MetadataURI-uri</a>.
+This implementation returns the same URI for <em>all</em> token types. It relies
+on the token type ID substitution mechanism
+https://eips.ethereum.org/EIPS/eip-1155#metadata[defined in the EIP].
+Clients calling this function must replace the <code>\{id\}</code> substring with the
+actual token type ID.</em></p>
+<pre><code class="language-solidity">function uri(uint256) public view virtual returns (string memory);
+</code></pre>
+<h3 id="balanceof"><a class="header" href="#balanceof">balanceOf</a></h3>
+<p><em>See <a href="/src/lift/ERC20DiscountedBalances.sol/contract.ERC20DiscountedBalances.html#balanceof">IERC1155-balanceOf</a>.</em></p>
+<pre><code class="language-solidity">function balanceOf(address _account, uint256 _id) public view returns (uint256);
+</code></pre>
+<h3 id="balanceofbatch"><a class="header" href="#balanceofbatch">balanceOfBatch</a></h3>
+<p>*See <a href="/lib/forge-std/src/interfaces/IERC1155.sol/interface.IERC1155.html#balanceofbatch">IERC1155-balanceOfBatch</a>.
+Requirements:</p>
+<ul>
+<li><code>accounts</code> and <code>ids</code> must have the same length.*</li>
+</ul>
+<pre><code class="language-solidity">function balanceOfBatch(address[] memory _accounts, uint256[] memory _ids) public view returns (uint256[] memory);
+</code></pre>
+<h3 id="setapprovalforall"><a class="header" href="#setapprovalforall">setApprovalForAll</a></h3>
+<p><em>See <a href="/lib/forge-std/src/interfaces/IERC1155.sol/interface.IERC1155.html#setapprovalforall">IERC1155-setApprovalForAll</a>.</em></p>
+<pre><code class="language-solidity">function setApprovalForAll(address _operator, bool _approved) public;
+</code></pre>
+<h3 id="isapprovedforall"><a class="header" href="#isapprovedforall">isApprovedForAll</a></h3>
+<p><em>See <a href="/lib/forge-std/src/interfaces/IERC1155.sol/interface.IERC1155.html#isapprovedforall">IERC1155-isApprovedForAll</a>.</em></p>
+<pre><code class="language-solidity">function isApprovedForAll(address _account, address _operator) public view returns (bool);
+</code></pre>
+<h3 id="safetransferfrom"><a class="header" href="#safetransferfrom">safeTransferFrom</a></h3>
+<p><em>See <a href="/lib/forge-std/src/interfaces/IERC1155.sol/interface.IERC1155.html#safetransferfrom">IERC1155-safeTransferFrom</a>.</em></p>
+<pre><code class="language-solidity">function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes memory _data) public;
+</code></pre>
+<h3 id="safebatchtransferfrom"><a class="header" href="#safebatchtransferfrom">safeBatchTransferFrom</a></h3>
+<p><em>See <a href="/lib/forge-std/src/interfaces/IERC1155.sol/interface.IERC1155.html#safebatchtransferfrom">IERC1155-safeBatchTransferFrom</a>.</em></p>
+<pre><code class="language-solidity">function safeBatchTransferFrom(
+    address _from,
+    address _to,
+    uint256[] memory _ids,
+    uint256[] memory _values,
+    bytes memory _data
+) public virtual;
+</code></pre>
+<h3 id="_update"><a class="header" href="#_update">_update</a></h3>
+<p>*Transfers a <code>value</code> amount of tokens of type <code>id</code> from <code>from</code> to <code>to</code>. Will mint (or burn) if <code>from</code>
+(or <code>to</code>) is the zero address.
+Emits a {TransferSingle} event if the arrays contain one element, and {TransferBatch} otherwise.
+Requirements:</p>
+<ul>
+<li>If <code>to</code> refers to a smart contract, it must implement either {IERC1155Receiver-onERC1155Received}
+or {IERC1155Receiver-onERC1155BatchReceived} and return the acceptance magic value.</li>
+<li><code>ids</code> and <code>values</code> must have the same length.
+NOTE: The ERC-1155 acceptance check is not performed in this function. See {_updateWithAcceptanceCheck} instead.*</li>
+</ul>
+<pre><code class="language-solidity">function _update(address from, address to, uint256[] memory ids, uint256[] memory values) internal virtual;
+</code></pre>
+<h3 id="_updatewithacceptancecheck"><a class="header" href="#_updatewithacceptancecheck">_updateWithAcceptanceCheck</a></h3>
+<p><em>Version of <a href="/src/circles/ERC1155.sol/abstract.ERC1155.html#_update">_update</a> that performs the token acceptance check by calling
+{IERC1155Receiver-onERC1155Received} or {IERC1155Receiver-onERC1155BatchReceived} on the receiver address if it
+contains code (eg. is a smart contract at the moment of execution).
+IMPORTANT: Overriding this function is discouraged because it poses a reentrancy risk from the receiver. So any
+update to the contract state after this function would break the check-effect-interaction pattern. Consider
+overriding {_update} instead.</em></p>
+<pre><code class="language-solidity">function _updateWithAcceptanceCheck(
+    address from,
+    address to,
+    uint256[] memory ids,
+    uint256[] memory values,
+    bytes memory data
+) internal virtual;
+</code></pre>
+<h3 id="_acceptancecheck"><a class="header" href="#_acceptancecheck">_acceptanceCheck</a></h3>
+<p><em>do the ERC1155 token acceptance check to the receiver</em></p>
+<pre><code class="language-solidity">function _acceptanceCheck(
+    address _from,
+    address _to,
+    uint256[] memory _ids,
+    uint256[] memory _values,
+    bytes memory _data
+) internal;
+</code></pre>
+<h3 id="_safetransferfrom"><a class="header" href="#_safetransferfrom">_safeTransferFrom</a></h3>
+<p>*Transfers a <code>value</code> tokens of token type <code>id</code> from <code>from</code> to <code>to</code>.
+Emits a {TransferSingle} event.
+Requirements:</p>
+<ul>
+<li><code>to</code> cannot be the zero address.</li>
+<li><code>from</code> must have a balance of tokens of type <code>id</code> of at least <code>value</code> amount.</li>
+<li>If <code>to</code> refers to a smart contract, it must implement {IERC1155Receiver-onERC1155Received} and return the
+acceptance magic value.*</li>
+</ul>
+<pre><code class="language-solidity">function _safeTransferFrom(address from, address to, uint256 id, uint256 value, bytes memory data) internal;
+</code></pre>
+<h3 id="_safebatchtransferfrom"><a class="header" href="#_safebatchtransferfrom">_safeBatchTransferFrom</a></h3>
+<p>*xref:ROOT:erc1155.adoc#batch-operations[Batched] version of <a href="/src/circles/ERC1155.sol/abstract.ERC1155.html#_safetransferfrom">_safeTransferFrom</a>.
+Emits a {TransferBatch} event.
+Requirements:</p>
+<ul>
+<li>If <code>to</code> refers to a smart contract, it must implement {IERC1155Receiver-onERC1155BatchReceived} and return the
+acceptance magic value.</li>
+<li><code>ids</code> and <code>values</code> must have the same length.*</li>
+</ul>
+<pre><code class="language-solidity">function _safeBatchTransferFrom(
+    address from,
+    address to,
+    uint256[] memory ids,
+    uint256[] memory values,
+    bytes memory data
+) internal;
+</code></pre>
+<h3 id="_seturi"><a class="header" href="#_seturi">_setURI</a></h3>
+<p><em>Sets a new URI for all token types, by relying on the token type ID
+substitution mechanism
+https://eips.ethereum.org/EIPS/eip-1155#metadata[defined in the EIP].
+By this mechanism, any occurrence of the <code>\{id\}</code> substring in either the
+URI or any of the values in the JSON file at said URI will be replaced by
+clients with the token type ID.
+For example, the <code>https://token-cdn-domain/\{id\}.json</code> URI would be
+interpreted by clients as
+<code>https://token-cdn-domain/000000000000000000000000000000000000000000000000000000000004cce0.json</code>
+for token type ID 0x4cce0.
+See <a href="/src/circles/ERC1155.sol/abstract.ERC1155.html#uri">uri</a>.
+Because these URIs cannot be meaningfully represented by the {URI} event,
+this function emits no events.</em></p>
+<pre><code class="language-solidity">function _setURI(string memory _newuri) internal virtual;
+</code></pre>
+<h3 id="_mint"><a class="header" href="#_mint">_mint</a></h3>
+<p>*Creates a <code>value</code> amount of tokens of type <code>id</code>, and assigns them to <code>to</code>.
+Emits a {TransferSingle} event.
+Requirements:</p>
+<ul>
+<li><code>to</code> cannot be the zero address.</li>
+<li>If <code>to</code> refers to a smart contract, it must implement {IERC1155Receiver-onERC1155Received} and return the
+acceptance magic value.*</li>
+</ul>
+<pre><code class="language-solidity">function _mint(address to, uint256 id, uint256 value, bytes memory data) internal;
+</code></pre>
+<h3 id="_burn"><a class="header" href="#_burn">_burn</a></h3>
+<p>*xref:ROOT:erc1155.adoc#batch-operations[Batched] version of <a href="/src/circles/ERC1155.sol/abstract.ERC1155.html#_mint">_mint</a>.
+Emits a {TransferBatch} event.
+Requirements:</p>
+<ul>
+<li><code>ids</code> and <code>values</code> must have the same length.</li>
+<li><code>to</code> cannot be the zero address.</li>
+<li>If <code>to</code> refers to a smart contract, it must implement {IERC1155Receiver-onERC1155BatchReceived} and return the
+acceptance magic value.*</li>
+</ul>
+<p>*Destroys a <code>value</code> amount of tokens of type <code>id</code> from <code>from</code>
+Emits a {TransferSingle} event.
+Requirements:</p>
+<ul>
+<li><code>from</code> cannot be the zero address.</li>
+<li><code>from</code> must have at least <code>value</code> amount of tokens of type <code>id</code>.*</li>
+</ul>
+<pre><code class="language-solidity">function _burn(address from, uint256 id, uint256 value) internal;
+</code></pre>
+<h3 id="_setapprovalforall"><a class="header" href="#_setapprovalforall">_setApprovalForAll</a></h3>
+<p>*xref:ROOT:erc1155.adoc#batch-operations[Batched] version of <a href="/src/circles/ERC1155.sol/abstract.ERC1155.html#_burn">_burn</a>.
+Emits a {TransferBatch} event.
+Requirements:</p>
+<ul>
+<li><code>from</code> cannot be the zero address.</li>
+<li><code>from</code> must have at least <code>value</code> amount of tokens of type <code>id</code>.</li>
+<li><code>ids</code> and <code>values</code> must have the same length.
+//*</li>
+</ul>
+<p>*Approve <code>operator</code> to operate on all of <code>owner</code> tokens
+Emits an {ApprovalForAll} event.
+Requirements:</p>
+<ul>
+<li><code>operator</code> cannot be the zero address.*</li>
+</ul>
+<pre><code class="language-solidity">function _setApprovalForAll(address owner, address operator, bool approved) internal virtual;
+</code></pre>
+<h3 id="_assingletonarrays"><a class="header" href="#_assingletonarrays">_asSingletonArrays</a></h3>
+<p><em>Creates an array in memory with only one value for each of the elements provided.</em></p>
+<pre><code class="language-solidity">function _asSingletonArrays(uint256 element1, uint256 element2)
+    internal
+    pure
+    returns (uint256[] memory array1, uint256[] memory array2);
+</code></pre>
+<h3 id="_dosafetransferacceptancecheck"><a class="header" href="#_dosafetransferacceptancecheck">_doSafeTransferAcceptanceCheck</a></h3>
+<p><em>Performs an acceptance check by calling <a href="/src/treasury/StandardTreasury.sol/contract.StandardTreasury.html#onerc1155received">IERC1155-onERC1155Received</a> on the <code>to</code> address
+if it contains code at the moment of execution.</em></p>
+<pre><code class="language-solidity">function _doSafeTransferAcceptanceCheck(
+    address operator,
+    address from,
+    address to,
+    uint256 id,
+    uint256 value,
+    bytes memory data
+) private;
+</code></pre>
+<h3 id="_dosafebatchtransferacceptancecheck"><a class="header" href="#_dosafebatchtransferacceptancecheck">_doSafeBatchTransferAcceptanceCheck</a></h3>
+<p><em>Performs a batch acceptance check by calling <a href="/src/treasury/StandardTreasury.sol/contract.StandardTreasury.html#onerc1155batchreceived">IERC1155-onERC1155BatchReceived</a> on the <code>to</code> address
+if it contains code at the moment of execution.</em></p>
+<pre><code class="language-solidity">function _doSafeBatchTransferAcceptanceCheck(
+    address operator,
+    address from,
+    address to,
+    uint256[] memory ids,
+    uint256[] memory values,
+    bytes memory data
+) private;
+</code></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../../src/circles/DiscountedBalances.sol/contract.DiscountedBalances.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../../src/circles/ICircles.sol/interface.ICircles.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../../src/circles/DiscountedBalances.sol/contract.DiscountedBalances.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../../src/circles/ICircles.sol/interface.ICircles.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../../elasticlunr.min.js"></script>
+        <script src="../../../mark.min.js"></script>
+        <script src="../../../searcher.js"></script>
+
+        <script src="../../../clipboard.min.js"></script>
+        <script src="../../../highlight.js"></script>
+        <script src="../../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../../../solidity.min.js"></script>
+
+
+    </div>
+    </body>
+</html>
