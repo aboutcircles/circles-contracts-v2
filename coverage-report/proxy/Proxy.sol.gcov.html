@@ -1,0 +1,142 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov_filtered.info - proxy/Proxy.sol</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="title">LCOV - code coverage report</td></tr>
+            <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+            <tr>
+              <td width="100%">
+                <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="10%" class="headerValue"><a href="../index.html" title="Click to go to top-level">top level</a> - <a href="index.html" title="Click to go to directory proxy">proxy</a> - Proxy.sol<span style="font-size: 80%;"> (source / <a href="Proxy.sol.func-c.html" title="Click to go to function table">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="5%"></td>
+            <td width="5%" class="headerCovTableHead">Coverage</td>
+            <td width="5%" class="headerCovTableHead" title="Covered + Uncovered code">Total</td>
+            <td width="5%" class="headerCovTableHead" title="Exercised code only">Hit</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov_filtered.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
+            <td class="headerCovTableEntry">6</td>
+            <td class="headerCovTableEntry">6</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test Date:</td>
+            <td class="headerValue">2024-07-23 17:27:21</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntry">2</td>
+          </tr>
+                  <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+          </table>
+
+          <table cellpadding=0 cellspacing=0 border=0>
+            <tr>
+              <td><br></td>
+            </tr>
+            <tr>
+              <td>
+<pre class="sourceHeading">            Line data    Source code</pre>
+<pre class="source">
+<span id="L1"><span class="lineNum">       1</span>              : // SPDX-License-Identifier: AGPL-3.0-only</span>
+<span id="L2"><span class="lineNum">       2</span>              : // Adapted from https://github.com/gnosis/safe-contracts</span>
+<span id="L3"><span class="lineNum">       3</span>              : pragma solidity &gt;=0.8.4;</span>
+<span id="L4"><span class="lineNum">       4</span>              : </span>
+<span id="L5"><span class="lineNum">       5</span>              : import &quot;../errors/Errors.sol&quot;;</span>
+<span id="L6"><span class="lineNum">       6</span>              : </span>
+<span id="L7"><span class="lineNum">       7</span>              : /// @title IProxy - interface to access master copy of the proxy on-chain</span>
+<span id="L8"><span class="lineNum">       8</span>              : interface IProxy {</span>
+<span id="L9"><span class="lineNum">       9</span>              :     function masterCopy() external view returns (address);</span>
+<span id="L10"><span class="lineNum">      10</span>              : }</span>
+<span id="L11"><span class="lineNum">      11</span>              : </span>
+<span id="L12"><span class="lineNum">      12</span>              : /// @title Proxy - Generic proxy contract allows to execute all transactions</span>
+<span id="L13"><span class="lineNum">      13</span>              : ///        applying the code of a master contract.</span>
+<span id="L14"><span class="lineNum">      14</span>              : /// @author Stefan George - &lt;stefan@gnosis.io&gt;</span>
+<span id="L15"><span class="lineNum">      15</span>              : /// @author Richard Meissner - &lt;richard@gnosis.io&gt;</span>
+<span id="L16"><span class="lineNum">      16</span>              : contract Proxy {</span>
+<span id="L17"><span class="lineNum">      17</span>              :     // masterCopy always needs to be first declared variable,</span>
+<span id="L18"><span class="lineNum">      18</span>              :     // to ensure that it is at the same location in the contracts</span>
+<span id="L19"><span class="lineNum">      19</span>              :     // to which calls are delegated.</span>
+<span id="L20"><span class="lineNum">      20</span>              :     // To reduce deployment costs this variable is internal</span>
+<span id="L21"><span class="lineNum">      21</span>              :     // and needs to be retrieved via `getStorageAt`</span>
+<span id="L22"><span class="lineNum">      22</span>              :     address public masterCopy;</span>
+<span id="L23"><span class="lineNum">      23</span>              : </span>
+<span id="L24"><span class="lineNum">      24</span>              :     /// @dev Constructor function sets address of master copy contract.</span>
+<span id="L25"><span class="lineNum">      25</span>              :     /// @param _masterCopy Master copy address.</span>
+<span id="L26"><span class="lineNum">      26</span>              :     constructor(address _masterCopy) {</span>
+<span id="L27"><span class="lineNum">      27</span> <span class="tlaGNC tlaBgGNC">         162 :         if (_masterCopy == address(0)) {</span></span>
+<span id="L28"><span class="lineNum">      28</span>              :             // Invalid master copy address provided</span>
+<span id="L29"><span class="lineNum">      29</span> <span class="tlaGNC">          48 :             revert();</span></span>
+<span id="L30"><span class="lineNum">      30</span>              :         }</span>
+<span id="L31"><span class="lineNum">      31</span> <span class="tlaGNC">          24 :         masterCopy = _masterCopy;</span></span>
+<span id="L32"><span class="lineNum">      32</span>              :     }</span>
+<span id="L33"><span class="lineNum">      33</span>              : </span>
+<span id="L34"><span class="lineNum">      34</span>              :     // todo: consider removing payable</span>
+<span id="L35"><span class="lineNum">      35</span>              :     fallback() external payable {</span>
+<span id="L36"><span class="lineNum">      36</span> <span class="tlaGNC">         194 :         _fallback();</span></span>
+<span id="L37"><span class="lineNum">      37</span>              :     }</span>
+<span id="L38"><span class="lineNum">      38</span>              : </span>
+<span id="L39"><span class="lineNum">      39</span>              :     receive() external payable {</span>
+<span id="L40"><span class="lineNum">      40</span>              :         _fallback();</span>
+<span id="L41"><span class="lineNum">      41</span>              :     }</span>
+<span id="L42"><span class="lineNum">      42</span>              : </span>
+<span id="L43"><span class="lineNum">      43</span>              :     // -- internal functions</span>
+<span id="L44"><span class="lineNum">      44</span>              : </span>
+<span id="L45"><span class="lineNum">      45</span>              :     /// @dev Fallback function forwards all transactions and</span>
+<span id="L46"><span class="lineNum">      46</span>              :     ///      returns all received return data.</span>
+<span id="L47"><span class="lineNum">      47</span>              :     function _fallback() internal {</span>
+<span id="L48"><span class="lineNum">      48</span>              :         // solhint-disable-next-line no-inline-assembly</span>
+<span id="L49"><span class="lineNum">      49</span>              :         assembly {</span>
+<span id="L50"><span class="lineNum">      50</span>              :             let _singleton := and(sload(0), 0xffffffffffffffffffffffffffffffffffffffff)</span>
+<span id="L51"><span class="lineNum">      51</span>              :             // 0xa619486e == keccak(&quot;masterCopy()&quot;).</span>
+<span id="L52"><span class="lineNum">      52</span>              :             // The value is right padded to 32-bytes with 0s</span>
+<span id="L53"><span class="lineNum">      53</span>              :             // solhint-disable-next-line max-line-length</span>
+<span id="L54"><span class="lineNum">      54</span> <span class="tlaGNC">          97 :             if eq(calldataload(0), 0xa619486e00000000000000000000000000000000000000000000000000000000) {</span></span>
+<span id="L55"><span class="lineNum">      55</span>              :                 mstore(0, _singleton)</span>
+<span id="L56"><span class="lineNum">      56</span>              :                 return(0, 0x20)</span>
+<span id="L57"><span class="lineNum">      57</span>              :             }</span>
+<span id="L58"><span class="lineNum">      58</span>              :             calldatacopy(0, 0, calldatasize())</span>
+<span id="L59"><span class="lineNum">      59</span>              :             // solhint-disable-next-line max-line-length</span>
+<span id="L60"><span class="lineNum">      60</span>              :             let success := delegatecall(gas(), _singleton, 0, calldatasize(), 0, 0)</span>
+<span id="L61"><span class="lineNum">      61</span>              :             returndatacopy(0, 0, returndatasize())</span>
+<span id="L62"><span class="lineNum">      62</span> <span class="tlaGNC">          97 :             if eq(success, 0) { revert(0, returndatasize()) }</span></span>
+<span id="L63"><span class="lineNum">      63</span>              :             return(0, returndatasize())</span>
+<span id="L64"><span class="lineNum">      64</span>              :         }</span>
+<span id="L65"><span class="lineNum">      65</span>              :     }</span>
+<span id="L66"><span class="lineNum">      66</span>              : }</span>
+        </pre>
+              </td>
+            </tr>
+          </table>
+          <br>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+            <tr><td class="versionInfo">Generated by: <a href="https://github.com//linux-test-project/lcov" target="_parent">LCOV version 2.1-1</a></td></tr>
+          </table>
+          <br>
+
+</body>
+</html>
