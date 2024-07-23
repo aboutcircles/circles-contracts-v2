@@ -68,20 +68,51 @@ This Solidity project uses Foundry as a toolkit. If you don't have Foundry insta
     ```
 
 ### Generating Code Coverage Report
-1. To generate the lcov file, run the following command:
-    ```bash
+
+1. **Generate the `lcov` File:**
+    To generate the coverage data in `lcov` format, run the following command:
+    ```sh
     forge coverage --report lcov
     ```
-2. To generate the HTML report from the lcov.info file located in the root directory, use:
-    ```bash
-    genhtml lcov.info --output-directory coverage-report --ignore-errors inconsistent,corrupt
+
+2. **Install `lcov`:**
+    If you don't have `lcov` installed, you can install it using your package manager. Here are the instructions for different operating systems:
+
+    - **macOS (using Homebrew):**
+      ```sh
+      brew install lcov
+      ```
+
+    - **Linux (using apt for Debian/Ubuntu):**
+      ```sh
+      sudo apt-get update
+      sudo apt-get install lcov
+      ```
+
+    - **Linux (using yum for CentOS/Fedora):**
+      ```sh
+      sudo yum install lcov
+      ```
+
+3. **Filter the Coverage Data:**
+    To ensure that only files from the `src` directory are included in the report, filter the coverage data:
+    ```sh
+    lcov --remove lcov.info 'test/*' -o lcov_filtered.info --ignore-errors inconsistent
     ```
-    The HTML report will be generated in the `coverage-report` directory.
-3. To open the HTML report, use:
-    ```bash
+
+4. **Generate the HTML Report:**
+    To create an HTML report from the filtered `lcov` data, use:
+    ```sh
+    genhtml lcov_filtered.info --output-directory coverage-report --ignore-errors inconsistent,corrupt
+    ```
+
+5. **Open the HTML Report:**
+    To view the HTML report, open the generated `index.html` file in your browser:
+    ```sh
     open coverage-report/index.html  # macOS
     xdg-open coverage-report/index.html  # Linux
     ```
+
 
 ### Deploying the contracts
 #### Chiado
