@@ -67,6 +67,22 @@ This Solidity project uses Foundry as a toolkit. If you don't have Foundry insta
     forge snapshot
     ```
 
+### Generating Code Coverage Report
+1. To generate the lcov file, run the following command:
+    ```bash
+    forge coverage --report lcov
+    ```
+2. To generate the HTML report from the lcov.info file located in the root directory, use:
+    ```bash
+    genhtml lcov.info --output-directory coverage-report --ignore-errors inconsistent,corrupt
+    ```
+    The HTML report will be generated in the `coverage-report` directory.
+3. To open the HTML report, use:
+    ```bash
+    open coverage-report/index.html  # macOS
+    xdg-open coverage-report/index.html  # Linux
+    ```
+
 ### Deploying the contracts
 #### Chiado
 To deploy the contracts to the Chiado testnet, run `./chiadoDeploy.sh` and supply a private key and API keys in `.env` file in the root directory (copy `.env.example` and set private information):

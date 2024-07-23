@@ -1,0 +1,145 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - test/setup/HumanRegistration.sol</title>
+  <link rel="stylesheet" type="text/css" href="../../gcov.css">
+</head>
+
+<body>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="title">LCOV - code coverage report</td></tr>
+            <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+
+            <tr>
+              <td width="100%">
+                <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="10%" class="headerValue"><a href="../../index.html" title="Click to go to top-level">top level</a> - <a href="index.html" title="Click to go to directory test/setup">test/setup</a> - HumanRegistration.sol<span style="font-size: 80%;"> (source / <a href="HumanRegistration.sol.func-c.html" title="Click to go to function table">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="5%"></td>
+            <td width="5%" class="headerCovTableHead">Coverage</td>
+            <td width="5%" class="headerCovTableHead" title="Covered + Uncovered code">Total</td>
+            <td width="5%" class="headerCovTableHead" title="Exercised code only">Hit</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntryLo">0.0&nbsp;%</td>
+            <td class="headerCovTableEntry">20</td>
+            <td class="headerCovTableEntry">0</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test Date:</td>
+            <td class="headerValue">2024-07-23 17:11:15</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntryLo">0.0&nbsp;%</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntry">0</td>
+          </tr>
+                  <tr><td><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+          </table>
+
+          <table cellpadding=0 cellspacing=0 border=0>
+            <tr>
+              <td><br></td>
+            </tr>
+            <tr>
+              <td>
+<pre class="sourceHeading">            Line data    Source code</pre>
+<pre class="source">
+<span id="L1"><span class="lineNum">       1</span>              : // SPDX-License-Identifier: AGPL-3.0-only</span>
+<span id="L2"><span class="lineNum">       2</span>              : pragma solidity &gt;=0.8.13;</span>
+<span id="L3"><span class="lineNum">       3</span>              : </span>
+<span id="L4"><span class="lineNum">       4</span>              : import {Test} from &quot;forge-std/Test.sol&quot;;</span>
+<span id="L5"><span class="lineNum">       5</span>              : import {StdCheats} from &quot;forge-std/StdCheats.sol&quot;;</span>
+<span id="L6"><span class="lineNum">       6</span>              : </span>
+<span id="L7"><span class="lineNum">       7</span>              : contract HumanRegistration is Test {</span>
+<span id="L8"><span class="lineNum">       8</span>              :     // Constants</span>
+<span id="L9"><span class="lineNum">       9</span>              :     uint256 public immutable N;</span>
+<span id="L10"><span class="lineNum">      10</span>              : </span>
+<span id="L11"><span class="lineNum">      11</span>              :     // State variables</span>
+<span id="L12"><span class="lineNum">      12</span>              : </span>
+<span id="L13"><span class="lineNum">      13</span>              :     // forgefmt: disable-next-line</span>
+<span id="L14"><span class="lineNum">      14</span>              :     string[50] public avatars = [&quot;Alice&quot;, &quot;Bob&quot;, &quot;Charlie&quot;, &quot;David&quot;, &quot;Eve&quot;, &quot;Frank&quot;, &quot;Grace&quot;, &quot;Hank&quot;, &quot;Ivy&quot;, &quot;Jack&quot;, &quot;Kathy&quot;, &quot;Liam&quot;, &quot;Mia&quot;, &quot;Noah&quot;, &quot;Olivia&quot;, &quot;Parker&quot;, &quot;Quinn&quot;, &quot;Ruby&quot;, &quot;Steve&quot;, &quot;Tina&quot;, &quot;Umar&quot;, &quot;Violet&quot;, &quot;Wes&quot;, &quot;Xena&quot;, &quot;Yale&quot;, &quot;Zara&quot;, &quot;Asher&quot;, &quot;Bella&quot;, &quot;Cody&quot;, &quot;Daisy&quot;, &quot;Edward&quot;, &quot;Fiona&quot;, &quot;George&quot;, &quot;Holly&quot;, &quot;Ian&quot;, &quot;Jenna&quot;, &quot;Kevin&quot;, &quot;Luna&quot;, &quot;Mason&quot;, &quot;Nina&quot;, &quot;Oscar&quot;, &quot;Piper&quot;, &quot;Quincy&quot;, &quot;Rosa&quot;, &quot;Sam&quot;, &quot;Troy&quot;, &quot;Una&quot;, &quot;Victor&quot;, &quot;Wendy&quot;, &quot;Xander&quot;];</span>
+<span id="L15"><span class="lineNum">      15</span>              : </span>
+<span id="L16"><span class="lineNum">      16</span>              :     address[] public addresses;</span>
+<span id="L17"><span class="lineNum">      17</span>              :     address[] public sortedAddresses;</span>
+<span id="L18"><span class="lineNum">      18</span>              :     uint16[] public permutationMap;</span>
+<span id="L19"><span class="lineNum">      19</span>              :     uint16[] public lookupMap;</span>
+<span id="L20"><span class="lineNum">      20</span>              : </span>
+<span id="L21"><span class="lineNum">      21</span>              :     // Public functions</span>
+<span id="L22"><span class="lineNum">      22</span>              : </span>
+<span id="L23"><span class="lineNum">      23</span>              :     constructor(uint16 _n) {</span>
+<span id="L24"><span class="lineNum">      24</span> <span class="tlaUNC tlaBgUNC">           0 :         require(_n &lt;= 50, &quot;N must be less than or equal to 50&quot;);</span></span>
+<span id="L25"><span class="lineNum">      25</span> <span class="tlaUNC">           0 :         N = _n;</span></span>
+<span id="L26"><span class="lineNum">      26</span> <span class="tlaUNC">           0 :         addresses = new address[](N);</span></span>
+<span id="L27"><span class="lineNum">      27</span> <span class="tlaUNC">           0 :         sortedAddresses = new address[](N);</span></span>
+<span id="L28"><span class="lineNum">      28</span> <span class="tlaUNC">           0 :         permutationMap = new uint16[](N);</span></span>
+<span id="L29"><span class="lineNum">      29</span> <span class="tlaUNC">           0 :         lookupMap = new uint16[](N);</span></span>
+<span id="L30"><span class="lineNum">      30</span> <span class="tlaUNC">           0 :         for (uint256 i = 0; i &lt; N; i++) {</span></span>
+<span id="L31"><span class="lineNum">      31</span> <span class="tlaUNC">           0 :             addresses[i] = makeAddr(avatars[i]);</span></span>
+<span id="L32"><span class="lineNum">      32</span>              :         }</span>
+<span id="L33"><span class="lineNum">      33</span> <span class="tlaUNC">           0 :         sortAddressesWithPermutationMap();</span></span>
+<span id="L34"><span class="lineNum">      34</span>              :     }</span>
+<span id="L35"><span class="lineNum">      35</span>              : </span>
+<span id="L36"><span class="lineNum">      36</span>              :     // Private functions</span>
+<span id="L37"><span class="lineNum">      37</span>              : </span>
+<span id="L38"><span class="lineNum">      38</span>              :     /**</span>
+<span id="L39"><span class="lineNum">      39</span>              :      * @dev Sorts an array of addresses in ascending order using Bubble Sort</span>
+<span id="L40"><span class="lineNum">      40</span>              :      *      and returns the permutation map. This is not meant to be an efficient sort,</span>
+<span id="L41"><span class="lineNum">      41</span>              :      *      rather the simplest implementation for transparancy of the test.</span>
+<span id="L42"><span class="lineNum">      42</span>              :      */</span>
+<span id="L43"><span class="lineNum">      43</span>              :     function sortAddressesWithPermutationMap() private {</span>
+<span id="L44"><span class="lineNum">      44</span> <span class="tlaUNC">           0 :         uint256 length = addresses.length;</span></span>
+<span id="L45"><span class="lineNum">      45</span> <span class="tlaUNC">           0 :         sortedAddresses = addresses;</span></span>
+<span id="L46"><span class="lineNum">      46</span>              : </span>
+<span id="L47"><span class="lineNum">      47</span>              :         // Initialize the permutation map with original indices</span>
+<span id="L48"><span class="lineNum">      48</span> <span class="tlaUNC">           0 :         for (uint16 i = 0; i &lt; length; i++) {</span></span>
+<span id="L49"><span class="lineNum">      49</span> <span class="tlaUNC">           0 :             permutationMap[i] = i;</span></span>
+<span id="L50"><span class="lineNum">      50</span>              :         }</span>
+<span id="L51"><span class="lineNum">      51</span>              : </span>
+<span id="L52"><span class="lineNum">      52</span>              :         // Bubble sort the array and the permutation map</span>
+<span id="L53"><span class="lineNum">      53</span> <span class="tlaUNC">           0 :         for (uint256 i = 0; i &lt; length; i++) {</span></span>
+<span id="L54"><span class="lineNum">      54</span> <span class="tlaUNC">           0 :             for (uint256 j = 0; j &lt; length - i - 1; j++) {</span></span>
+<span id="L55"><span class="lineNum">      55</span> <span class="tlaUNC">           0 :                 if (sortedAddresses[j] &gt; sortedAddresses[j + 1]) {</span></span>
+<span id="L56"><span class="lineNum">      56</span>              :                     // Swap elements in the address array</span>
+<span id="L57"><span class="lineNum">      57</span> <span class="tlaUNC">           0 :                     (sortedAddresses[j], sortedAddresses[j + 1]) = (sortedAddresses[j + 1], sortedAddresses[j]);</span></span>
+<span id="L58"><span class="lineNum">      58</span>              :                     // Swap corresponding elements in the permutation map</span>
+<span id="L59"><span class="lineNum">      59</span> <span class="tlaUNC">           0 :                     (permutationMap[j], permutationMap[j + 1]) = (permutationMap[j + 1], permutationMap[j]);</span></span>
+<span id="L60"><span class="lineNum">      60</span>              :                 }</span>
+<span id="L61"><span class="lineNum">      61</span>              :             }</span>
+<span id="L62"><span class="lineNum">      62</span>              :         }</span>
+<span id="L63"><span class="lineNum">      63</span>              : </span>
+<span id="L64"><span class="lineNum">      64</span>              :         // Create a lookup map for the sorted addresses</span>
+<span id="L65"><span class="lineNum">      65</span> <span class="tlaUNC">           0 :         for (uint16 i = 0; i &lt; length; i++) {</span></span>
+<span id="L66"><span class="lineNum">      66</span> <span class="tlaUNC">           0 :             lookupMap[permutationMap[i]] = i;</span></span>
+<span id="L67"><span class="lineNum">      67</span>              :         }</span>
+<span id="L68"><span class="lineNum">      68</span>              :     }</span>
+<span id="L69"><span class="lineNum">      69</span>              : }</span>
+        </pre>
+              </td>
+            </tr>
+          </table>
+          <br>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+            <tr><td class="versionInfo">Generated by: <a href="https://github.com//linux-test-project/lcov" target="_parent">LCOV version 2.1-1</a></td></tr>
+          </table>
+          <br>
+
+</body>
+</html>
