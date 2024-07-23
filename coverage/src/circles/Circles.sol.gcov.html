@@ -1,0 +1,333 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - src/circles/Circles.sol</title>
+  <link rel="stylesheet" type="text/css" href="../../gcov.css">
+</head>
+
+<body>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="title">LCOV - code coverage report</td></tr>
+            <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+
+            <tr>
+              <td width="100%">
+                <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="10%" class="headerValue"><a href="../../index.html" title="Click to go to top-level">top level</a> - <a href="index.html" title="Click to go to directory src/circles">src/circles</a> - Circles.sol<span style="font-size: 80%;"> (source / <a href="Circles.sol.func-c.html" title="Click to go to function table">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="5%"></td>
+            <td width="5%" class="headerCovTableHead">Coverage</td>
+            <td width="5%" class="headerCovTableHead" title="Covered + Uncovered code">Total</td>
+            <td width="5%" class="headerCovTableHead" title="Exercised code only">Hit</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntryLo">56.0&nbsp;%</td>
+            <td class="headerCovTableEntry">50</td>
+            <td class="headerCovTableEntry">28</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test Date:</td>
+            <td class="headerValue">2024-07-23 12:20:46</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntryLo">55.6&nbsp;%</td>
+            <td class="headerCovTableEntry">9</td>
+            <td class="headerCovTableEntry">5</td>
+          </tr>
+                  <tr><td><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+          </table>
+
+          <table cellpadding=0 cellspacing=0 border=0>
+            <tr>
+              <td><br></td>
+            </tr>
+            <tr>
+              <td>
+<pre class="sourceHeading">            Line data    Source code</pre>
+<pre class="source">
+<span id="L1"><span class="lineNum">       1</span>              : // SPDX-License-Identifier: AGPL-3.0-only</span>
+<span id="L2"><span class="lineNum">       2</span>              : pragma solidity &gt;=0.8.24;</span>
+<span id="L3"><span class="lineNum">       3</span>              : </span>
+<span id="L4"><span class="lineNum">       4</span>              : import &quot;../errors/Errors.sol&quot;;</span>
+<span id="L5"><span class="lineNum">       5</span>              : import &quot;../lib/Math64x64.sol&quot;;</span>
+<span id="L6"><span class="lineNum">       6</span>              : import &quot;./ERC1155.sol&quot;;</span>
+<span id="L7"><span class="lineNum">       7</span>              : </span>
+<span id="L8"><span class="lineNum">       8</span>              : contract Circles is ERC1155, ICirclesErrors {</span>
+<span id="L9"><span class="lineNum">       9</span>              :     // Type declarations</span>
+<span id="L10"><span class="lineNum">      10</span>              : </span>
+<span id="L11"><span class="lineNum">      11</span>              :     /**</span>
+<span id="L12"><span class="lineNum">      12</span>              :      * @notice MintTime struct stores the last mint time,</span>
+<span id="L13"><span class="lineNum">      13</span>              :      * and the status of a connected v1 Circles contract.</span>
+<span id="L14"><span class="lineNum">      14</span>              :      * @dev This is used to store the last mint time for each avatar,</span>
+<span id="L15"><span class="lineNum">      15</span>              :      * and the address is used as a status for the connected v1 Circles contract.</span>
+<span id="L16"><span class="lineNum">      16</span>              :      * The address is kept at zero address if the avatar is not registered in Hub v1.</span>
+<span id="L17"><span class="lineNum">      17</span>              :      * If the avatar is registered in Hub v1, but the associated Circles ERC20 contract</span>
+<span id="L18"><span class="lineNum">      18</span>              :      * has not been stopped, then the address is set to that v1 Circles contract address.</span>
+<span id="L19"><span class="lineNum">      19</span>              :      * Once the Circles v1 contract has been stopped, the address is set to 0x01.</span>
+<span id="L20"><span class="lineNum">      20</span>              :      * At every observed transition of the status of the v1 Circles contract,</span>
+<span id="L21"><span class="lineNum">      21</span>              :      * the lastMintTime will be updated to the current timestamp to avoid possible</span>
+<span id="L22"><span class="lineNum">      22</span>              :      * overlap of the mint between Hub v1 and Hub v2.</span>
+<span id="L23"><span class="lineNum">      23</span>              :      */</span>
+<span id="L24"><span class="lineNum">      24</span>              :     struct MintTime {</span>
+<span id="L25"><span class="lineNum">      25</span>              :         address mintV1Status;</span>
+<span id="L26"><span class="lineNum">      26</span>              :         uint96 lastMintTime;</span>
+<span id="L27"><span class="lineNum">      27</span>              :     }</span>
+<span id="L28"><span class="lineNum">      28</span>              : </span>
+<span id="L29"><span class="lineNum">      29</span>              :     // Constants</span>
+<span id="L30"><span class="lineNum">      30</span>              : </span>
+<span id="L31"><span class="lineNum">      31</span>              :     /**</span>
+<span id="L32"><span class="lineNum">      32</span>              :      * @notice Issue one Circle per hour for each human in demurraged units.</span>
+<span id="L33"><span class="lineNum">      33</span>              :      * So per second issue 10**18 / 3600 = 277777777777778 attoCircles.</span>
+<span id="L34"><span class="lineNum">      34</span>              :      */</span>
+<span id="L35"><span class="lineNum">      35</span>              :     uint256 private constant ISSUANCE_PER_SECOND = uint256(277777777777778);</span>
+<span id="L36"><span class="lineNum">      36</span>              : </span>
+<span id="L37"><span class="lineNum">      37</span>              :     /**</span>
+<span id="L38"><span class="lineNum">      38</span>              :      * @notice Upon claiming, the maximum claim is upto two weeks</span>
+<span id="L39"><span class="lineNum">      39</span>              :      * of history. Unclaimed older Circles are unclaimable.</span>
+<span id="L40"><span class="lineNum">      40</span>              :      */</span>
+<span id="L41"><span class="lineNum">      41</span>              :     uint256 private constant MAX_CLAIM_DURATION = 2 weeks;</span>
+<span id="L42"><span class="lineNum">      42</span>              : </span>
+<span id="L43"><span class="lineNum">      43</span>              :     /**</span>
+<span id="L44"><span class="lineNum">      44</span>              :      * @dev Address used to indicate that the associated v1 Circles contract has been stopped.</span>
+<span id="L45"><span class="lineNum">      45</span>              :      */</span>
+<span id="L46"><span class="lineNum">      46</span>              :     address internal constant CIRCLES_STOPPED_V1 = address(0x1);</span>
+<span id="L47"><span class="lineNum">      47</span>              : </span>
+<span id="L48"><span class="lineNum">      48</span>              :     /**</span>
+<span id="L49"><span class="lineNum">      49</span>              :      * @notice Indefinite future, or approximated with uint96.max</span>
+<span id="L50"><span class="lineNum">      50</span>              :      */</span>
+<span id="L51"><span class="lineNum">      51</span>              :     uint96 internal constant INDEFINITE_FUTURE = type(uint96).max;</span>
+<span id="L52"><span class="lineNum">      52</span>              : </span>
+<span id="L53"><span class="lineNum">      53</span>              :     // State variables</span>
+<span id="L54"><span class="lineNum">      54</span>              : </span>
+<span id="L55"><span class="lineNum">      55</span>              :     /**</span>
+<span id="L56"><span class="lineNum">      56</span>              :      * @notice The mapping of avatar addresses to the last mint time,</span>
+<span id="L57"><span class="lineNum">      57</span>              :      * and the status of the v1 Circles minting.</span>
+<span id="L58"><span class="lineNum">      58</span>              :      * @dev This is used to store the last mint time for each avatar.</span>
+<span id="L59"><span class="lineNum">      59</span>              :      */</span>
+<span id="L60"><span class="lineNum">      60</span>              :     mapping(address =&gt; MintTime) internal mintTimes;</span>
+<span id="L61"><span class="lineNum">      61</span>              : </span>
+<span id="L62"><span class="lineNum">      62</span>              :     // Events</span>
+<span id="L63"><span class="lineNum">      63</span>              : </span>
+<span id="L64"><span class="lineNum">      64</span>              :     event PersonalMint(address indexed human, uint256 amount, uint256 startPeriod, uint256 endPeriod);</span>
+<span id="L65"><span class="lineNum">      65</span>              : </span>
+<span id="L66"><span class="lineNum">      66</span>              :     // Constructor</span>
+<span id="L67"><span class="lineNum">      67</span>              : </span>
+<span id="L68"><span class="lineNum">      68</span>              :     /**</span>
+<span id="L69"><span class="lineNum">      69</span>              :      * Constructor to create a Circles ERC1155 contract with demurrage.</span>
+<span id="L70"><span class="lineNum">      70</span>              :      * @param _inflation_day_zero Inflation day zero stores the start of the global inflation curve</span>
+<span id="L71"><span class="lineNum">      71</span>              :      * @param _uri uri for the Circles metadata</span>
+<span id="L72"><span class="lineNum">      72</span>              :      */</span>
+<span id="L73"><span class="lineNum">      73</span>              :     constructor(uint256 _inflation_day_zero, string memory _uri)</span>
+<span id="L74"><span class="lineNum">      74</span>              :         ERC1155(_uri)</span>
+<span id="L75"><span class="lineNum">      75</span>              :         DiscountedBalances(_inflation_day_zero)</span>
+<span id="L76"><span class="lineNum">      76</span>              :     {}</span>
+<span id="L77"><span class="lineNum">      77</span>              : </span>
+<span id="L78"><span class="lineNum">      78</span>              :     // Public functions</span>
+<span id="L79"><span class="lineNum">      79</span>              : </span>
+<span id="L80"><span class="lineNum">      80</span>              :     /**</span>
+<span id="L81"><span class="lineNum">      81</span>              :      * @notice Calculate the demurraged issuance for a human's avatar.</span>
+<span id="L82"><span class="lineNum">      82</span>              :      * @param _human Address of the human's avatar to calculate the issuance for.</span>
+<span id="L83"><span class="lineNum">      83</span>              :      * @return issuance The issuance in attoCircles.</span>
+<span id="L84"><span class="lineNum">      84</span>              :      * @return startPeriod The start of the claimable period.</span>
+<span id="L85"><span class="lineNum">      85</span>              :      * @return endPeriod The end of the claimable period.</span>
+<span id="L86"><span class="lineNum">      86</span>              :      */</span>
+<span id="L87"><span class="lineNum">      87</span>              :     function calculateIssuance(address _human) public view returns (uint256, uint256, uint256) {</span>
+<span id="L88"><span class="lineNum">      88</span> <span class="tlaGNC tlaBgGNC">        1236 :         MintTime storage mintTime = mintTimes[_human];</span></span>
+<span id="L89"><span class="lineNum">      89</span> <span class="tlaGNC">        2477 :         if (mintTime.mintV1Status != address(0) &amp;&amp; mintTime.mintV1Status != CIRCLES_STOPPED_V1) {</span></span>
+<span id="L90"><span class="lineNum">      90</span>              :             // Circles v1 contract cannot be active.</span>
+<span id="L91"><span class="lineNum">      91</span> <span class="tlaGNC">           4 :             revert CirclesERC1155MintBlocked(_human, mintTime.mintV1Status);</span></span>
+<span id="L92"><span class="lineNum">      92</span>              :         }</span>
+<span id="L93"><span class="lineNum">      93</span>              : </span>
+<span id="L94"><span class="lineNum">      94</span> <span class="tlaGNC">        2464 :         if (uint256(mintTime.lastMintTime) + 1 hours &gt; block.timestamp) {</span></span>
+<span id="L95"><span class="lineNum">      95</span>              :             // Mint time is set to indefinite future for stopped mints in v2</span>
+<span id="L96"><span class="lineNum">      96</span>              :             // and only complete hours get minted, so shortcut the calculation</span>
+<span id="L97"><span class="lineNum">      97</span> <span class="tlaGNC">         226 :             return (0, 0, 0);</span></span>
+<span id="L98"><span class="lineNum">      98</span>              :         }</span>
+<span id="L99"><span class="lineNum">      99</span>              : </span>
+<span id="L100"><span class="lineNum">     100</span>              :         // calculate the start of the claimable period</span>
+<span id="L101"><span class="lineNum">     101</span> <span class="tlaGNC">        1509 :         uint256 startMint = _max(block.timestamp - MAX_CLAIM_DURATION, mintTime.lastMintTime);</span></span>
+<span id="L102"><span class="lineNum">     102</span>              : </span>
+<span id="L103"><span class="lineNum">     103</span>              :         // day of start of mint, dA</span>
+<span id="L104"><span class="lineNum">     104</span> <span class="tlaGNC">        1509 :         uint256 dA = uint256(day(startMint));</span></span>
+<span id="L105"><span class="lineNum">     105</span>              : </span>
+<span id="L106"><span class="lineNum">     106</span>              :         // day of current block, dB</span>
+<span id="L107"><span class="lineNum">     107</span> <span class="tlaGNC">        1509 :         uint256 dB = uint256(day(block.timestamp));</span></span>
+<span id="L108"><span class="lineNum">     108</span>              : </span>
+<span id="L109"><span class="lineNum">     109</span>              :         // the difference of days between dB and dA used for the table lookups</span>
+<span id="L110"><span class="lineNum">     110</span> <span class="tlaGNC">        1509 :         uint256 n = dB - dA;</span></span>
+<span id="L111"><span class="lineNum">     111</span>              : </span>
+<span id="L112"><span class="lineNum">     112</span>              :         // calculate the number of completed hours in day A until `startMint`</span>
+<span id="L113"><span class="lineNum">     113</span> <span class="tlaGNC">        1509 :         int128 k = Math64x64.fromUInt((startMint - (dA * 1 days + inflationDayZero)) / 1 hours);</span></span>
+<span id="L114"><span class="lineNum">     114</span>              : </span>
+<span id="L115"><span class="lineNum">     115</span>              :         // Calculate the number of incompleted hours remaining in day B from current timestamp</span>
+<span id="L116"><span class="lineNum">     116</span> <span class="tlaGNC">        1509 :         int128 l = Math64x64.fromUInt(((dB + 1) * 1 days + inflationDayZero - block.timestamp) / 1 hours + 1);</span></span>
+<span id="L117"><span class="lineNum">     117</span>              : </span>
+<span id="L118"><span class="lineNum">     118</span>              :         // calculate the overcounted (demurraged) k (in day A) and l (in day B) hours</span>
+<span id="L119"><span class="lineNum">     119</span> <span class="tlaGNC">        1509 :         int128 overcount = Math64x64.add(Math64x64.mul(R[n], k), l);</span></span>
+<span id="L120"><span class="lineNum">     120</span>              : </span>
+<span id="L121"><span class="lineNum">     121</span>              :         // subtract the overcount from the total issuance, and convert to attoCircles</span>
+<span id="L122"><span class="lineNum">     122</span> <span class="tlaGNC">        1006 :         return (</span></span>
+<span id="L123"><span class="lineNum">     123</span>              :             Math64x64.mulu(Math64x64.sub(T[n], overcount), EXA),</span>
+<span id="L124"><span class="lineNum">     124</span>              :             // start of the claimable period</span>
+<span id="L125"><span class="lineNum">     125</span>              :             inflationDayZero + dA * 1 days + Math64x64.mulu(k, 1 hours),</span>
+<span id="L126"><span class="lineNum">     126</span>              :             // end of the claimable period</span>
+<span id="L127"><span class="lineNum">     127</span>              :             inflationDayZero + dB * 1 days + 1 days - Math64x64.mulu(l, 1 hours)</span>
+<span id="L128"><span class="lineNum">     128</span>              :         );</span>
+<span id="L129"><span class="lineNum">     129</span>              :     }</span>
+<span id="L130"><span class="lineNum">     130</span>              : </span>
+<span id="L131"><span class="lineNum">     131</span>              :     /**</span>
+<span id="L132"><span class="lineNum">     132</span>              :      * Inflationary balance of an account for a Circles identifier. Careful,</span>
+<span id="L133"><span class="lineNum">     133</span>              :      * calculating the inflationary balance can introduce numerical errors</span>
+<span id="L134"><span class="lineNum">     134</span>              :      * in the least significant digits (order of few attoCircles).</span>
+<span id="L135"><span class="lineNum">     135</span>              :      * @param _account Address for which the balance is queried.</span>
+<span id="L136"><span class="lineNum">     136</span>              :      * @param _id Circles identifier for which the balance is queried.</span>
+<span id="L137"><span class="lineNum">     137</span>              :      */</span>
+<span id="L138"><span class="lineNum">     138</span>              :     function inflationaryBalanceOf(address _account, uint256 _id) public view returns (uint256) {</span>
+<span id="L139"><span class="lineNum">     139</span> <span class="tlaUNC tlaBgUNC">           0 :         return _inflationaryBalanceOf(_account, _id);</span></span>
+<span id="L140"><span class="lineNum">     140</span>              :     }</span>
+<span id="L141"><span class="lineNum">     141</span>              : </span>
+<span id="L142"><span class="lineNum">     142</span>              :     /**</span>
+<span id="L143"><span class="lineNum">     143</span>              :      * @notice safeInflationaryTransferFrom transfers Circles from one address to another by specifying inflationary units.</span>
+<span id="L144"><span class="lineNum">     144</span>              :      * @param _from Address from which the Circles are transferred.</span>
+<span id="L145"><span class="lineNum">     145</span>              :      * @param _to Address to which the Circles are transferred.</span>
+<span id="L146"><span class="lineNum">     146</span>              :      * @param _id Circles indentifier for which the Circles are transferred.</span>
+<span id="L147"><span class="lineNum">     147</span>              :      * @param _inflationaryValue Inflationary value of the Circles transferred.</span>
+<span id="L148"><span class="lineNum">     148</span>              :      * @param _data Data to pass to the receiver.</span>
+<span id="L149"><span class="lineNum">     149</span>              :      */</span>
+<span id="L150"><span class="lineNum">     150</span>              :     function safeInflationaryTransferFrom(</span>
+<span id="L151"><span class="lineNum">     151</span>              :         address _from,</span>
+<span id="L152"><span class="lineNum">     152</span>              :         address _to,</span>
+<span id="L153"><span class="lineNum">     153</span>              :         uint256 _id,</span>
+<span id="L154"><span class="lineNum">     154</span>              :         uint256 _inflationaryValue,</span>
+<span id="L155"><span class="lineNum">     155</span>              :         bytes memory _data</span>
+<span id="L156"><span class="lineNum">     156</span>              :     ) public {</span>
+<span id="L157"><span class="lineNum">     157</span> <span class="tlaUNC">           0 :         address sender = _msgSender();</span></span>
+<span id="L158"><span class="lineNum">     158</span> <span class="tlaUNC">           0 :         if (_from != sender &amp;&amp; !isApprovedForAll(_from, sender)) {</span></span>
+<span id="L159"><span class="lineNum">     159</span> <span class="tlaUNC">           0 :             revert ERC1155MissingApprovalForAll(sender, _from);</span></span>
+<span id="L160"><span class="lineNum">     160</span>              :         }</span>
+<span id="L161"><span class="lineNum">     161</span>              :         // convert inflationary value to todays demurrage value</span>
+<span id="L162"><span class="lineNum">     162</span> <span class="tlaUNC">           0 :         uint256 value = convertInflationaryToDemurrageValue(_inflationaryValue, day(block.timestamp));</span></span>
+<span id="L163"><span class="lineNum">     163</span> <span class="tlaUNC">           0 :         _safeTransferFrom(_from, _to, _id, value, _data);</span></span>
+<span id="L164"><span class="lineNum">     164</span>              :     }</span>
+<span id="L165"><span class="lineNum">     165</span>              : </span>
+<span id="L166"><span class="lineNum">     166</span>              :     /**</span>
+<span id="L167"><span class="lineNum">     167</span>              :      * @notice safeInflationaryBatchTransferFrom transfers Circles from one address to another by specifying inflationary units.</span>
+<span id="L168"><span class="lineNum">     168</span>              :      * @param _from Address from which the Circles are transferred.</span>
+<span id="L169"><span class="lineNum">     169</span>              :      * @param _to Address to which the Circles are transferred.</span>
+<span id="L170"><span class="lineNum">     170</span>              :      * @param _ids Batch of Circles identifiers for which the Circles are transferred.</span>
+<span id="L171"><span class="lineNum">     171</span>              :      * @param _inflationaryValues Batch of inflationary values of the Circles transferred.</span>
+<span id="L172"><span class="lineNum">     172</span>              :      * @param _data Data to pass to the receiver.</span>
+<span id="L173"><span class="lineNum">     173</span>              :      */</span>
+<span id="L174"><span class="lineNum">     174</span>              :     function safeInflationaryBatchTransferFrom(</span>
+<span id="L175"><span class="lineNum">     175</span>              :         address _from,</span>
+<span id="L176"><span class="lineNum">     176</span>              :         address _to,</span>
+<span id="L177"><span class="lineNum">     177</span>              :         uint256[] memory _ids,</span>
+<span id="L178"><span class="lineNum">     178</span>              :         uint256[] memory _inflationaryValues,</span>
+<span id="L179"><span class="lineNum">     179</span>              :         bytes memory _data</span>
+<span id="L180"><span class="lineNum">     180</span>              :     ) public {</span>
+<span id="L181"><span class="lineNum">     181</span> <span class="tlaUNC">           0 :         address sender = _msgSender();</span></span>
+<span id="L182"><span class="lineNum">     182</span> <span class="tlaUNC">           0 :         if (_from != sender &amp;&amp; !isApprovedForAll(_from, sender)) {</span></span>
+<span id="L183"><span class="lineNum">     183</span> <span class="tlaUNC">           0 :             revert ERC1155MissingApprovalForAll(sender, _from);</span></span>
+<span id="L184"><span class="lineNum">     184</span>              :         }</span>
+<span id="L185"><span class="lineNum">     185</span> <span class="tlaUNC">           0 :         uint64 today = day(block.timestamp);</span></span>
+<span id="L186"><span class="lineNum">     186</span> <span class="tlaUNC">           0 :         uint256[] memory values = convertBatchInflationaryToDemurrageValues(_inflationaryValues, today);</span></span>
+<span id="L187"><span class="lineNum">     187</span> <span class="tlaUNC">           0 :         _safeBatchTransferFrom(_from, _to, _ids, values, _data);</span></span>
+<span id="L188"><span class="lineNum">     188</span>              :     }</span>
+<span id="L189"><span class="lineNum">     189</span>              : </span>
+<span id="L190"><span class="lineNum">     190</span>              :     // Internal functions</span>
+<span id="L191"><span class="lineNum">     191</span>              : </span>
+<span id="L192"><span class="lineNum">     192</span>              :     /**</span>
+<span id="L193"><span class="lineNum">     193</span>              :      * @notice Claim issuance for a human's avatar and update the last mint time.</span>
+<span id="L194"><span class="lineNum">     194</span>              :      * @param _human Address of the human's avatar to claim the issuance for.</span>
+<span id="L195"><span class="lineNum">     195</span>              :      */</span>
+<span id="L196"><span class="lineNum">     196</span>              :     function _claimIssuance(address _human) internal {</span>
+<span id="L197"><span class="lineNum">     197</span> <span class="tlaGNC tlaBgGNC">        1212 :         (uint256 issuance, uint256 startPeriod, uint256 endPeriod) = calculateIssuance(_human);</span></span>
+<span id="L198"><span class="lineNum">     198</span> <span class="tlaGNC">         806 :         if (issuance == 0) {</span></span>
+<span id="L199"><span class="lineNum">     199</span>              :             // No issuance to claim, simply return without reverting</span>
+<span id="L200"><span class="lineNum">     200</span> <span class="tlaGNC">           2 :             return;</span></span>
+<span id="L201"><span class="lineNum">     201</span>              :         }</span>
+<span id="L202"><span class="lineNum">     202</span>              :         // mint personal Circles to the human</span>
+<span id="L203"><span class="lineNum">     203</span> <span class="tlaGNC">         804 :         _mintAndUpdateTotalSupply(_human, toTokenId(_human), issuance, &quot;&quot;);</span></span>
+<span id="L204"><span class="lineNum">     204</span>              :         // update the last mint time</span>
+<span id="L205"><span class="lineNum">     205</span> <span class="tlaGNC">         804 :         mintTimes[_human].lastMintTime = uint96(block.timestamp);</span></span>
+<span id="L206"><span class="lineNum">     206</span>              : </span>
+<span id="L207"><span class="lineNum">     207</span> <span class="tlaGNC">         804 :         emit PersonalMint(_human, issuance, startPeriod, endPeriod);</span></span>
+<span id="L208"><span class="lineNum">     208</span>              :     }</span>
+<span id="L209"><span class="lineNum">     209</span>              : </span>
+<span id="L210"><span class="lineNum">     210</span>              :     function _mintAndUpdateTotalSupply(address _account, uint256 _id, uint256 _value, bytes memory _data) internal {</span>
+<span id="L211"><span class="lineNum">     211</span> <span class="tlaGNC">         938 :         _mint(_account, _id, _value, _data);</span></span>
+<span id="L212"><span class="lineNum">     212</span>              : </span>
+<span id="L213"><span class="lineNum">     213</span> <span class="tlaGNC">        1407 :         uint64 today = day(block.timestamp);</span></span>
+<span id="L214"><span class="lineNum">     214</span> <span class="tlaGNC">         938 :         DiscountedBalance storage totalSupplyBalance = discountedTotalSupplies[_id];</span></span>
+<span id="L215"><span class="lineNum">     215</span> <span class="tlaGNC">         938 :         uint256 newTotalSupply =</span></span>
+<span id="L216"><span class="lineNum">     216</span> <span class="tlaGNC">        1407 :             _calculateDiscountedBalance(totalSupplyBalance.balance, today - totalSupplyBalance.lastUpdatedDay) + _value;</span></span>
+<span id="L217"><span class="lineNum">     217</span> <span class="tlaGNC">         938 :         if (newTotalSupply &gt; MAX_VALUE) {</span></span>
+<span id="L218"><span class="lineNum">     218</span>              :             // DiscountedBalances: balance exceeds maximum value</span>
+<span id="L219"><span class="lineNum">     219</span> <span class="tlaUNC tlaBgUNC">           0 :             revert CirclesDemurrageAmountExceedsMaxUint190(_account, _id, newTotalSupply, 2);</span></span>
+<span id="L220"><span class="lineNum">     220</span>              :         }</span>
+<span id="L221"><span class="lineNum">     221</span> <span class="tlaGNC tlaBgGNC">         938 :         totalSupplyBalance.balance = uint192(newTotalSupply);</span></span>
+<span id="L222"><span class="lineNum">     222</span> <span class="tlaGNC">         938 :         totalSupplyBalance.lastUpdatedDay = today;</span></span>
+<span id="L223"><span class="lineNum">     223</span>              :     }</span>
+<span id="L224"><span class="lineNum">     224</span>              : </span>
+<span id="L225"><span class="lineNum">     225</span>              :     function _burnAndUpdateTotalSupply(address _account, uint256 _id, uint256 _value) internal {</span>
+<span id="L226"><span class="lineNum">     226</span>              :         // _update will discount the balance before subtracting the value</span>
+<span id="L227"><span class="lineNum">     227</span> <span class="tlaUNC tlaBgUNC">           0 :         _burn(_account, _id, _value);</span></span>
+<span id="L228"><span class="lineNum">     228</span>              : </span>
+<span id="L229"><span class="lineNum">     229</span> <span class="tlaUNC">           0 :         uint64 today = day(block.timestamp);</span></span>
+<span id="L230"><span class="lineNum">     230</span> <span class="tlaUNC">           0 :         DiscountedBalance storage totalSupplyBalance = discountedTotalSupplies[_id];</span></span>
+<span id="L231"><span class="lineNum">     231</span> <span class="tlaUNC">           0 :         uint256 discountedTotalSupply =</span></span>
+<span id="L232"><span class="lineNum">     232</span> <span class="tlaUNC">           0 :             _calculateDiscountedBalance(totalSupplyBalance.balance, today - totalSupplyBalance.lastUpdatedDay);</span></span>
+<span id="L233"><span class="lineNum">     233</span> <span class="tlaUNC">           0 :         if (discountedTotalSupply &lt; _value) {</span></span>
+<span id="L234"><span class="lineNum">     234</span>              :             // Logically impossible to burn more than the total supply</span>
+<span id="L235"><span class="lineNum">     235</span>              :             // however if the total supply nears dust, the discounting of the balance</span>
+<span id="L236"><span class="lineNum">     236</span>              :             // and the total supply might differ on the least significant bits.</span>
+<span id="L237"><span class="lineNum">     237</span>              :             // There is no good way to handle this, so user should burn a few attoCRC less,</span>
+<span id="L238"><span class="lineNum">     238</span>              :             // or wait a day for the total supply to be discounted to zero automatically.</span>
+<span id="L239"><span class="lineNum">     239</span> <span class="tlaUNC">           0 :             revert CirclesLogicAssertion(4);</span></span>
+<span id="L240"><span class="lineNum">     240</span>              :         }</span>
+<span id="L241"><span class="lineNum">     241</span>              :         unchecked {</span>
+<span id="L242"><span class="lineNum">     242</span> <span class="tlaUNC">           0 :             totalSupplyBalance.balance = uint192(discountedTotalSupply - _value);</span></span>
+<span id="L243"><span class="lineNum">     243</span>              :         }</span>
+<span id="L244"><span class="lineNum">     244</span> <span class="tlaUNC">           0 :         totalSupplyBalance.lastUpdatedDay = today;</span></span>
+<span id="L245"><span class="lineNum">     245</span>              :     }</span>
+<span id="L246"><span class="lineNum">     246</span>              : </span>
+<span id="L247"><span class="lineNum">     247</span>              :     // Private functions</span>
+<span id="L248"><span class="lineNum">     248</span>              : </span>
+<span id="L249"><span class="lineNum">     249</span>              :     /**</span>
+<span id="L250"><span class="lineNum">     250</span>              :      * @dev Max function to compare two values.</span>
+<span id="L251"><span class="lineNum">     251</span>              :      * @param a Value a</span>
+<span id="L252"><span class="lineNum">     252</span>              :      * @param b Value b</span>
+<span id="L253"><span class="lineNum">     253</span>              :      */</span>
+<span id="L254"><span class="lineNum">     254</span>              :     function _max(uint256 a, uint256 b) private pure returns (uint256) {</span>
+<span id="L255"><span class="lineNum">     255</span> <span class="tlaGNC tlaBgGNC">        1509 :         return a &gt;= b ? a : b;</span></span>
+<span id="L256"><span class="lineNum">     256</span>              :     }</span>
+<span id="L257"><span class="lineNum">     257</span>              : }</span>
+        </pre>
+              </td>
+            </tr>
+          </table>
+          <br>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+            <tr><td class="versionInfo">Generated by: <a href="https://github.com//linux-test-project/lcov" target="_parent">LCOV version 2.1-1</a></td></tr>
+          </table>
+          <br>
+
+</body>
+</html>
