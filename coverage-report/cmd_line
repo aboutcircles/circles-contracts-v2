@@ -1,1 +1,0 @@
-genhtml lcov_filtered.info --output-directory coverage-report --ignore-errors inconsistent,corrupt
