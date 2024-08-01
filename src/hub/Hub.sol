@@ -401,7 +401,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * @param _group address of the group avatar to mint Circles of
      * @param _collateralAvatars array of (personal or group) avatar addresses to be used as collateral
      * @param _amounts array of amounts of collateral to be used for minting
-     * @param _data (optional) additional data to be passed to the mint policy, treasury and minter
+     * @param _data (optional) additional data to be passed to the mint policy, treasury and minter (caller)
      */
     function groupMint(
         address _group,
@@ -413,7 +413,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         for (uint256 i = 0; i < _collateralAvatars.length; i++) {
             collateral[i] = toTokenId(_collateralAvatars[i]);
         }
-        _groupMint(msg.sender, _group, collateral, _amounts, _data);
+        _groupMint(msg.sender, msg.sender, _group, collateral, _amounts, _data);
     }
 
     /**
@@ -606,15 +606,22 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         return uint256(trustMarkers[_truster][_trustee].expiry) >= block.timestamp;
     }
 
+    /**
+     * @notice Returns true if the receiver trusts the Circles being sent, and if the circles avatar of the Circles
+     * being sent trusts the receiver (unless this avatar has opted out of consented flow).
+     * @param _to the address to which the Circles are being sent, must trust the Circles being sent
+     * @param _circlesAvatar the address of the Circles being sent. For consented flow, this Circles avatar
+     * must also trust the receiver for tokens to be permitted to flow there under a flow operation.
+     */
     function isPermittedFlow(address _to, address _circlesAvatar) public view returns (bool) {
-        // if receiver does not trust the Circles being sent, then the flow is not consented regardless
+        // if receiver does not trust the Circles being sent, then the flow is not permitted regardless
         if (uint256(trustMarkers[_to][_circlesAvatar].expiry) < block.timestamp) return false;
         // if the advanced usage flag is set to opt-out of consented flow,
         // then the uni-directional trust is sufficient
         if (advancedUsageFlags[_circlesAvatar] & ADVANCED_FLAG_OPTOUT_CONSENTEDFLOW != bytes32(0)) {
             return true;
         }
-        // however, by default the consented flow requires bi-directional trust from center to receiver
+        // however, by default the consented flow requires bi-directional trust also from center to receiver
         return uint256(trustMarkers[_circlesAvatar][_to].expiry) >= block.timestamp;
     }
 
@@ -622,7 +629,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
 
     /**
      * @notice Group mint allows to mint group Circles by providing the required collateral.
-     * @param _sender address of the sender of the group mint, and receiver of minted group Circles
+     * @param _sender address of the sender of the group mint
+     * @param _receiver address of the receiver of minted group Circles
      * @param _group address of the group avatar to mint Circles of
      * @param _collateral array of (personal or group) avatar addresses to be used as collateral
      * @param _amounts array of amounts of collateral to be used for minting
@@ -630,6 +638,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      */
     function _groupMint(
         address _sender,
+        address _receiver,
         address _group,
         uint256[] memory _collateral,
         uint256[] memory _amounts,
@@ -655,9 +664,9 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         for (uint256 i = 0; i < _amounts.length; i++) {
             // _groupMint is only called from the public groupMint function,
             // or from operateFlowMatrix, and both ensure the collateral ids are derived
-            // from an address, so we can cast here without checks.
+            // from a registered address, so we can cast here without checking valid registration
             if (!isPermittedFlow(_group, _validateAddressFromId(_collateral[i], 2))) {
-                // Group does not trust collateral.
+                // Group does not trust collateral, or flow edge is not permitted
                 revert CirclesHubFlowEdgeIsNotPermitted(_group, _collateral[i], 0);
             }
 
@@ -683,8 +692,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         // note: treasury.on1155Received must implement and unpack the GroupMintMetadata to know the group
         safeBatchTransferFrom(_sender, treasuries[_group], _collateral, _amounts, dataWithGroup);
 
-        // mint group Circles to the sender and send the original _data onwards
-        _mintAndUpdateTotalSupply(_sender, toTokenId(_group), sumAmounts, _data);
+        // mint group Circles to the receiver and send the original _data onwards
+        _mintAndUpdateTotalSupply(_receiver, toTokenId(_group), sumAmounts, _data);
     }
 
     function _verifyFlowMatrix(
