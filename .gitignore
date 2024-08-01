@@ -18,3 +18,5 @@ docs/
 
 # OSX
 .DS_Store
+
+coverage-report/

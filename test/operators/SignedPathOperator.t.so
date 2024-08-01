@@ -60,8 +60,6 @@ contract SignedPathOperatorTest is Test, TimeCirclesSetup, HumanRegistration, Tr
         // |       |       |   |
         // 20------17------18--19
         _setTrustGraph();
-
-
     }
 
     // Tests
@@ -74,10 +72,12 @@ contract SignedPathOperatorTest is Test, TimeCirclesSetup, HumanRegistration, Tr
         vm.prank(alice);
         hub.setApprovalForAll(address(operator), true);
 
-        (address[] memory flowVertices,
-        TypeDefinitions.FlowEdge[] memory flowEdges,
-        TypeDefinitions.Stream[] memory streams,
-        bytes memory packedCoordinates) = _setupExplicitFlowMatrix01();
+        (
+            address[] memory flowVertices,
+            TypeDefinitions.FlowEdge[] memory flowEdges,
+            TypeDefinitions.Stream[] memory streams,
+            bytes memory packedCoordinates
+        ) = _setupExplicitFlowMatrix01();
 
         vm.prank(alice);
         operator.operateSignedFlowMatrix(flowVertices, flowEdges, streams, packedCoordinates, lookupMap[11]);
@@ -86,7 +86,8 @@ contract SignedPathOperatorTest is Test, TimeCirclesSetup, HumanRegistration, Tr
     // Internal functions
 
     function _setupExplicitFlowMatrix01()
-        internal view
+        internal
+        view
         returns (address[] memory, TypeDefinitions.FlowEdge[] memory, TypeDefinitions.Stream[] memory, bytes memory)
     {
         uint256 M = 7;

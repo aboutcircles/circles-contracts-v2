@@ -7,6 +7,10 @@ import "forge-std/console.sol";
 import "./MockCircles.sol";
 import "../setup/TimeCirclesSetup.sol";
 import "../utils/Approximation.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+
+// Error declarations
+error ERC1155MissingApprovalForAll(address operator, address owner);
 
 contract CirclesTest is Test, TimeCirclesSetup, Approximation {
     // Constants
@@ -15,6 +19,7 @@ contract CirclesTest is Test, TimeCirclesSetup, Approximation {
 
     uint256 public constant EPS = 10 ** (18 - 2);
     uint256 public constant FEMTO_EPS = 10 ** (18 - 15);
+    uint256 public constant TOLERANCE = 100; // Define a tolerance for numerical errors
 
     // State variables
 
@@ -66,7 +71,7 @@ contract CirclesTest is Test, TimeCirclesSetup, Approximation {
             previousEndPeriod = endPeriod;
 
             // Generate a pseudo-random number between 1 and 4
-            uint256 hoursSkip = uint256(keccak256(abi.encodePacked(block.timestamp, i, uint256(0)))) % 34 + 1;
+            uint256 hoursSkip = (uint256(keccak256(abi.encodePacked(block.timestamp, i, uint256(0)))) % 34) + 1;
             uint256 secondsSkip = uint256(keccak256(abi.encodePacked(block.timestamp, i, uint256(1)))) % 3600;
 
             // Simulate passing of time variable windows of time (1-5 hours)
@@ -111,6 +116,113 @@ contract CirclesTest is Test, TimeCirclesSetup, Approximation {
         assertEq(bobBalance + 5 * CRC, bobBalanceAfter);
     }
 
+    function testSafeInflationaryTransferFrom() public {
+        skipTime(12 * 24 hours + 1 minutes);
+
+        // Claim issuance for Alice
+        vm.prank(addresses[0]);
+        circles.claimIssuance();
+
+        uint256 balanceBefore = circles.balanceOf(addresses[0], circlesIdentifiers[0]);
+        uint256 inflationaryBalanceBefore = circles.inflationaryBalanceOf(addresses[0], circlesIdentifiers[0]);
+
+        // Transfer some Circles from Alice to Bob
+        uint256 transferAmount = 5 * CRC;
+        uint256 inflationaryValue =
+            circles.convertInflationaryToDemurrageValue(transferAmount, circles.day(block.timestamp));
+        vm.prank(addresses[0]);
+        circles.safeInflationaryTransferFrom(addresses[0], addresses[1], circlesIdentifiers[0], inflationaryValue, "");
+
+        uint256 balanceAfter = circles.balanceOf(addresses[0], circlesIdentifiers[0]);
+        uint256 inflationaryBalanceAfter = circles.inflationaryBalanceOf(addresses[0], circlesIdentifiers[0]);
+        uint256 balanceBob = circles.balanceOf(addresses[1], circlesIdentifiers[0]);
+        uint256 inflationaryBalanceBob = circles.inflationaryBalanceOf(addresses[1], circlesIdentifiers[0]);
+
+        // Recalculate the transferAmount using the convertInflationaryToDemurrageValue function
+        uint256 recalculatedTransferAmount =
+            circles.convertInflationaryToDemurrageValue(inflationaryValue, circles.day(block.timestamp));
+
+        assertApproxEqAbs(balanceBefore - recalculatedTransferAmount, balanceAfter, TOLERANCE);
+        assertApproxEqAbs(balanceBob, recalculatedTransferAmount, TOLERANCE);
+        assertApproxEqAbs(inflationaryBalanceBefore - inflationaryValue, inflationaryBalanceAfter, TOLERANCE);
+        assertApproxEqAbs(inflationaryBalanceBob, inflationaryValue, TOLERANCE);
+    }
+
+    function testSafeInflationaryBatchTransferFrom() public {
+        skipTime(12 * 24 hours + 1 minutes);
+
+        // Claim issuance for Alice
+        vm.prank(addresses[0]);
+        circles.claimIssuance();
+
+        uint256 balanceBefore = circles.balanceOf(addresses[0], circlesIdentifiers[0]);
+        uint256 inflationaryBalanceBefore = circles.inflationaryBalanceOf(addresses[0], circlesIdentifiers[0]);
+
+        // Transfer some Circles from Alice to Bob in batch
+        uint256[] memory ids = new uint256[](2);
+        ids[0] = circlesIdentifiers[0];
+        ids[1] = circlesIdentifiers[0];
+
+        uint256[] memory transferAmounts = new uint256[](2);
+        transferAmounts[0] = 3 * CRC;
+        transferAmounts[1] = 2 * CRC;
+
+        uint256[] memory inflationaryValues = new uint256[](2);
+        inflationaryValues[0] =
+            circles.convertInflationaryToDemurrageValue(transferAmounts[0], circles.day(block.timestamp));
+        inflationaryValues[1] =
+            circles.convertInflationaryToDemurrageValue(transferAmounts[1], circles.day(block.timestamp));
+
+        vm.prank(addresses[0]);
+        circles.safeInflationaryBatchTransferFrom(addresses[0], addresses[1], ids, inflationaryValues, "");
+
+        uint256 balanceAfter = circles.balanceOf(addresses[0], circlesIdentifiers[0]);
+        uint256 inflationaryBalanceAfter = circles.inflationaryBalanceOf(addresses[0], circlesIdentifiers[0]);
+        uint256 balanceBob = circles.balanceOf(addresses[1], circlesIdentifiers[0]);
+        uint256 inflationaryBalanceBob = circles.inflationaryBalanceOf(addresses[1], circlesIdentifiers[0]);
+
+        // Recalculate the transferAmount using the convertInflationaryToDemurrageValue function
+        uint256 recalculatedTransferAmount1 =
+            circles.convertInflationaryToDemurrageValue(inflationaryValues[0], circles.day(block.timestamp));
+        uint256 recalculatedTransferAmount2 =
+            circles.convertInflationaryToDemurrageValue(inflationaryValues[1], circles.day(block.timestamp));
+        uint256 totalRecalculatedTransferAmount = recalculatedTransferAmount1 + recalculatedTransferAmount2;
+
+        assertApproxEqAbs(balanceBefore - totalRecalculatedTransferAmount, balanceAfter, TOLERANCE);
+        assertApproxEqAbs(balanceBob, totalRecalculatedTransferAmount, TOLERANCE);
+        assertApproxEqAbs(
+            inflationaryBalanceBefore - (inflationaryValues[0] + inflationaryValues[1]),
+            inflationaryBalanceAfter,
+            TOLERANCE
+        );
+        assertApproxEqAbs(inflationaryBalanceBob, inflationaryValues[0] + inflationaryValues[1], TOLERANCE);
+    }
+
+    function testRevertSafeInflationaryTransferFromMissingApproval() public {
+        address unauthorized = addresses[2];
+        address target = addresses[1];
+        uint256 inflationaryValue = 100 * CRC;
+
+        vm.expectRevert(abi.encodeWithSelector(ERC1155MissingApprovalForAll.selector, unauthorized, addresses[0]));
+
+        vm.prank(unauthorized);
+        circles.safeInflationaryTransferFrom(addresses[0], target, circlesIdentifiers[0], inflationaryValue, "");
+    }
+
+    function testRevertSafeInflationaryBatchTransferFromMissingApproval() public {
+        address unauthorized = addresses[2];
+        address target = addresses[1];
+        uint256[] memory ids = new uint256[](1);
+        ids[0] = circlesIdentifiers[0];
+        uint256[] memory inflationaryValues = new uint256[](1);
+        inflationaryValues[0] = 100 * CRC;
+
+        vm.expectRevert(abi.encodeWithSelector(ERC1155MissingApprovalForAll.selector, unauthorized, addresses[0]));
+
+        vm.prank(unauthorized);
+        circles.safeInflationaryBatchTransferFrom(addresses[0], target, ids, inflationaryValues, "");
+    }
+
     // Private functions
 
     function _skipAndMint(uint256 _seconds, address _avatar) private {
@@ -124,7 +236,6 @@ contract CirclesTest is Test, TimeCirclesSetup, Approximation {
         uint256 balanceBefore = circles.balanceOf(_avatar, uint256(uint160(_avatar)));
         (issuance, startPeriod, endPeriod) = circles.calculateIssuance(_avatar);
         uint256 hoursCount = (endPeriod - startPeriod) / 1 hours;
-        // console.log("hoursCount", hoursCount, "days:", hoursCount / 24);
         vm.prank(_avatar);
         circles.claimIssuance();
         uint256 balanceAfter = circles.balanceOf(_avatar, uint256(uint160(_avatar)));
