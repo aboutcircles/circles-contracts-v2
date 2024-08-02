@@ -696,6 +696,16 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         _mintAndUpdateTotalSupply(_receiver, toTokenId(_group), sumAmounts, _data);
     }
 
+    /**
+     * @dev Verify the correctness of the flow matrix describing the path transfer
+     * @param _flowVertices an ordered list of avatar addresses as the vertices which the path touches
+     * @param _flow array of flow edges, each edge is a struct with the amount (uint192)
+     * and streamSinkId (reference to a stream, where for non-terminal flow edges this is 0, and for terminal flow edges
+     * this must reference the index of the stream in the streams array, starting from 1)
+     * @param _coordinates unpacked array of coordinates of the flow edges, with 3 coordinates per flow edge:
+     * Circles identifier being transfered, sender, receiver, each a uint16 referencing the flow vertex.
+     * @param _closedPath boolean indicating whether the path is a closed path or not
+     */
     function _verifyFlowMatrix(
         address[] calldata _flowVertices,
         FlowEdge[] calldata _flow,
@@ -762,12 +772,9 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
                 }
 
                 // nett the flow, dividing out the different Circle identifiers
-                // expect for all edges to a group, as they are interpreted
-                // as a request for group mint in _effectPathTransfers
-                if (!isGroup(to)) {
-                    nettedFlow[_coordinates[index + 1]] -= flow;
-                    nettedFlow[_coordinates[index + 2]] += flow;
-                }
+                nettedFlow[_coordinates[index + 1]] -= flow;
+                nettedFlow[_coordinates[index + 2]] += flow;
+
                 index = index + 3;
             }
         }
@@ -829,13 +836,14 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
                         amounts
                     );
                 } else {
-                    // do group mint, and the sender receives the minted group Circles
+                    // do group mint, and the group itself receives the minted group Circles
                     _groupMint(
                         _flowVertices[_coordinates[index + 1]], // sender, from coordinate
-                        to, // group
+                        to, // receiver, to coordinate
+                        to, // group; for triggering group mint, to == the group to mint for
                         ids, // collateral
                         amounts, // amounts
-                        ""
+                        "" // path-based group mints never send data to the mint policy
                     );
                 }
 
