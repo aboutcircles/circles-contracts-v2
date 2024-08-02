@@ -4,8 +4,9 @@ pragma solidity >=0.8.24;
 import "../../src/hub/Hub.sol";
 
 contract MockHub is Hub {
-    // Constructor
+    uint256 private constant INVITATION_COST = 100 * 1e18;
 
+    // Constructor
     constructor(
         uint256 _inflationDayZero,
         uint256 _bootstrapTime
@@ -23,7 +24,6 @@ contract MockHub is Hub {
     {}
 
     // External functions
-
     function setSiblings(
         address _migration,
         INameRegistry _nameRegistry,
@@ -72,8 +72,43 @@ contract MockHub is Hub {
         _claimIssuance(human);
     }
 
-    // Public functions
+    // Mock migration function to bypass onlyMigration modifier
+    function mockMigrate(
+        address _owner,
+        address[] calldata _avatars,
+        uint256[] calldata _amounts
+    ) external {
+        if (avatars[_owner] == address(0)) {
+            revert CirclesAvatarMustBeRegistered(_owner, 1);
+        }
+        if (_avatars.length != _amounts.length) {
+            revert CirclesArraysLengthMismatch(
+                _avatars.length,
+                _amounts.length,
+                0
+            );
+        }
 
+        uint256 cost = INVITATION_COST * _ensureAvatarsRegistered(_avatars);
+
+        if (block.timestamp > invitationOnlyTime && cost > 0) {
+            if (!isHuman(_owner)) {
+                revert CirclesHubMustBeHuman(_owner, 4);
+            }
+            _burnAndUpdateTotalSupply(_owner, toTokenId(_owner), cost);
+        }
+
+        for (uint256 i = 0; i < _avatars.length; i++) {
+            _mintAndUpdateTotalSupply(
+                _owner,
+                toTokenId(_avatars[i]),
+                _amounts[i],
+                ""
+            );
+        }
+    }
+
+    // Public functions
     function accessUnpackCoordinates(
         bytes calldata _packedData,
         uint256 _numberOfTriplets
@@ -82,7 +117,6 @@ contract MockHub is Hub {
     }
 
     // Private functions
-
     function notMocked() private pure {
         assert(false);
     }

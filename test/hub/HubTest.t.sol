@@ -33,12 +33,6 @@ contract HubTest is Test {
         david = address(uint160(uint256(keccak256(abi.encodePacked("david")))));
         eve = address(uint160(uint256(keccak256(abi.encodePacked("eve")))));
         frank = address(uint160(uint256(keccak256(abi.encodePacked("frank")))));
-
-        // Register some humans if not already registered
-        registerHumanIfNotExists(alice);
-        registerHumanIfNotExists(bob);
-        registerHumanIfNotExists(charlie);
-        registerHumanIfNotExists(david);
     }
 
     function registerHumanIfNotExists(address human) internal {
@@ -57,7 +51,43 @@ contract HubTest is Test {
         assertTrue(isHuman, "Eve should be registered as a human");
     }
 
+    function testMigrate() public {
+        // Register Alice if not already registered
+        registerHumanIfNotExists(alice);
+
+        // Migrate Alice
+        address[] memory avatars = new address[](1);
+        avatars[0] = alice;
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 1000 * 1e18; // arbitrary amount for migration
+
+        vm.startPrank(address(hub));
+        hub.mockMigrate(alice, avatars, amounts);
+        vm.stopPrank();
+
+        // Check Alice's balance after migration
+        uint256 aliceBalance = hub.balanceOf(alice, hub.toTokenId(alice));
+        assertEq(
+            aliceBalance,
+            1000 * 1e18,
+            "Alice's balance should be 1000 Circles after migration"
+        );
+    }
+
     function testInviteHuman() public {
+        // Register Alice if not already registered
+        registerHumanIfNotExists(alice);
+
+        // Migrate Alice
+        address[] memory avatars = new address[](1);
+        avatars[0] = alice;
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 1000 * 1e18; // arbitrary amount for migration
+
+        vm.startPrank(address(hub));
+        hub.mockMigrate(alice, avatars, amounts);
+        vm.stopPrank();
+
         // Skip time for 2 weeks before minting
         skipTime(2 weeks);
 
@@ -105,6 +135,9 @@ contract HubTest is Test {
     }
 
     function testRegisterGroup() public {
+        // Register Alice if not already registered
+        registerHumanIfNotExists(alice);
+
         vm.startPrank(alice);
         hub.registerGroup(address(this), "Test Group", "TST", bytes32(0));
         bool isGroup = hub.isGroup(alice);
@@ -113,6 +146,10 @@ contract HubTest is Test {
     }
 
     function testSetTrust() public {
+        // Register Alice and Bob if not already registered
+        registerHumanIfNotExists(alice);
+        registerHumanIfNotExists(bob);
+
         vm.startPrank(alice);
         hub.trust(bob, uint96(block.timestamp + 1 days));
         bool isTrusted = hub.isTrusted(alice, bob);
@@ -121,6 +158,9 @@ contract HubTest is Test {
     }
 
     function testStopMinting() public {
+        // Register Alice if not already registered
+        registerHumanIfNotExists(alice);
+
         vm.startPrank(alice);
         hub.stop();
         bool isStopped = hub.stopped(alice);
@@ -129,6 +169,12 @@ contract HubTest is Test {
     }
 
     function testOperateFlowMatrixConsentedFlow() public {
+        // Register Alice, Bob, Charlie, and David if not already registered
+        registerHumanIfNotExists(alice);
+        registerHumanIfNotExists(bob);
+        registerHumanIfNotExists(charlie);
+        registerHumanIfNotExists(david);
+
         // Setup trust relationships
         setTrust(alice, bob);
         setTrust(bob, charlie);
