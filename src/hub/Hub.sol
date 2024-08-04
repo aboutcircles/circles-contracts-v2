@@ -782,6 +782,14 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         return nettedFlow;
     }
 
+    /**
+     * @dev Effect the flow edges of the path transfer, this will revert if any balance is insufficient
+     * @param _flowVertices an ordered list of avatar addresses as the vertices which the path touches
+     * @param _flow array of flow edges, each edge is a struct with the amount and streamSinkId
+     * @param _streams array of streams, each stream is a struct that references the source vertex coordinate,
+     * the ids of the terminal flow edges of this stream, and the data that is passed to the ERC1155 acceptance check
+     * @param _coordinates unpacked array of coordinates of the flow edges
+     */
     function _effectPathTransfers(
         address[] calldata _flowVertices,
         FlowEdge[] calldata _flow,
@@ -864,6 +872,13 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         }
     }
 
+    /**
+     * @dev Call the acceptance checks for the streams, and return the netted streams
+     * @param _flowVertices sorted array of avatar addresses as the vertices which the path touches
+     * @param _flow array of flow edges
+     * @param _streams array of streams
+     * @param _coordinates unpacked array of coordinates of the flow edges
+     */
     function _callAcceptanceChecks(
         address[] calldata _flowVertices,
         FlowEdge[] calldata _flow,
