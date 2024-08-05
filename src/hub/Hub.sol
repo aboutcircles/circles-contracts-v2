@@ -39,8 +39,6 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      */
     address private constant SENTINEL = address(0x1);
 
-    bytes32 private constant ADVANCED_FLAG_OPTOUT_CONSENTEDFLOW = bytes32(uint256(1));
-
     // State variables
 
     // /**
@@ -106,12 +104,6 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * @notice The mapping of group avatar addresses to the treasury contract address.
      */
     mapping(address => address) public treasuries;
-
-    /**
-     * @notice By default the advanced usage flags should remain set to zero.
-     * Only for advanced purposes people can consider enabling flags.
-     */
-    mapping(address => bytes32) public advancedUsageFlags;
 
     /**
      * @notice The iterable mapping of directional trust relations between avatars and
@@ -561,14 +553,6 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         _matchNettedFlows(streamsNettedFlow, matrixNettedFlow);
     }
 
-    function setAdvancedUsageFlag(bytes32 _flag) external {
-        if (avatars[msg.sender] == address(0)) {
-            // Only registered avatars can set advanced usage flags.
-            revert CirclesAvatarMustBeRegistered(msg.sender, 3);
-        }
-        advancedUsageFlags[msg.sender] = _flag;
-    }
-
     // Public functions
 
     /**
@@ -606,15 +590,18 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         return uint256(trustMarkers[_truster][_trustee].expiry) >= block.timestamp;
     }
 
+    /**
+     * @notice Returns true if the flow to the receiver is permitted.
+     * The receiver must trust the Circles being sent, and the Circles avatar associated with
+     * the Circles must trust the receiver.
+     * @param _to Address of the receiver
+     * @param _circlesAvatar Address of the Circles avatar of the Circles being sent
+     * @return permitted true if the flow is permitted, false otherwise
+     */
     function isPermittedFlow(address _to, address _circlesAvatar) public view returns (bool) {
         // if receiver does not trust the Circles being sent, then the flow is not consented regardless
         if (uint256(trustMarkers[_to][_circlesAvatar].expiry) < block.timestamp) return false;
-        // if the advanced usage flag is set to opt-out of consented flow,
-        // then the uni-directional trust is sufficient
-        if (advancedUsageFlags[_circlesAvatar] & ADVANCED_FLAG_OPTOUT_CONSENTEDFLOW != bytes32(0)) {
-            return true;
-        }
-        // however, by default the consented flow requires bi-directional trust from center to receiver
+        // however, consented flow also requires bi-directional trust from center to receiver
         return uint256(trustMarkers[_circlesAvatar][_to].expiry) >= block.timestamp;
     }
 
