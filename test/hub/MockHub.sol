@@ -7,10 +7,7 @@ contract MockHub is Hub {
     uint256 private constant INVITATION_COST = 100 * 1e18;
 
     // Constructor
-    constructor(
-        uint256 _inflationDayZero,
-        uint256 _bootstrapTime
-    )
+    constructor(uint256 _inflationDayZero, uint256 _bootstrapTime)
         Hub(
             IHubV1(address(1)),
             INameRegistry(address(1)),
@@ -42,10 +39,7 @@ contract MockHub is Hub {
         // insert avatar into linked list; reverts if it already exists
         _insertAvatar(human);
 
-        require(
-            avatars[human] != address(0),
-            "MockPathTransferHub: avatar not found"
-        );
+        require(avatars[human] != address(0), "MockPathTransferHub: avatar not found");
 
         // set the last mint time to the current timestamp for invited human
         // and register the v1 Circles contract status as unregistered
@@ -60,10 +54,7 @@ contract MockHub is Hub {
 
     function personalMintWithoutV1Check() external {
         require(isHuman(msg.sender), "MockPathTransferHub: not a human");
-        require(
-            avatars[msg.sender] != address(0),
-            "MockPathTransferHub: avatar not found"
-        );
+        require(avatars[msg.sender] != address(0), "MockPathTransferHub: avatar not found");
         address human = msg.sender;
 
         // skips checks in v1 mint for tests
@@ -73,20 +64,12 @@ contract MockHub is Hub {
     }
 
     // Mock migration function to bypass onlyMigration modifier
-    function mockMigrate(
-        address _owner,
-        address[] calldata _avatars,
-        uint256[] calldata _amounts
-    ) external {
+    function mockMigrate(address _owner, address[] calldata _avatars, uint256[] calldata _amounts) external {
         if (avatars[_owner] == address(0)) {
             revert CirclesAvatarMustBeRegistered(_owner, 1);
         }
         if (_avatars.length != _amounts.length) {
-            revert CirclesArraysLengthMismatch(
-                _avatars.length,
-                _amounts.length,
-                0
-            );
+            revert CirclesArraysLengthMismatch(_avatars.length, _amounts.length, 0);
         }
 
         uint256 cost = INVITATION_COST * _ensureAvatarsRegistered(_avatars);
@@ -99,20 +82,21 @@ contract MockHub is Hub {
         }
 
         for (uint256 i = 0; i < _avatars.length; i++) {
-            _mintAndUpdateTotalSupply(
-                _owner,
-                toTokenId(_avatars[i]),
-                _amounts[i],
-                ""
-            );
+            _mintAndUpdateTotalSupply(_owner, toTokenId(_avatars[i]), _amounts[i], "");
         }
     }
 
+    // Getter for invitationOnlyTime
+    function getInvitationOnlyTime() external view returns (uint256) {
+        return invitationOnlyTime;
+    }
+
     // Public functions
-    function accessUnpackCoordinates(
-        bytes calldata _packedData,
-        uint256 _numberOfTriplets
-    ) public pure returns (uint16[] memory unpackedCoordinates_) {
+    function accessUnpackCoordinates(bytes calldata _packedData, uint256 _numberOfTriplets)
+        public
+        pure
+        returns (uint16[] memory unpackedCoordinates_)
+    {
         return super._unpackCoordinates(_packedData, _numberOfTriplets);
     }
 

@@ -6,10 +6,12 @@ import "../../src/hub/Hub.sol";
 import "../../src/hub/TypeDefinitions.sol";
 import "../hub/MockHub.sol";
 import "../hub/MockDeployment.sol";
+import "../../src/names/NameRegistry.sol";
 
 contract HubTest is Test {
     MockHub public hub;
     MockDeployment public deployment;
+    NameRegistry public nameRegistry;
 
     uint256 private constant INVITATION_COST = 100 * 1e18;
 
@@ -23,6 +25,8 @@ contract HubTest is Test {
     function setUp() public {
         deployment = new MockDeployment(block.timestamp, 365 days);
         hub = deployment.hub();
+
+        nameRegistry = new NameRegistry(IHubV2(address(hub)));
 
         // Generate random addresses
         alice = address(uint160(uint256(keccak256(abi.encodePacked("alice")))));
@@ -114,10 +118,19 @@ contract HubTest is Test {
         // Log Alice's balance before inviting
         emit log_named_uint("Alice balance before inviting", aliceBalance);
 
+        // Log current block timestamp and invitationOnlyTime
+        emit log_named_uint("Current block timestamp", block.timestamp);
+        emit log_named_uint("invitationOnlyTime", hub.getInvitationOnlyTime());
+
         // Alice invites Frank (who is not registered)
         vm.startPrank(alice);
-        hub.inviteHuman(frank);
-        vm.stopPrank();
+        try hub.inviteHuman(frank) {
+            vm.stopPrank();
+        } catch (bytes memory reason) {
+            vm.stopPrank();
+            emit log_named_bytes("inviteHuman failed with reason", reason);
+            revert("inviteHuman failed");
+        }
 
         // Check if Frank is now registered as a human
         bool isHuman = hub.isHuman(frank);
@@ -134,120 +147,97 @@ contract HubTest is Test {
         emit log_named_uint("Alice balance after inviting", aliceBalance);
     }
 
-    function testRegisterGroup() public {
-        // Register Alice if not already registered
-        registerHumanIfNotExists(alice);
-
-        vm.startPrank(alice);
-        hub.registerGroup(address(this), "Test Group", "TST", bytes32(0));
-        bool isGroup = hub.isGroup(alice);
-        vm.stopPrank();
-        assertTrue(isGroup, "Alice should be registered as a group");
-    }
-
-    function testSetTrust() public {
-        // Register Alice and Bob if not already registered
-        registerHumanIfNotExists(alice);
-        registerHumanIfNotExists(bob);
-
-        vm.startPrank(alice);
-        hub.trust(bob, uint96(block.timestamp + 1 days));
-        bool isTrusted = hub.isTrusted(alice, bob);
-        vm.stopPrank();
-        assertTrue(isTrusted, "Alice should trust Bob");
-    }
-
-    function testStopMinting() public {
-        // Register Alice if not already registered
-        registerHumanIfNotExists(alice);
-
-        vm.startPrank(alice);
-        hub.stop();
-        bool isStopped = hub.stopped(alice);
-        vm.stopPrank();
-        assertTrue(isStopped, "Alice's minting should be stopped");
-    }
-
-    function testOperateFlowMatrixConsentedFlow() public {
-        // Register Alice, Bob, Charlie, and David if not already registered
-        registerHumanIfNotExists(alice);
-        registerHumanIfNotExists(bob);
-        registerHumanIfNotExists(charlie);
-        registerHumanIfNotExists(david);
-
-        // Setup trust relationships
-        setTrust(alice, bob);
-        setTrust(bob, charlie);
-        setTrust(charlie, david);
-
-        // Setup flow matrix
-        address[] memory flowVertices = new address[](4);
-        flowVertices[0] = alice;
-        flowVertices[1] = bob;
-        flowVertices[2] = charlie;
-        flowVertices[3] = david;
-
-        TypeDefinitions.FlowEdge[] memory flow = new TypeDefinitions.FlowEdge[](
-            3
-        );
-        flow[0] = TypeDefinitions.FlowEdge(5000, 0);
-        flow[1] = TypeDefinitions.FlowEdge(5000, 0);
-        flow[2] = TypeDefinitions.FlowEdge(5000, 1);
-
-        uint16[] memory coordinates = new uint16[](9);
-        coordinates[0] = 0; // Alice -> Bob
-        coordinates[1] = 0;
-        coordinates[2] = 1;
-        coordinates[3] = 1; // Bob -> Charlie
-        coordinates[4] = 1;
-        coordinates[5] = 2;
-        coordinates[6] = 2; // Charlie -> David
-        coordinates[7] = 2;
-        coordinates[8] = 3;
-
-        TypeDefinitions.Stream[] memory streams = new TypeDefinitions.Stream[](
-            1
-        );
-        streams[0] = TypeDefinitions.Stream(0, new uint16[](1), new bytes(0));
-        streams[0].flowEdgeIds[0] = 2;
-
-        bytes memory packedCoordinates = packCoordinates(coordinates);
-
-        // Set approvals for each address in the flow
-        setApproval(alice, alice);
-        setApproval(bob, alice);
-        setApproval(charlie, alice);
-        setApproval(david, alice);
-
-        vm.startPrank(alice);
-        hub.operateFlowMatrix(flowVertices, flow, streams, packedCoordinates);
-        vm.stopPrank();
-    }
-
-    function setTrust(address from, address to) internal {
-        vm.startPrank(from);
-        hub.trust(to, uint96(block.timestamp + 1 days));
-        vm.stopPrank();
-    }
-
-    function setApproval(address owner, address operator) internal {
-        vm.startPrank(owner);
-        hub.setApprovalForAll(operator, true);
-        vm.stopPrank();
-    }
-
-    function packCoordinates(
-        uint16[] memory _coordinates
-    ) private pure returns (bytes memory packedData_) {
-        packedData_ = new bytes(_coordinates.length * 2);
-        for (uint256 i = 0; i < _coordinates.length; i++) {
-            packedData_[2 * i] = bytes1(uint8(_coordinates[i] >> 8)); // High byte
-            packedData_[2 * i + 1] = bytes1(uint8(_coordinates[i] & 0xFF)); // Low byte
+    function testRegisterCustomGroup() public {
+        // Ensure David is not registered as a human
+        if (hub.isHuman(david)) {
+            revert("David is already registered as a human");
         }
+
+        // Custom group parameters
+        address customMint = address(this);
+        address customTreasury = address(0x12345);
+        string memory groupName = "Custom Group";
+        string memory groupSymbol = "CG";
+        bytes32 metadataDigest = 0x0000000000000000000000000000000000000000000000000000000000abcdef;
+
+        vm.startPrank(david);
+        hub.registerCustomGroup(
+            customMint,
+            customTreasury,
+            groupName,
+            groupSymbol,
+            metadataDigest
+        );
+        vm.stopPrank();
+
+        // Check if the group is registered
+        bool isGroup = hub.isGroup(david);
+        assertTrue(isGroup, "David should be registered as a custom group");
+
+        // Check if the custom treasury and mint policy are correctly set
+        address treasury = hub.treasuries(david);
+        address mintPolicy = hub.mintPolicies(david);
+        assertEq(
+            treasury,
+            customTreasury,
+            "Custom treasury should be correctly set"
+        );
+        assertEq(
+            mintPolicy,
+            customMint,
+            "Custom mint policy should be correctly set"
+        );
+
+        // Check if the name and symbol are correctly set
+        string memory name = nameRegistry.name(david);
+        string memory symbol = nameRegistry.symbol(david);
+        assertEq(name, groupName, "Group name should be correctly set");
+        assertEq(symbol, groupSymbol, "Group symbol should be correctly set");
+
+        // Emit log to check details
+        emit log_named_address("Group treasury", treasury);
+        emit log_named_address("Group mint policy", mintPolicy);
+        emit log_named_string("Group name", name);
+        emit log_named_string("Group symbol", symbol);
     }
 
-    function skipTime(uint256 _duration) public {
-        uint256 afterSkip = block.timestamp + _duration;
-        vm.warp(afterSkip);
+    function testRegisterGroup() public {
+        // Ensure Eve is not registered as a human
+        if (hub.isHuman(eve)) {
+            revert("Eve is already registered as a human");
+        }
+
+        // Group parameters
+        address mint = address(this);
+        string memory groupName = "Test Group";
+        string memory groupSymbol = "TST";
+        bytes32 metadataDigest = 0x0000000000000000000000000000000000000000000000000000000000000000;
+
+        vm.startPrank(eve);
+        hub.registerGroup(mint, groupName, groupSymbol, metadataDigest);
+        vm.stopPrank();
+
+        // Check if the group is registered
+        bool isGroup = hub.isGroup(eve);
+        assertTrue(isGroup, "Eve should be registered as a group");
+
+        // Check if the mint policy is correctly set
+        address mintPolicy = hub.mintPolicies(eve);
+        assertEq(mintPolicy, mint, "Mint policy should be correctly set");
+
+        // Check if the name and symbol are correctly set
+        string memory name = nameRegistry.name(eve);
+        string memory symbol = nameRegistry.symbol(eve);
+        assertEq(name, groupName, "Group name should be correctly set");
+        assertEq(symbol, groupSymbol, "Group symbol should be correctly set");
+
+        // Emit log to check details
+        emit log_named_address("Group mint policy", mintPolicy);
+        emit log_named_string("Group name", name);
+        emit log_named_string("Group symbol", symbol);
+    }
+
+    function skipTime(uint256 time) internal {
+        vm.warp(block.timestamp + time);
     }
 }

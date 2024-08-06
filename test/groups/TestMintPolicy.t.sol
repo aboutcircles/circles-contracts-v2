@@ -22,12 +22,8 @@ contract MintPolicyTest is Test {
         redemptionValues[0] = 100;
         redemptionValues[1] = 200;
 
-        BaseMintPolicyDefinitions.BaseRedemptionPolicy
-            memory redemptionPolicy = BaseMintPolicyDefinitions
-                .BaseRedemptionPolicy({
-                    redemptionIds: redemptionIds,
-                    redemptionValues: redemptionValues
-                });
+        BaseMintPolicyDefinitions.BaseRedemptionPolicy memory redemptionPolicy = BaseMintPolicyDefinitions
+            .BaseRedemptionPolicy({redemptionIds: redemptionIds, redemptionValues: redemptionValues});
 
         bytes memory data = abi.encode(redemptionPolicy);
 
@@ -37,32 +33,14 @@ contract MintPolicyTest is Test {
             uint256[] memory returnedValues,
             uint256[] memory burnIds,
             uint256[] memory burnValues
-        ) = mintPolicy.beforeRedeemPolicy(
-                address(this),
-                address(this),
-                address(this),
-                100,
-                data
-            );
+        ) = mintPolicy.beforeRedeemPolicy(address(this), address(this), address(this), 100, data);
 
         // Check returned values
-        assertEq(
-            returnedIds.length,
-            redemptionIds.length,
-            "Returned ids length mismatch"
-        );
-        assertEq(
-            returnedValues.length,
-            redemptionValues.length,
-            "Returned values length mismatch"
-        );
+        assertEq(returnedIds.length, redemptionIds.length, "Returned ids length mismatch");
+        assertEq(returnedValues.length, redemptionValues.length, "Returned values length mismatch");
         for (uint256 i = 0; i < returnedIds.length; i++) {
             assertEq(returnedIds[i], redemptionIds[i], "Returned id mismatch");
-            assertEq(
-                returnedValues[i],
-                redemptionValues[i],
-                "Returned value mismatch"
-            );
+            assertEq(returnedValues[i], redemptionValues[i], "Returned value mismatch");
         }
 
         // Check burn values (should be empty)
@@ -75,13 +53,7 @@ contract MintPolicyTest is Test {
 
         // Expect revert when calling beforeRedeemPolicy with empty data
         vm.expectRevert();
-        mintPolicy.beforeRedeemPolicy(
-            address(this),
-            address(this),
-            address(this),
-            100,
-            data
-        );
+        mintPolicy.beforeRedeemPolicy(address(this), address(this), address(this), 100, data);
     }
 
     function testBeforeRedeemPolicyInvalidData() public {
@@ -89,12 +61,6 @@ contract MintPolicyTest is Test {
 
         // Expect revert when decoding invalid data
         vm.expectRevert();
-        mintPolicy.beforeRedeemPolicy(
-            address(this),
-            address(this),
-            address(this),
-            100,
-            data
-        );
+        mintPolicy.beforeRedeemPolicy(address(this), address(this), address(this), 100, data);
     }
 }
