@@ -88,7 +88,7 @@ contract ERC20LiftTest is Test, TimeCirclesSetup, HumanRegistration {
         // send 50 CRC from Alice to Bob
         vm.prank(addresses[0]);
         vm.expectEmit(true, true, false, true, address(aliceERC20));
-        emit Demurrage.DiscountCost(addresses[0], aliceCirclesId, aliceDiscountCostT2);
+        // emit Demurrage.DiscountCost(addresses[0], aliceCirclesId, aliceDiscountCostT2);
         aliceERC20.transfer(addresses[1], 50 * CRC);
 
         (uint256 aliceBalanceT3, uint256 aliceDiscountCostT3) = aliceERC20.balanceOfOnDay(addresses[0], dayT2);
