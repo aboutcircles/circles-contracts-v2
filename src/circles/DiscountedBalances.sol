@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.8.24;
 
+import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "../lib/Math64x64.sol";
 import "./Demurrage.sol";
 
@@ -122,7 +123,8 @@ contract DiscountedBalances is Demurrage {
         unchecked {
             uint256 discountCost = discountedBalance.balance - discountedBalanceOnDay;
             if (discountCost > 0) {
-                emit DiscountCost(_account, _id, discountCost);
+                // emit DiscountCost(_account, _id, discountCost);
+                emit IERC1155.TransferSingle(msg.sender, _account, address(0), _id, discountCost);
             }
         }
         uint256 updatedBalance = discountedBalanceOnDay + _value;

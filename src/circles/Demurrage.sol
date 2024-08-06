@@ -144,7 +144,7 @@ contract Demurrage is ICirclesDemurrageErrors {
 
     // Events
 
-    event DiscountCost(address indexed account, uint256 indexed id, uint256 discountCost);
+    // event DiscountCost(address indexed account, uint256 indexed id, uint256 discountCost);
 
     // Constructor
 
