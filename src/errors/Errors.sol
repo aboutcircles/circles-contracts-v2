@@ -24,8 +24,6 @@ interface IHubErrors {
 
     error CirclesHubFlowEdgeIsNotPermitted(address receiver, uint256 circlesId, uint8 code);
 
-    error CirclesHubOnClosedPathOnlyPersonalCirclesCanReturnToAvatar(address failedReceiver, uint256 circlesId);
-
     error CirclesHubFlowVerticesMustBeSorted();
 
     error CirclesHubFlowEdgeStreamMismatch(uint16 flowEdgeId, uint16 streamId, uint8 code);
