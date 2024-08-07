@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.8.24;
 
+import {ABDKMath64x64 as Math64x64} from "lib/abdk-libraries-solidity/ABDKMath64x64.sol";
 import "../errors/Errors.sol";
-import "../lib/Math64x64.sol";
 
 contract Demurrage is ICirclesDemurrageErrors {
     // Type declarations
