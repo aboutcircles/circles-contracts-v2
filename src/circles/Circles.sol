@@ -146,7 +146,7 @@ contract Circles is ERC1155, ICirclesErrors {
      * @return endPeriod The end of the claimable period.
      */
     function _calculateIssuance(address _human) internal view returns (uint256, uint256, uint256) {
-        MintTime storage mintTime = mintTimes[_human];
+        MintTime memory mintTime = mintTimes[_human];
         if (mintTime.mintV1Status != address(0) && mintTime.mintV1Status != CIRCLES_STOPPED_V1) {
             // Circles v1 contract cannot be active.
             revert CirclesERC1155MintBlocked(_human, mintTime.mintV1Status);
@@ -211,7 +211,7 @@ contract Circles is ERC1155, ICirclesErrors {
         _mint(_account, _id, _value, _data);
 
         uint64 today = day(block.timestamp);
-        DiscountedBalance storage totalSupplyBalance = discountedTotalSupplies[_id];
+        DiscountedBalance memory totalSupplyBalance = discountedTotalSupplies[_id];
         uint256 newTotalSupply =
             _calculateDiscountedBalance(totalSupplyBalance.balance, today - totalSupplyBalance.lastUpdatedDay) + _value;
         if (newTotalSupply > MAX_VALUE) {
@@ -220,6 +220,7 @@ contract Circles is ERC1155, ICirclesErrors {
         }
         totalSupplyBalance.balance = uint192(newTotalSupply);
         totalSupplyBalance.lastUpdatedDay = today;
+        discountedTotalSupplies[_id] = totalSupplyBalance;
     }
 
     function _burnAndUpdateTotalSupply(address _account, uint256 _id, uint256 _value) internal {
@@ -227,7 +228,7 @@ contract Circles is ERC1155, ICirclesErrors {
         _burn(_account, _id, _value);
 
         uint64 today = day(block.timestamp);
-        DiscountedBalance storage totalSupplyBalance = discountedTotalSupplies[_id];
+        DiscountedBalance memory totalSupplyBalance = discountedTotalSupplies[_id];
         uint256 discountedTotalSupply =
             _calculateDiscountedBalance(totalSupplyBalance.balance, today - totalSupplyBalance.lastUpdatedDay);
         if (discountedTotalSupply < _value) {
@@ -242,6 +243,7 @@ contract Circles is ERC1155, ICirclesErrors {
             totalSupplyBalance.balance = uint192(discountedTotalSupply - _value);
         }
         totalSupplyBalance.lastUpdatedDay = today;
+        discountedTotalSupplies[_id] = totalSupplyBalance;
     }
 
     // Private functions

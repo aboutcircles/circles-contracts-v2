@@ -96,9 +96,10 @@ contract DiscountedBalances is Demurrage {
             // DiscountedBalances: balance exceeds maximum value
             revert CirclesDemurrageAmountExceedsMaxUint190(_account, _id, _balance, 0);
         }
-        DiscountedBalance storage discountedBalance = discountedBalances[_id][_account];
+        DiscountedBalance memory discountedBalance = discountedBalances[_id][_account];
         discountedBalance.balance = uint192(_balance);
         discountedBalance.lastUpdatedDay = _day;
+        discountedBalances[_id][_account] = discountedBalance;
     }
 
     /**
@@ -109,7 +110,7 @@ contract DiscountedBalances is Demurrage {
      * @param _day Day since inflation_day_zero to discount the balance to
      */
     function _discountAndAddToBalance(address _account, uint256 _id, uint256 _value, uint64 _day) internal {
-        DiscountedBalance storage discountedBalance = discountedBalances[_id][_account];
+        DiscountedBalance memory discountedBalance = discountedBalances[_id][_account];
         if (_day < discountedBalance.lastUpdatedDay) {
             // DiscountedBalances: day is before last updated day
             revert CirclesDemurrageDayBeforeLastUpdatedDay(_account, _id, _day, discountedBalance.lastUpdatedDay, 1);
@@ -133,5 +134,6 @@ contract DiscountedBalances is Demurrage {
         }
         discountedBalance.balance = uint192(updatedBalance);
         discountedBalance.lastUpdatedDay = _day;
+        discountedBalances[_id][_account] = discountedBalance;
     }
 }

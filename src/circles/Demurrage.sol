@@ -238,22 +238,27 @@ contract Demurrage is ICirclesDemurrageErrors {
     }
 
     function _calculateDemurrageFactor(uint256 _dayDifference) internal view returns (int128) {
-        if (_dayDifference <= R_TABLE_LOOKUP && R[_dayDifference] != 0) {
-            return R[_dayDifference];
-        } else {
-            return Math64x64.pow(GAMMA_64x64, _dayDifference);
+        if (_dayDifference <= R_TABLE_LOOKUP) {
+            // if the day difference is in the lookup table, return the value from the table
+            int128 demurrageFactor = R[_dayDifference];
+            if (demurrageFactor != 0) {
+                return demurrageFactor;
+            }
         }
+        // if the day difference is not in the lookup table, calculate the value
+        return Math64x64.pow(GAMMA_64x64, _dayDifference);
     }
 
     function _calculateDemurrageFactorAndCache(uint256 _dayDifference) internal returns (int128) {
         if (_dayDifference <= R_TABLE_LOOKUP) {
-            if (R[_dayDifference] == 0) {
+            int128 demurrageFactor = R[_dayDifference];
+            if (demurrageFactor == 0) {
                 // for proxy ERC20 contracts, the storage does not contain the R table yet
                 // so compute it lazily and store it in the table
-                int128 r = Math64x64.pow(GAMMA_64x64, _dayDifference);
-                R[_dayDifference] = r;
+                demurrageFactor = Math64x64.pow(GAMMA_64x64, _dayDifference);
+                R[_dayDifference] = demurrageFactor;
             }
-            return R[_dayDifference];
+            return demurrageFactor;
         } else {
             return Math64x64.pow(GAMMA_64x64, _dayDifference);
         }
