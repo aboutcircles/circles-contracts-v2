@@ -546,13 +546,14 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             }
         }
 
-        // if no streams are provided, then only closed paths are allowed
-        bool closedPath = (_streams.length == 0);
+        // if no streams are provided, the streams will nett to zero for all vertices
+        // so to pass the acceptance checks, the flow matrix must also nett to zero
+        // which can be true if for all vertices the sum of incoming and outgoing flow is zero
 
         // verify the correctness of the flow matrix describing the path itself,
         // ie. well-definedness of the flow matrix itself,
         // check all entities are registered, and the trust relations are respected.
-        int256[] memory matrixNettedFlow = _verifyFlowMatrix(_flowVertices, _flow, coordinates, closedPath);
+        int256[] memory matrixNettedFlow = _verifyFlowMatrix(_flowVertices, _flow, coordinates);
 
         _effectPathTransfers(_flowVertices, _flow, _streams, coordinates);
 
@@ -690,8 +691,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     function _verifyFlowMatrix(
         address[] calldata _flowVertices,
         FlowEdge[] calldata _flow,
-        uint16[] memory _coordinates,
-        bool _closedPath
+        uint16[] memory _coordinates
     ) internal view returns (int256[] memory) {
         if (3 * _flow.length != _coordinates.length) {
             // Mismatch in flow and coordinates length.
@@ -746,10 +746,6 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
                 if (!isPermittedFlow(to, circlesId)) {
                     // Flow edge is not permitted.
                     revert CirclesHubFlowEdgeIsNotPermitted(to, toTokenId(circlesId), 1);
-                }
-                if (_closedPath && (to != circlesId || isGroup(circlesId))) {
-                    // Closed paths can only return personal Circles to source.
-                    revert CirclesHubOnClosedPathOnlyPersonalCirclesCanReturnToAvatar(to, toTokenId(circlesId));
                 }
 
                 // nett the flow, dividing out the different Circle identifiers
@@ -853,7 +849,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         Stream[] calldata _streams,
         uint16[] memory _coordinates
     ) internal returns (int256[] memory) {
-        // initialize netted flow
+        // initialize netted flow to zero
         int256[] memory nettedFlow = new int256[](_flowVertices.length);
 
         // effect the stream transfers with acceptance calls
