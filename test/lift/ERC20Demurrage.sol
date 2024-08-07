@@ -65,7 +65,7 @@ contract ERC20LiftTest is Test, TimeCirclesSetup, HumanRegistration {
     function testERC20Demurrage() public {
         DemurrageCircles aliceERC20 = erc20s[addresses[0]];
         // DemurrageCircles bobERC20 = erc20s[addresses[1]];
-        uint256 aliceCirclesId = uint256(uint160(addresses[0]));
+        // uint256 aliceCirclesId = uint256(uint160(addresses[0]));
 
         // commenting out because stack too deep; todo write test cleaner
 
