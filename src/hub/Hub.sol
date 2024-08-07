@@ -425,14 +425,15 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             // Only human can call stop.
             revert CirclesHubMustBeHuman(msg.sender, 2);
         }
-        MintTime storage mintTime = mintTimes[msg.sender];
+        uint96 lastMintTime = mintTimes[msg.sender].lastMintTime;
         // check if already stopped
-        if (mintTime.lastMintTime == INDEFINITE_FUTURE) {
+        if (lastMintTime == INDEFINITE_FUTURE) {
             return;
         }
         // stop future mints of personal Circles
         // by setting the last mint time to indefinite future.
-        mintTime.lastMintTime = INDEFINITE_FUTURE;
+        lastMintTime = INDEFINITE_FUTURE;
+        mintTimes[msg.sender].lastMintTime = lastMintTime;
 
         emit Stopped(msg.sender);
     }
@@ -446,8 +447,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             // Only personal Circles can have a status of boolean stopped.
             revert CirclesHubMustBeHuman(_human, 3);
         }
-        MintTime storage mintTime = mintTimes[msg.sender];
-        return (mintTime.lastMintTime == INDEFINITE_FUTURE);
+        uint96 lastMintTime = mintTimes[msg.sender].lastMintTime;
+        return (lastMintTime == INDEFINITE_FUTURE);
     }
 
     /**
@@ -912,9 +913,10 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         // set the last mint time to the current timestamp for invited human
         // and register the v1 Circles contract status
         v1CirclesStatus = _avatarV1CirclesStatus(_human);
-        MintTime storage mintTime = mintTimes[_human];
+        MintTime memory mintTime = mintTimes[_human];
         mintTime.mintV1Status = v1CirclesStatus;
         mintTime.lastMintTime = uint96(block.timestamp);
+        mintTimes[_human] = mintTime;
 
         // trust self indefinitely, cannot be altered later
         _trust(_human, _human, INDEFINITE_FUTURE);
@@ -1032,7 +1034,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * @param _mintV1Status Mint status of the v1 Circles contract.
      */
     function _updateMintV1Status(address _human, address _mintV1Status) internal {
-        MintTime storage mintTime = mintTimes[_human];
+        MintTime memory mintTime = mintTimes[_human];
         // precautionary check to ensure that the last mint time is already set
         // as this marks whether an avatar is registered as human or not
         if (mintTime.lastMintTime == 0) {
@@ -1044,6 +1046,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         if (mintTime.mintV1Status != _mintV1Status) {
             mintTime.mintV1Status = _mintV1Status;
             mintTime.lastMintTime = uint96(block.timestamp);
+            mintTimes[_human] = mintTime;
         }
     }
 

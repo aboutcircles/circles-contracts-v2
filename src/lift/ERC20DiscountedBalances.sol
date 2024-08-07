@@ -107,13 +107,14 @@ contract ERC20DiscountedBalances is ERC20Permit, Demurrage, IERC20 {
             // Balance exceeds maximum value.
             revert CirclesDemurrageAmountExceedsMaxUint190(_account, toTokenId(avatar), _balance, 0);
         }
-        DiscountedBalance storage discountedBalance = discountedBalances[_account];
+        DiscountedBalance memory discountedBalance = discountedBalances[_account];
         discountedBalance.balance = uint192(_balance);
         discountedBalance.lastUpdatedDay = _day;
+        discountedBalances[_account] = discountedBalance;
     }
 
     function _discountAndAddToBalance(address _account, uint256 _value, uint64 _day) internal {
-        DiscountedBalance storage discountedBalance = discountedBalances[_account];
+        DiscountedBalance memory discountedBalance = discountedBalances[_account];
         if (_day < discountedBalance.lastUpdatedDay) {
             // ERC20 DiscountedBalances: day is before last updated day
             revert CirclesDemurrageDayBeforeLastUpdatedDay(
@@ -138,6 +139,7 @@ contract ERC20DiscountedBalances is ERC20Permit, Demurrage, IERC20 {
         }
         discountedBalance.balance = uint192(updatedBalance);
         discountedBalance.lastUpdatedDay = _day;
+        discountedBalances[_account] = discountedBalance;
     }
 
     function _transfer(address _from, address _to, uint256 _amount) internal {
