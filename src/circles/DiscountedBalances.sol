@@ -123,7 +123,6 @@ contract DiscountedBalances is Demurrage {
         unchecked {
             uint256 discountCost = discountedBalance.balance - discountedBalanceOnDay;
             if (discountCost > 0) {
-                emit DiscountCost(_account, _id, discountCost);
                 emit IERC1155.TransferSingle(msg.sender, _account, address(0), _id, discountCost);
             }
         }

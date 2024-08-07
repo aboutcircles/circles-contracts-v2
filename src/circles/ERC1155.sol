@@ -173,7 +173,6 @@ abstract contract ERC1155 is DiscountedBalances, Context, ERC165, IERC1155, IERC
                     revert ERC1155InsufficientBalance(from, fromBalance, value, id);
                 }
                 if (discountCost > 0) {
-                    emit DiscountCost(from, id, discountCost);
                     emit TransferSingle(operator, from, address(0), id, discountCost);
                 }
                 unchecked {

@@ -128,7 +128,6 @@ contract ERC20DiscountedBalances is ERC20Permit, Demurrage, IERC20 {
         unchecked {
             uint256 discountCost = discountedBalance.balance - discountedBalanceOnDay;
             if (discountCost > 0) {
-                emit DiscountCost(_account, toTokenId(avatar), discountCost);
                 emit Transfer(_account, address(0), discountCost);
             }
         }
@@ -148,7 +147,6 @@ contract ERC20DiscountedBalances is ERC20Permit, Demurrage, IERC20 {
             revert ERC20InsufficientBalance(_from, fromBalance, _amount);
         }
         if (discountCost > 0) {
-            emit DiscountCost(_from, toTokenId(avatar), discountCost);
             emit Transfer(_from, address(0), discountCost);
         }
         unchecked {
@@ -171,7 +169,6 @@ contract ERC20DiscountedBalances is ERC20Permit, Demurrage, IERC20 {
             revert ERC20InsufficientBalance(_owner, ownerBalance, _amount);
         }
         if (discountCost > 0) {
-            emit DiscountCost(_owner, toTokenId(avatar), discountCost);
             emit Transfer(_owner, address(0), discountCost);
         }
         unchecked {
