@@ -124,6 +124,10 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
 
     event Stopped(address indexed avatar);
 
+    event StreamCompleted(
+        address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] amounts
+    );
+
     // Modifiers
 
     /**
@@ -894,6 +898,10 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             nettedFlow[_streams[i].sourceCoordinate] -= int256(streamTotal);
             // to recover the receiver coordinate, get the first sink
             nettedFlow[receiverCoordinate] += int256(streamTotal);
+
+            // emit the stream completed event which expresses the effective "ERC1155:BatchTransfer" event
+            // for the stream as part of a batch of path transfers.
+            emit StreamCompleted(msg.sender, _flowVertices[_streams[i].sourceCoordinate], receiver, ids, amounts);
         }
 
         return nettedFlow;

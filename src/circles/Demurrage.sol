@@ -142,10 +142,6 @@ contract Demurrage is ICirclesDemurrageErrors {
      */
     int128[15] internal R;
 
-    // Events
-
-    event DiscountCost(address indexed account, uint256 indexed id, uint256 discountCost);
-
     // Constructor
 
     constructor() {
