@@ -78,57 +78,6 @@ contract Circles is ERC1155, ICirclesErrors {
     // Public functions
 
     /**
-     * @notice Calculate the demurraged issuance for a human's avatar.
-     * @param _human Address of the human's avatar to calculate the issuance for.
-     * @return issuance The issuance in attoCircles.
-     * @return startPeriod The start of the claimable period.
-     * @return endPeriod The end of the claimable period.
-     */
-    function calculateIssuance(address _human) public view returns (uint256, uint256, uint256) {
-        MintTime storage mintTime = mintTimes[_human];
-        if (mintTime.mintV1Status != address(0) && mintTime.mintV1Status != CIRCLES_STOPPED_V1) {
-            // Circles v1 contract cannot be active.
-            revert CirclesERC1155MintBlocked(_human, mintTime.mintV1Status);
-        }
-
-        if (uint256(mintTime.lastMintTime) + 1 hours > block.timestamp) {
-            // Mint time is set to indefinite future for stopped mints in v2
-            // and only complete hours get minted, so shortcut the calculation
-            return (0, 0, 0);
-        }
-
-        // calculate the start of the claimable period
-        uint256 startMint = _max(block.timestamp - MAX_CLAIM_DURATION, mintTime.lastMintTime);
-
-        // day of start of mint, dA
-        uint256 dA = uint256(day(startMint));
-
-        // day of current block, dB
-        uint256 dB = uint256(day(block.timestamp));
-
-        // the difference of days between dB and dA used for the table lookups
-        uint256 n = dB - dA;
-
-        // calculate the number of completed hours in day A until `startMint`
-        int128 k = Math64x64.fromUInt((startMint - (dA * 1 days + inflationDayZero)) / 1 hours);
-
-        // Calculate the number of incompleted hours remaining in day B from current timestamp
-        int128 l = Math64x64.fromUInt(((dB + 1) * 1 days + inflationDayZero - block.timestamp) / 1 hours + 1);
-
-        // calculate the overcounted (demurraged) k (in day A) and l (in day B) hours
-        int128 overcount = Math64x64.add(Math64x64.mul(R[n], k), l);
-
-        // subtract the overcount from the total issuance, and convert to attoCircles
-        return (
-            Math64x64.mulu(Math64x64.sub(T[n], overcount), EXA),
-            // start of the claimable period
-            inflationDayZero + dA * 1 days + Math64x64.mulu(k, 1 hours),
-            // end of the claimable period
-            inflationDayZero + dB * 1 days + 1 days - Math64x64.mulu(l, 1 hours)
-        );
-    }
-
-    /**
      * Inflationary balance of an account for a Circles identifier. Careful,
      * calculating the inflationary balance can introduce numerical errors
      * in the least significant digits (order of few attoCircles).
@@ -190,11 +139,62 @@ contract Circles is ERC1155, ICirclesErrors {
     // Internal functions
 
     /**
+     * @notice Calculate the demurraged issuance for a human's avatar.
+     * @param _human Address of the human's avatar to calculate the issuance for.
+     * @return issuance The issuance in attoCircles.
+     * @return startPeriod The start of the claimable period.
+     * @return endPeriod The end of the claimable period.
+     */
+    function _calculateIssuance(address _human) internal view returns (uint256, uint256, uint256) {
+        MintTime storage mintTime = mintTimes[_human];
+        if (mintTime.mintV1Status != address(0) && mintTime.mintV1Status != CIRCLES_STOPPED_V1) {
+            // Circles v1 contract cannot be active.
+            revert CirclesERC1155MintBlocked(_human, mintTime.mintV1Status);
+        }
+
+        if (uint256(mintTime.lastMintTime) + 1 hours > block.timestamp) {
+            // Mint time is set to indefinite future for stopped mints in v2
+            // and only complete hours get minted, so shortcut the calculation
+            return (0, 0, 0);
+        }
+
+        // calculate the start of the claimable period
+        uint256 startMint = _max(block.timestamp - MAX_CLAIM_DURATION, mintTime.lastMintTime);
+
+        // day of start of mint, dA
+        uint256 dA = uint256(day(startMint));
+
+        // day of current block, dB
+        uint256 dB = uint256(day(block.timestamp));
+
+        // the difference of days between dB and dA used for the table lookups
+        uint256 n = dB - dA;
+
+        // calculate the number of completed hours in day A until `startMint`
+        int128 k = Math64x64.fromUInt((startMint - (dA * 1 days + inflationDayZero)) / 1 hours);
+
+        // Calculate the number of incompleted hours remaining in day B from current timestamp
+        int128 l = Math64x64.fromUInt(((dB + 1) * 1 days + inflationDayZero - block.timestamp) / 1 hours + 1);
+
+        // calculate the overcounted (demurraged) k (in day A) and l (in day B) hours
+        int128 overcount = Math64x64.add(Math64x64.mul(R[n], k), l);
+
+        // subtract the overcount from the total issuance, and convert to attoCircles
+        return (
+            Math64x64.mulu(Math64x64.sub(T[n], overcount), EXA),
+            // start of the claimable period
+            inflationDayZero + dA * 1 days + Math64x64.mulu(k, 1 hours),
+            // end of the claimable period
+            inflationDayZero + dB * 1 days + 1 days - Math64x64.mulu(l, 1 hours)
+        );
+    }
+
+    /**
      * @notice Claim issuance for a human's avatar and update the last mint time.
      * @param _human Address of the human's avatar to claim the issuance for.
      */
     function _claimIssuance(address _human) internal {
-        (uint256 issuance, uint256 startPeriod, uint256 endPeriod) = calculateIssuance(_human);
+        (uint256 issuance, uint256 startPeriod, uint256 endPeriod) = _calculateIssuance(_human);
         if (issuance == 0) {
             // No issuance to claim, simply return without reverting
             return;
