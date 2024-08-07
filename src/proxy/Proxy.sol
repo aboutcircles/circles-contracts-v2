@@ -27,7 +27,9 @@ contract Proxy {
     }
 
     /// @dev Fallback function forwards all transactions and returns all received return data.
-    fallback() external payable {
+    /// The fallback function is not payable because at no plpointace in Circles do these proxy contracts
+    /// need to receive xDAI (on Gnosis Chain, or Ether if they are deployed on Ethereum)
+    fallback() external {
         // solhint-disable-next-line no-inline-assembly
         assembly {
             let _singleton := sload(0)
