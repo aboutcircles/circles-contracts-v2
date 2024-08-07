@@ -378,6 +378,22 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     }
 
     /**
+     * @notice Calculate the demurraged issuance for a human's avatar.
+     * @param _human Address of the human's avatar to calculate the issuance for.
+     * @return issuance The issuance in attoCircles.
+     * @return startPeriod The start of the claimable period.
+     * @return endPeriod The end of the claimable period.
+     */
+    function calculateIssuance(address _human) external view returns (uint256, uint256, uint256) {
+        if (!isHuman(_human)) {
+            // Only avatars registered as human can calculate issuance.
+            // If the avatar is not registered as human, return 0 issuance.
+            return (0, 0, 0);
+        }
+        return _calculateIssuance(_human);
+    }
+
+    /**
      * @notice Calculate issuance allows to calculate the issuance for a human avatar with a check
      * to update the v1 mint status if updated.
      * @param _human address of the human avatar to calculate the issuance for
@@ -389,7 +405,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         // check if v1 Circles is known to be stopped and update status
         _checkHumanV1CirclesStatus(_human);
         // calculate issuance for the human avatar, but don't mint
-        return calculateIssuance(_human);
+        return _calculateIssuance(_human);
     }
 
     /**
