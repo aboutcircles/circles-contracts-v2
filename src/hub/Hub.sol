@@ -690,7 +690,6 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * this must reference the index of the stream in the streams array, starting from 1)
      * @param _coordinates unpacked array of coordinates of the flow edges, with 3 coordinates per flow edge:
      * Circles identifier being transfered, sender, receiver, each a uint16 referencing the flow vertex.
-     * @param _closedPath boolean indicating whether the path is a closed path or not
      */
     function _verifyFlowMatrix(
         address[] calldata _flowVertices,
