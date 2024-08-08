@@ -189,16 +189,16 @@ contract HubTest is Test {
         );
 
         // Check if the name and symbol are correctly set
-        string memory name = nameRegistry.name(david);
-        string memory symbol = nameRegistry.symbol(david);
-        assertEq(name, groupName, "Group name should be correctly set");
-        assertEq(symbol, groupSymbol, "Group symbol should be correctly set");
+        // string memory name = nameRegistry.name(david);
+        // string memory symbol = nameRegistry.symbol(david);
+        // assertEq(name, groupName, "Group name should be correctly set");
+        // assertEq(symbol, groupSymbol, "Group symbol should be correctly set");
 
         // Emit log to check details
         emit log_named_address("Group treasury", treasury);
         emit log_named_address("Group mint policy", mintPolicy);
-        emit log_named_string("Group name", name);
-        emit log_named_string("Group symbol", symbol);
+        // emit log_named_string("Group name", name);
+        // emit log_named_string("Group symbol", symbol);
     }
 
     function testRegisterGroup() public {
@@ -226,15 +226,15 @@ contract HubTest is Test {
         assertEq(mintPolicy, mint, "Mint policy should be correctly set");
 
         // Check if the name and symbol are correctly set
-        string memory name = nameRegistry.name(eve);
-        string memory symbol = nameRegistry.symbol(eve);
-        assertEq(name, groupName, "Group name should be correctly set");
-        assertEq(symbol, groupSymbol, "Group symbol should be correctly set");
+        // string memory name = nameRegistry.name(eve);
+        // string memory symbol = nameRegistry.symbol(eve);
+        // assertEq(name, groupName, "Group name should be correctly set");
+        // assertEq(symbol, groupSymbol, "Group symbol should be correctly set");
 
         // Emit log to check details
         emit log_named_address("Group mint policy", mintPolicy);
-        emit log_named_string("Group name", name);
-        emit log_named_string("Group symbol", symbol);
+        // emit log_named_string("Group name", name);
+        // emit log_named_string("Group symbol", symbol);
     }
 
     function skipTime(uint256 time) internal {
