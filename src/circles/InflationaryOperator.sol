@@ -9,6 +9,20 @@ contract InflationaryCirclesOperator is Demurrage {
 
     IHubV2 public hub;
 
+    // Errors
+
+    error InflationaryCirclesOperatorOnlyActOnBalancesOfSender(address sender, address from);
+
+    // Modifier
+
+    modifier OnlyActOnBalancesOfSender(address _from) {
+        if (_from != msg.sender) {
+            // only accept requests that act on the balances of msg.sender
+            revert InflationaryCirclesOperatorOnlyActOnBalancesOfSender(msg.sender, _from);
+        }
+        _;
+    }
+
     // Constructor
 
     constructor(IHubV2 _hub) {
@@ -28,53 +42,45 @@ contract InflationaryCirclesOperator is Demurrage {
         return _inflationaryBalanceOf(_account, _id);
     }
 
-    // /**
-    //  * @notice safeInflationaryTransferFrom transfers Circles from one address to another by specifying inflationary units.
-    //  * @param _from Address from which the Circles are transferred.
-    //  * @param _to Address to which the Circles are transferred.
-    //  * @param _id Circles indentifier for which the Circles are transferred.
-    //  * @param _inflationaryValue Inflationary value of the Circles transferred.
-    //  * @param _data Data to pass to the receiver.
-    //  */
-    // function safeInflationaryTransferFrom(
-    //     address _from,
-    //     address _to,
-    //     uint256 _id,
-    //     uint256 _inflationaryValue,
-    //     bytes memory _data
-    // ) public {
-    //     address sender = _msgSender();
-    //     if (_from != sender && !isApprovedForAll(_from, sender)) {
-    //         revert ERC1155MissingApprovalForAll(sender, _from);
-    //     }
-    //     // convert inflationary value to todays demurrage value
-    //     uint256 value = convertInflationaryToDemurrageValue(_inflationaryValue, day(block.timestamp));
-    //     _safeTransferFrom(_from, _to, _id, value, _data);
-    // }
+    /**
+     * @notice safeInflationaryTransferFrom transfers Circles from one address to another by specifying inflationary units.
+     * @param _from Address from which the Circles are transferred.
+     * @param _to Address to which the Circles are transferred.
+     * @param _id Circles indentifier for which the Circles are transferred.
+     * @param _inflationaryValue Inflationary value of the Circles transferred.
+     * @param _data Data to pass to the receiver.
+     */
+    function safeInflationaryTransferFrom(
+        address _from,
+        address _to,
+        uint256 _id,
+        uint256 _inflationaryValue,
+        bytes memory _data
+    ) public OnlyActOnBalancesOfSender(_from) {
+        // convert inflationary value to todays demurrage value
+        uint256 value = convertInflationaryToDemurrageValue(_inflationaryValue, day(block.timestamp));
+        // if from has this operator authorized, it can call ERC1155:safeTransferFrom
+        hub.safeTransferFrom(_from, _to, _id, value, _data);
+    }
 
-    // /**
-    //  * @notice safeInflationaryBatchTransferFrom transfers Circles from one address to another by specifying inflationary units.
-    //  * @param _from Address from which the Circles are transferred.
-    //  * @param _to Address to which the Circles are transferred.
-    //  * @param _ids Batch of Circles identifiers for which the Circles are transferred.
-    //  * @param _inflationaryValues Batch of inflationary values of the Circles transferred.
-    //  * @param _data Data to pass to the receiver.
-    //  */
-    // function safeInflationaryBatchTransferFrom(
-    //     address _from,
-    //     address _to,
-    //     uint256[] memory _ids,
-    //     uint256[] memory _inflationaryValues,
-    //     bytes memory _data
-    // ) public {
-    //     address sender = _msgSender();
-    //     if (_from != sender && !isApprovedForAll(_from, sender)) {
-    //         revert ERC1155MissingApprovalForAll(sender, _from);
-    //     }
-    //     uint64 today = day(block.timestamp);
-    //     uint256[] memory values = convertBatchInflationaryToDemurrageValues(_inflationaryValues, today);
-    //     _safeBatchTransferFrom(_from, _to, _ids, values, _data);
-    // }
+    /**
+     * @notice safeInflationaryBatchTransferFrom transfers Circles from one address to another by specifying inflationary units.
+     * @param _from Address from which the Circles are transferred.
+     * @param _to Address to which the Circles are transferred.
+     * @param _ids Batch of Circles identifiers for which the Circles are transferred.
+     * @param _inflationaryValues Batch of inflationary values of the Circles transferred.
+     * @param _data Data to pass to the receiver.
+     */
+    function safeInflationaryBatchTransferFrom(
+        address _from,
+        address _to,
+        uint256[] memory _ids,
+        uint256[] memory _inflationaryValues,
+        bytes memory _data
+    ) public OnlyActOnBalancesOfSender(_from) {
+        uint256[] memory values = convertBatchInflationaryToDemurrageValues(_inflationaryValues, day(block.timestamp));
+        hub.safeBatchTransferFrom(_from, _to, _ids, values, _data);
+    }
 
     // Internal functions
 
