@@ -1011,6 +1011,9 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             if (avatars[_avatars[i]] == address(0)) {
                 registrationCount++;
                 _registerHuman(_avatars[i]);
+
+                // emit the registration event for the human avatar
+                emit RegisterHuman(_avatars[i]);
             } else {
                 if (!isHuman(_avatars[i])) {
                     // Only humans can be registered.
