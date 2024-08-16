@@ -18,3 +18,8 @@ docs/
 
 # OSX
 .DS_Store
+
+# Coverage reports and data
+coverage-report/
+lcov.info
+lcov_filtered.info
