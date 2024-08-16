@@ -113,7 +113,6 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
 
     // Events
 
-    event RegisterHuman(address indexed avatar);
     event InviteHuman(address indexed inviter, address indexed invited);
     event RegisterOrganization(address indexed organization, string name);
     event RegisterGroup(
@@ -237,7 +236,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             nameRegistry.setMetadataDigest(msg.sender, _metadataDigest);
         }
 
-        emit RegisterHuman(msg.sender);
+        emit InviteHuman(msg.sender, msg.sender);
     }
 
     /**
@@ -484,7 +483,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
 
         // register all unregistered avatars as humans, and check that registered avatars are humans
         // after the bootstrap period, the _owner needs to pay the equivalent invitation cost for all newly registered humans
-        uint256 cost = INVITATION_COST * _ensureAvatarsRegistered(_avatars);
+        uint256 cost = INVITATION_COST * _ensureAvatarsRegistered(_owner, _avatars);
 
         // Invitation cost only applies after the bootstrap period
         if (block.timestamp > invitationOnlyTime && cost > 0) {
@@ -1005,15 +1004,15 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         emit Trust(_truster, _trustee, _expiry);
     }
 
-    function _ensureAvatarsRegistered(address[] calldata _avatars) internal returns (uint256) {
+    function _ensureAvatarsRegistered(address _owner, address[] calldata _avatars) internal returns (uint256) {
         uint256 registrationCount = 0;
         for (uint256 i = 0; i < _avatars.length; i++) {
             if (avatars[_avatars[i]] == address(0)) {
                 registrationCount++;
                 _registerHuman(_avatars[i]);
 
-                // emit the registration event for the human avatar
-                emit RegisterHuman(_avatars[i]);
+                // emit the invite human event for the migrated human avatar
+                emit InviteHuman(_owner, _avatars[i]);
             } else {
                 if (!isHuman(_avatars[i])) {
                     // Only humans can be registered.
