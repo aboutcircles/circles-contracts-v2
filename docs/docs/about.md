@@ -1,4 +1,4 @@
-# About Circles Protocol
+# About the Circles Protocol
 
 Circles is a vision for a fair and social form of money. It is also the culmination of the efforts of multiple teams over several years, working to bring this vision to life through organizing and building concrete instantiations.  
 
