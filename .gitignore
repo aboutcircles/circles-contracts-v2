@@ -3,7 +3,7 @@ cache/
 out/
 
 # docs
-docs/
+
 
 # gas snapshot files
 .gas-snapshot
