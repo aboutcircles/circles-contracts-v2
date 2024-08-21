@@ -8,6 +8,9 @@ We do not claim any authority over what Circles should be or become. Instead, we
 
 Ultimately, the path forward for Circles will be shaped by the collective actions and decisions of the community. We are merely one voice and one effort among many in this collaborative, open-source endeavor to create a fair and socially-embedded form of digital money. We are excited to be part of this journey and to see how Circles evolves.
 
+## Disclaimer
+Circles is not owned or controlled by any single entity, including the "About Circles" team. Instead, it is a collective vision and effort, intended to be cared for and shaped by the wider community. The "About Circles" team acts as an ambassador and contributor to this vision, but does not claim any special authority or ownership over Circles.
+
 ## Licensing
 In alignment with our open-source ethos, Circles Protocol is developed and released under the following licenses:
 
