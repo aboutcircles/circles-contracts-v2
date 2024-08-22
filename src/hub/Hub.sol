@@ -425,7 +425,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         for (uint256 i = 0; i < _collateralAvatars.length; i++) {
             collateral[i] = toTokenId(_collateralAvatars[i]);
         }
-        _groupMint(msg.sender, msg.sender, _group, collateral, _amounts, _data);
+        _groupMint(msg.sender, msg.sender, _group, collateral, _amounts, _data, true);
     }
 
     /**
@@ -636,6 +636,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * @param _collateral array of (personal or group) avatar addresses to be used as collateral
      * @param _amounts array of amounts of collateral to be used for minting
      * @param _data (optional) additional data to be passed to the mint policy, treasury and minter
+     * @param explicitGroupMint boolean indicating whether the group mint is called explicitly from the public groupMint function
+     * or implicitly from operateFlowMatrix
      */
     function _groupMint(
         address _sender,
@@ -643,7 +645,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         address _group,
         uint256[] memory _collateral,
         uint256[] memory _amounts,
-        bytes memory _data
+        bytes memory _data,
+        bool explicitGroupMint
     ) internal {
         if (_collateral.length != _amounts.length) {
             // Collateral and amount arrays must have equal length.
@@ -666,9 +669,16 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             // _groupMint is only called from the public groupMint function,
             // or from operateFlowMatrix, and both ensure the collateral ids are derived
             // from a registered address, so we can cast here without checking valid registration
-            if (!isPermittedFlow(_group, _validateAddressFromId(_collateral[i], 2))) {
-                // Group does not trust collateral, or flow edge is not permitted
-                revert CirclesHubFlowEdgeIsNotPermitted(_group, _collateral[i], 0);
+            if (!explicitGroupMint) {
+                if (!isPermittedFlow(_group, _validateAddressFromId(_collateral[i], 2))) {
+                    // Group does not trust collateral, or flow edge is not permitted
+                    revert CirclesHubFlowEdgeIsNotPermitted(_group, _collateral[i], 0);
+                }
+            } else {
+                if (!isTrusted(_group, _validateAddressFromId(_collateral[i], 3))) {
+                    // Group does not trust collateral.
+                    revert CirclesHubFlowEdgeIsNotPermitted(_group, _collateral[i], 0);
+                }
             }
 
             if (_amounts[i] == 0) {
@@ -846,7 +856,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
                         to, // group; for triggering group mint, to == the group to mint for
                         ids, // collateral
                         amounts, // amounts
-                        "" // path-based group mints never send data to the mint policy
+                        "", // path-based group mints never send data to the mint policy
+                        false
                     );
                 }
 
