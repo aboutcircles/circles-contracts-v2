@@ -2,30 +2,36 @@
 
 ## Brief Overview
 
-Circles is a digital protocol designed to create and distribute a a fair and social money through personal currencies. It leverages the power of decentralized technology to implement a system of interconnected, individual economic units that together form a larger, more equitable economic network.
+Circles is a digital protocol designed to create and distribute fair and social money through personal currencies. It harnesses the power of decentralized technology to implement a system of interconnected, individual economic units that collectively form a larger, more equitable economic network.
 
-The Circles protocol is built on top of the Gnosis Chain blockchain, utilizing smart contracts to manage the creation, distribution, and transfer of personal currencies. At its core, Circles employs an ERC1155 multi-token standard, allowing for efficient handling of multiple token types (different personal and group Circles -- more on groups later) within a single contract.
+The Circles protocol is built on the Gnosis Chain blockchain, utilizing smart contracts to manage the creation, distribution, and transfer of personal currencies. At its core, Circles employs an ERC1155 multi-token standard, enabling efficient handling of multiple token types (different personal and group Circles -- more on groups later) within a single contract.
 
 ## Purpose and Goals of Circles
 
-The primary purpose of Circles is to create a more inclusive and sustainable economic system by providing equitable issuance of money to all participants. By doing so, Circles aims to:
+The primary purpose of Circles is to create a more inclusive and sustainable economic system through the equitable issuance of money to all participants. In pursuing this vision, Circles aims to:
 
-1. Introduce community currencies with lower economic inequality by ensuring a baseline level of economic participation for all.
-2. Foster community connections and local economies through trust-based currency networks.
-3. Encourage sustainable economic growth by implementing a demurrage system that discourages hoarding and promotes circulation.
+1. Introduce community currencies that reduce economic inequality by ensuring a baseline level of economic participation for all.
+2. Foster community connections and strengthen local economies through trust-based currency networks.
+3. Promote sustainable economic growth by implementing a demurrage system that discourages hoarding and encourages circulation.
 4. Provide a flexible framework for various economic experiments and community-driven initiatives.
+5. Empower individuals and communities to have greater control over their economic interactions and monetary systems.
 
 ## Key Concepts
 
 ### Personal Currencies
 
-In the Circles ecosystem, each individual can mint their own personal currency. This is a unique feature of the protocol, allowing every participant to become an issuer of their own basic income. The Hub contract manages the registration of individuals (referred to as "humans" in the contract) and the issuance of their personal currencies.
+In the Circles ecosystem, each individual can mint their own personal currency. This unique feature of the protocol empowers every participant to become an issuer of their own personal Circles. The Hub contract manages both the registration of individuals (referred to as "humans" in the contract) and the issuance of their personal currencies.
 
 Key points about personal currencies:
 
-- Each registered human can mint a fixed amount of their personal currency regularly (1 Circle per hour).
-- Personal currencies are represented as unique tokens within the ERC1155 multi-token system.
-- The minting process is managed by the `personalMint()` function in the Hub contract.
+- Each registered human can mint a deterministic amount of their personal currency at a consistent rate of one Circle per hour.
+- Minting is retroactive, allowing claims for up to 14 days of past elapsed time.
+- The mintable amount is calculated based on the number of complete hours passed since the last issuance of Circles.
+- Circles undergo daily demurrage at a rate equivalent to 7% per year. Issuance for past days accounts for this demurrage, ensuring fair distribution over time. (Further details on demurrage are discussed in a later section)
+- Personal currencies are represented as unique tokens within the ERC1155 multi-token system, with each token ID derived from the address of the human's avatar.
+- The `personalMint()` function in the Hub contract manages the minting process.
+
+This system ensures a fair, time-based issuance of personal currencies while implementing mechanisms to encourage active participation in the Circles economy.
 
 ### Trust Networks
 
