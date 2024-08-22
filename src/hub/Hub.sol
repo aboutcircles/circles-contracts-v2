@@ -666,19 +666,17 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         // so it suffices to check that all amounts are non-zero during summing.
         uint256 sumAmounts = 0;
         for (uint256 i = 0; i < _amounts.length; i++) {
-            // _groupMint is only called from the public groupMint function,
-            // or from operateFlowMatrix, and both ensure the collateral ids are derived
-            // from a registered address, so we can cast here without checking valid registration
-            if (!explicitGroupMint) {
-                if (!isPermittedFlow(_group, _validateAddressFromId(_collateral[i], 2))) {
-                    // Group does not trust collateral, or flow edge is not permitted
-                    revert CirclesHubFlowEdgeIsNotPermitted(_group, _collateral[i], 0);
-                }
-            } else {
-                if (!isTrusted(_group, _validateAddressFromId(_collateral[i], 3))) {
-                    // Group does not trust collateral.
-                    revert CirclesHubFlowEdgeIsNotPermitted(_group, _collateral[i], 0);
-                }
+            address collateralAvatar = _validateAddressFromId(_collateral[i], 1);
+
+            // if the group mint is called explicitly, check the group trusts the collateral
+            // otherwise if the group mint is called implicitly over operateFlowMatrix,
+            // check the flow edge is permitted
+            bool isValidCollateral =
+                explicitGroupMint ? isTrusted(_group, collateralAvatar) : isPermittedFlow(_group, collateralAvatar);
+
+            if (!isValidCollateral) {
+                // Group does not trust collateral, or flow edge is not permitted
+                revert CirclesHubFlowEdgeIsNotPermitted(_group, _collateral[i], 0);
             }
 
             if (_amounts[i] == 0) {
