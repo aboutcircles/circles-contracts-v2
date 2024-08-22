@@ -37,14 +37,17 @@ This system ensures a fair, time-based issuance of personal currencies while imp
 
 Trust is a fundamental concept in the Circles protocol. It allows personal currencies to become valuable and transferable within the network. The trust system is implemented in the Hub contract through the following mechanisms:
 
-- Users can establish trust relationships with other users using the `trust()` function.
-- Trust relationships have expiration times, allowing for dynamic trust networks.
-- The `isPermittedFlow()` function checks if a transfer is allowed based on the trust relationships between the sender, receiver, and the currency being transferred.
+- People can establish trust relationships with other entities (people, organizations, or groups) using the `trust()` function.
+- Trust relationships can be set with expiration times, allowing for dynamic trust networks. Alternatively, trust can be established indefinitely by setting the expiration to the maximum possible future time.
+- The trust network is leveraged to enable transitive transfers of Circles along paths of trust. The `isPermittedFlow()` function verifies if a transitive transfer is permissible based on the trust relationships between the involved parties and the specific currency being transferred.
+- Trust relationships can be established not only between individuals but also between people, organizations, and groups, creating a diverse and interconnected economic ecosystem.
 
 Trust networks enable:
-- Path-based transactions, where currencies can be exchanged through chains of trust.
-- Community-building, as users create economic connections with those they trust.
-- A decentralized approach to currency valuation and acceptance.
+
+- Path-based transactions, where currencies can be exchanged through chains of trust connections.
+- Community-building, as users create economic connections with individuals and entities they trust.
+- A decentralized approach to currency valuation and acceptance, based on social and organizational relationships rather than centralized authority.
+- Flexible economic interactions between various types of actors within the Circles ecosystem.
 
 ### Demurrage
 
