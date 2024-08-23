@@ -51,13 +51,18 @@ Trust networks enable:
 
 ### Demurrage
 
-Demurrage is an economic concept where the value of a currency decreases over time. In Circles, this is implemented to encourage circulation of the currency and discourage hoarding. The Circles contract includes a demurrage system with the following characteristics:
+Demurrage is an economic concept where the value of a currency decreases over time. In Circles, this is implemented to encourage circulation of the currency and discourage hoarding. Demurrage further ensures that all times in the future one hour can be issued as one Circle.
+
+By default all balances and transfer amounts as arguments in functions in the Hub contract are understood as demurraged amounts for the present day. However, to interact with other smart contracts it is often important to be able to interact with a static (ie. not rebalancing) token representation. Therefore Circles also offers a static, inflationary representation of all balances and transfer functions - both at the ERC1155 representation and in the ERC20 representation.
+
+The Circles contract includes a demurrage system with the following characteristics:
 
 - Balances are stored as "discounted balances" that automatically decrease in value over time.
-- The `_calculateIssuance()` function in the Circles contract accounts for demurrage when determining how much new currency to mint for a user.
+- The `calculateIssuance()` function in the Circles contract accounts for demurrage when determining how much new currency to mint for a person.
 - Demurrage applies to both personal currencies and group currencies.
 
 This system ensures that:
+
 - The currency remains active and circulating within the community.
 - Long-term storage of wealth is discouraged, promoting a more dynamic economy.
 - The basic income aspect of the system remains relevant, as users are incentivized to regularly engage with their personal currency.
