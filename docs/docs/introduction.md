@@ -40,6 +40,7 @@ Trust is a fundamental concept in the Circles protocol. It allows personal curre
 - People can establish trust relationships with other entities (people, organizations, or groups) using the `trust()` function.
 - Trust relationships can be set with expiration times, allowing for dynamic trust networks. Alternatively, trust can be established indefinitely by setting the expiration to the maximum possible future time.
 - The trust network is leveraged to enable transitive transfers of Circles along paths of trust. The `isPermittedFlow()` function verifies if a transitive transfer is permissible based on the trust relationships between the involved parties and the specific currency being transferred.
+- Circles still function as a normal token, for explicit `ERC1155:safe(Batch)TransferFrom()` or `ERC20:transfer()` no constraints of the transitive transfer of the trust network apply.
 - Trust relationships can be established not only between individuals but also between people, organizations, and groups, creating a diverse and interconnected economic ecosystem.
 
 Trust networks enable:
