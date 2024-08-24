@@ -51,20 +51,21 @@ Trust networks enable:
 
 ### Demurrage
 
-Demurrage is an economic concept where the value of a currency decreases over time. In Circles, this is implemented to encourage circulation of the currency and discourage hoarding. Demurrage further ensures that all times in the future one hour can be issued as one Circle.
+Demurrage in currency systems is an economic concept where a cost is associated with holding a currency over time. In Circles, this mechanism is implemented to encourage circulation of the currency and mitigate extreme inequities. Demurrage ensures that at any future point, one hour can be issued as one Circle, while maintaining a maximum total supply of Circles.
 
-By default all balances and transfer amounts as arguments in functions in the Hub contract are understood as demurraged amounts for the present day. However, to interact with other smart contracts it is often important to be able to interact with a static (ie. not rebalancing) token representation. Therefore Circles also offers a static, inflationary representation of all balances and transfer functions - both at the ERC1155 representation and in the ERC20 representation.
+In the Hub contract, all balances and transfer amounts used as function arguments are, by default, understood as demurraged amounts for the present day. However, to facilitate interactions with other smart contracts, Circles also offers a static (non-rebalancing) token representation. This static, inflationary representation of all balances and transfer functions is available both in the ERC1155 and ERC20 representations.
 
-The Circles contract includes a demurrage system with the following characteristics:
+The Circles contract incorporates a demurrage system with the following key characteristics:
 
 - Balances are stored as "discounted balances" that automatically decrease in value over time.
-- The `calculateIssuance()` function in the Circles contract accounts for demurrage when determining how much new currency to mint for a person.
-- Demurrage applies to both personal currencies and group currencies.
+- The `calculateIssuance()` function in the Circles contract factors in demurrage when determining the amount of new currency to mint for an individual.
+- Demurrage applies uniformly to both personal currencies and group currencies.
 
 This system ensures that:
 
 - The currency remains active and circulating within the community.
-- Long-term storage of wealth is discouraged, promoting a more dynamic economy.
-- The basic income aspect of the system remains relevant, as users are incentivized to regularly engage with their personal currency.
+- Circles are issued equitably across individuals and over time.
+- A clear unit of account is established, with one Circle representing one hour of an individual's time.
+- Circles serves as both a robust store of value and an effective means of exchange.
 
-By combining these key concepts - personal currencies, trust networks, and demurrage - Circles creates a unique economic system that aims to provide a basic income while fostering community connections and encouraging active participation in the local economy.
+By integrating these key concepts - personal currencies, trust networks, and demurrage - Circles creates a unique economic system. This system aims to provide a fairly issued, socially-rooted monetary framework that fosters community connections and promotes active participation in the local economy.
