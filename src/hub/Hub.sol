@@ -114,7 +114,6 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     // Events
 
     event RegisterHuman(address indexed avatar);
-    // event InviteHuman(address indexed inviter, address indexed invited);
     event RegisterOrganization(address indexed organization, string name);
     event RegisterGroup(
         address indexed group, address indexed mint, address indexed treasury, string name, string symbol
