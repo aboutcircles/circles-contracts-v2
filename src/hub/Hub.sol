@@ -39,6 +39,11 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      */
     address private constant SENTINEL = address(0x1);
 
+    /**
+     * @dev advanced flag to indicate whether avatar disables consented flow
+     */
+    bytes32 private constant ADVANCED_FLAG_DISABLE_CONSENTEDFLOW = bytes32(uint256(1));
+
     // State variables
 
     /**
@@ -110,6 +115,13 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * their expiry times.
      */
     mapping(address => mapping(address => TrustMarker)) public trustMarkers;
+
+    /**
+     * @notice Advanced usage flags for avatar. Only the least significant bit is used
+     * by the Circles protocol itself for consented flow behaviour, the remaining bits
+     * are reserved for future community-proposed extensions.
+     */
+    mapping(address => bytes32) public advancedUsageFlags;
 
     // Events
 
@@ -574,6 +586,19 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         _matchNettedFlows(streamsNettedFlow, matrixNettedFlow);
     }
 
+    /**
+     * @notice Set the advanced usage flag for the caller's avatar.
+     * @param _flag advanced usage flags combination to set
+     */
+    function setAdvancedUsageFlag(bytes32 _flag) external {
+        if (avatars[msg.sender] == address(0)) {
+            // Only registered avatars can set advanced usage flags.
+            revert CirclesAvatarMustBeRegistered(msg.sender, 3);
+        }
+
+        advancedUsageFlags[msg.sender] = _flag;
+    }
+
     // Public functions
 
     /**
@@ -612,9 +637,11 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     }
 
     /**
-     * @notice Returns true if the flow to the receiver is permitted.
+     * @notice Returns true if the flow to the receiver is permitted. This function is called only
+     * by the operateFlowMatrix function to check whether the flow edge is permitted.
      * The receiver must trust the Circles being sent, and the Circles avatar associated with
-     * the Circles must trust the receiver.
+     * the Circles must trust the receiver. Unless the Circles avatar concerned has opted out of
+     * consented flow, in which case the flow is permitted once the receiver trusts the Circles.
      * @param _to Address of the receiver
      * @param _circlesAvatar Address of the Circles avatar of the Circles being sent
      * @return permitted true if the flow is permitted, false otherwise
@@ -622,7 +649,11 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     function isPermittedFlow(address _to, address _circlesAvatar) public view returns (bool) {
         // if receiver does not trust the Circles being sent, then the flow is not permitted regardless
         if (uint256(trustMarkers[_to][_circlesAvatar].expiry) < block.timestamp) return false;
-        // however, consented flow also requires bi-directional trust from center to receiver
+        // if the advanced usage flag disables consented flow, then the uni-directional trust is sufficient
+        if (advancedUsageFlags[_circlesAvatar] & ADVANCED_FLAG_DISABLE_CONSENTEDFLOW != bytes32(0)) {
+            return true;
+        }
+        // however, consented flow also requires bi-directional trust from center (minter) to receiver
         return uint256(trustMarkers[_circlesAvatar][_to].expiry) >= block.timestamp;
     }
 
