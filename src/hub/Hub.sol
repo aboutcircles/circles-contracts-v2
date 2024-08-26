@@ -639,22 +639,23 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     /**
      * @notice Returns true if the flow to the receiver is permitted. This function is called only
      * by the operateFlowMatrix function to check whether the flow edge is permitted.
-     * The receiver must trust the Circles being sent, and the Circles avatar associated with
-     * the Circles must trust the receiver. Unless the Circles avatar concerned has opted out of
+     * The receiver must trust the Circles being sent, and the sender must trust the receiver.
+     * Unless the sender avatar concerned has opted out of
      * consented flow, in which case the flow is permitted once the receiver trusts the Circles.
+     * @param _from Address of the sender
      * @param _to Address of the receiver
      * @param _circlesAvatar Address of the Circles avatar of the Circles being sent
      * @return permitted true if the flow is permitted, false otherwise
      */
-    function isPermittedFlow(address _to, address _circlesAvatar) public view returns (bool) {
+    function isPermittedFlow(address _from, address _to, address _circlesAvatar) public view returns (bool) {
         // if receiver does not trust the Circles being sent, then the flow is not permitted regardless
         if (uint256(trustMarkers[_to][_circlesAvatar].expiry) < block.timestamp) return false;
         // if the advanced usage flag disables consented flow, then the uni-directional trust is sufficient
-        if (advancedUsageFlags[_circlesAvatar] & ADVANCED_FLAG_DISABLE_CONSENTEDFLOW != bytes32(0)) {
+        if (advancedUsageFlags[_from] & ADVANCED_FLAG_DISABLE_CONSENTEDFLOW != bytes32(0)) {
             return true;
         }
-        // however, consented flow also requires bi-directional trust from center (minter) to receiver
-        return uint256(trustMarkers[_circlesAvatar][_to].expiry) >= block.timestamp;
+        // however, consented flow also requires sender to trust the receiver
+        return uint256(trustMarkers[_from][_to].expiry) >= block.timestamp;
     }
 
     // Internal functions
@@ -702,8 +703,9 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             // if the group mint is called explicitly, check the group trusts the collateral
             // otherwise if the group mint is called implicitly over operateFlowMatrix,
             // check the flow edge is permitted
-            bool isValidCollateral =
-                explicitGroupMint ? isTrusted(_group, collateralAvatar) : isPermittedFlow(_group, collateralAvatar);
+            bool isValidCollateral = explicitGroupMint
+                ? isTrusted(_group, collateralAvatar)
+                : isPermittedFlow(_sender, _group, collateralAvatar);
 
             if (!isValidCollateral) {
                 // Group does not trust collateral, or flow edge is not permitted
@@ -795,12 +797,13 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
                 // index + 1: sender coordinate
                 // index + 2: receiver coordinate
                 address circlesId = _flowVertices[_coordinates[index]];
+                address from = _flowVertices[_coordinates[index + 1]];
                 address to = _flowVertices[_coordinates[index + 2]];
                 int256 flow = int256(uint256(_flow[i].amount));
 
                 // check the receiver trusts the Circles being sent
-                // and that the center trusts the receiver (unless center opt-ed out)
-                if (!isPermittedFlow(to, circlesId)) {
+                // and that the sender trusts the receiver (unless sender opt-ed out of consented flow)
+                if (!isPermittedFlow(from, to, circlesId)) {
                     // Flow edge is not permitted.
                     revert CirclesHubFlowEdgeIsNotPermitted(to, toTokenId(circlesId), 1);
                 }
