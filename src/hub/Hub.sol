@@ -621,11 +621,11 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     }
 
     /**
-     * @notice Returns true if the flow to the receiver is permitted. This function is called only
-     * by the operateFlowMatrix function to check whether the flow edge is permitted.
-     * The receiver must trust the Circles being sent, and the sender must trust the receiver.
-     * Unless the sender avatar concerned has opted out of
-     * consented flow, in which case the flow is permitted once the receiver trusts the Circles.
+     * @notice Returns true if the flow to the receiver is permitted. By default avatars don't have
+     * consented flow enabled, so then this function is equivalent to isTrusted(). This function is called
+     * to check whether the flow edge is permitted (either along a path's flow edge, or upon groupMint).
+     * If the sender avatar has enabled consented flow for the Circles balances they own,
+     * then the receiver must trust the Circles being sent, and the sender must trust the receiver.
      * @param _from Address of the sender
      * @param _to Address of the receiver
      * @param _circlesAvatar Address of the Circles avatar of the Circles being sent
