@@ -46,17 +46,17 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
 
     // State variables
 
-    /**
-     * @notice The global name of Circles.
-     * todo, change this to "Circles" for the production deployment
-     */
-    string public name = "Rings";
+    // /**
+    //  * @notice The global name of Circles.
+    //  * todo, change this to "Circles" for the production deployment
+    //  */
+    // string public name = "Rings";
 
-    /**
-     * @notice The global symbol ticker for Circles.
-     * todo, change this to "CRC" for the production deployment
-     */
-    string public symbol = "RING";
+    // /**
+    //  * @notice The global symbol ticker for Circles.
+    //  * todo, change this to "CRC" for the production deployment
+    //  */
+    // string public symbol = "RING";
 
     /**
      * @notice The Hub v1 contract address.
