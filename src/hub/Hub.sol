@@ -40,9 +40,9 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     address private constant SENTINEL = address(0x1);
 
     /**
-     * @dev advanced flag to indicate whether avatar disables consented flow
+     * @dev advanced flag to indicate whether avatar enables consented flow
      */
-    bytes32 private constant ADVANCED_FLAG_DISABLE_CONSENTEDFLOW = bytes32(uint256(1));
+    bytes32 private constant ADVANCED_FLAG_ENABLE_CONSENTEDFLOW = bytes32(uint256(1));
 
     // State variables
 
@@ -646,8 +646,9 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     function isPermittedFlow(address _from, address _to, address _circlesAvatar) public view returns (bool) {
         // if receiver does not trust the Circles being sent, then the flow is not permitted regardless
         if (uint256(trustMarkers[_to][_circlesAvatar].expiry) < block.timestamp) return false;
-        // if the advanced usage flag disables consented flow, then the uni-directional trust is sufficient
-        if (advancedUsageFlags[_from] & ADVANCED_FLAG_DISABLE_CONSENTEDFLOW != bytes32(0)) {
+        // if the advanced usage flag does not enables consented flow,
+        // then the uni-directional trust is sufficient, ie. no consented flow applies for sender
+        if (advancedUsageFlags[_from] & ADVANCED_FLAG_ENABLE_CONSENTEDFLOW == bytes32(0)) {
             return true;
         }
         // however, consented flow also requires sender to trust the receiver
