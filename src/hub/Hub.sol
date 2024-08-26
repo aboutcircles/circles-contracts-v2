@@ -780,7 +780,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
                 int256 flow = int256(uint256(_flow[i].amount));
 
                 // check the receiver trusts the Circles being sent
-                // and that the sender trusts the receiver (unless sender opt-ed out of consented flow)
+                // and if the sender has enabled consented flow, also check that the sender trusts the receiver
                 if (!isPermittedFlow(from, to, circlesId)) {
                     // Flow edge is not permitted.
                     revert CirclesHubFlowEdgeIsNotPermitted(to, toTokenId(circlesId), 1);
