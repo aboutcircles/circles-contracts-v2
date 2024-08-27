@@ -624,7 +624,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * consented flow enabled, so then this function is equivalent to isTrusted(). This function is called
      * to check whether the flow edge is permitted (either along a path's flow edge, or upon groupMint).
      * If the sender avatar has enabled consented flow for the Circles balances they own,
-     * then the receiver must trust the Circles being sent, and the sender must trust the receiver.
+     * then the receiver must trust the Circles being sent, and the sender must trust the receiver,
+     * and to preserve the protection recursively the receiver themselves must have consented flow enabled.
      * @param _from Address of the sender
      * @param _to Address of the receiver
      * @param _circlesAvatar Address of the Circles avatar of the Circles being sent
@@ -638,8 +639,12 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         if (advancedUsageFlags[_from] & ADVANCED_FLAG_ENABLE_CONSENTEDFLOW == bytes32(0)) {
             return true;
         }
-        // however, consented flow also requires sender to trust the receiver
-        return uint256(trustMarkers[_from][_to].expiry) >= block.timestamp;
+        // however, recursive consented flow also requires sender to trust the receiver
+        // and for that receiver themselves to have consented flow enabled
+        return (
+            uint256(trustMarkers[_from][_to].expiry) >= block.timestamp
+                && advancedUsageFlags[_to] & ADVANCED_FLAG_ENABLE_CONSENTEDFLOW != bytes32(0)
+        );
     }
 
     // Internal functions
