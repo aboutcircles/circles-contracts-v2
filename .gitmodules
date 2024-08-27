@@ -5,6 +5,4 @@
 	path = lib/openzeppelin-contracts
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts
 	branch = v5.0.2
-[submodule "v1Contracts"]
-	path = v1Contracts
-	url = https://github.com/CirclesUBI/circles-contracts.git
+
