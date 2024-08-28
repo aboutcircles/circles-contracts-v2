@@ -27,7 +27,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     /**
      * @dev Welcome bonus for new avatars invited to Circles. Set to 50 Circles.
      */
-    uint256 private constant WELCOME_BONUS = 50 * EXA;
+    uint256 private constant WELCOME_BONUS = 48 * EXA;
 
     /**
      * @dev The cost of an invitation for a new avatar, paid in personal Circles burnt, set to 100 Circles.
