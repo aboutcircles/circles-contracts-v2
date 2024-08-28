@@ -47,6 +47,15 @@ contract StandardTreasury is
      */
     mapping(address => IStandardVault) public vaults;
 
+    // Events
+
+    event CreateVault(address indexed group, address indexed vault);
+    event GroupMintSingle(address indexed group, uint256 indexed id, uint256 value, bytes userData);
+    event GroupMintBatch(address indexed group, uint256[] ids, uint256[] values, bytes userData);
+    event GroupRedeem(address indexed group, uint256 indexed id, uint256 value, bytes data);
+    event GroupRedeemCollateralReturn(address indexed group, address indexed to, uint256[] ids, uint256[] values);
+    event GroupRedeemCollateralBurn(address indexed group, uint256[] ids, uint256[] values);
+
     // Modifiers
 
     /**
@@ -145,6 +154,10 @@ contract StandardTreasury is
         address vault = address(_ensureVault(_group));
         // forward the Circles to the vault
         hub.safeBatchTransferFrom(address(this), vault, _ids, _values, _userData);
+
+        // emit the group mint event
+        emit GroupMintBatch(_group, _ids, _values, _userData);
+
         return this.onERC1155BatchReceived.selector;
     }
 
@@ -156,6 +169,10 @@ contract StandardTreasury is
         address vault = address(_ensureVault(_group));
         // forward the Circles to the vault
         hub.safeTransferFrom(address(this), vault, _id, _value, _userData);
+
+        // emit the group mint event
+        emit GroupMintSingle(_group, _id, _value, _userData);
+
         return this.onERC1155Received.selector;
     }
 
@@ -209,6 +226,11 @@ contract StandardTreasury is
         // burn the collateral Circles from the vault
         vault.burnCollateral(burnIds, burnValues, _data);
 
+        // emit the group redeem event
+        emit GroupRedeem(group, _id, _value, _data);
+        emit GroupRedeemCollateralReturn(group, _from, redemptionIds, redemptionValues);
+        emit GroupRedeemCollateralBurn(group, burnIds, burnValues);
+
         // return the ERC1155 selector for acceptance of the (redeemed) group Circles
         return this.onERC1155Received.selector;
     }
@@ -259,6 +281,8 @@ contract StandardTreasury is
         if (address(vault) == address(0)) {
             vault = _deployVault();
             vaults[_group] = vault;
+
+            emit CreateVault(_group, address(vault));
         }
         return vault;
     }

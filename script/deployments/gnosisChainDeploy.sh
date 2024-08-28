@@ -99,7 +99,7 @@ INFLATION_DAY_ZERO=1602720000
 # put a long bootstrap time for testing bootstrap to one year
 BOOTSTRAP_ONE_YEAR=31540000
 # fallback URI 
-URI='https://fallback.aboutcircles.com/v1/circles/{id}.json'
+URI='https://gateway.aboutcircles.com/v1/circles/{id}.json'
 
 # re-export the variables for use here and in the general calculation JS script
 export PRIVATE_KEY=$PRIVATE_KEY_GNOSIS
