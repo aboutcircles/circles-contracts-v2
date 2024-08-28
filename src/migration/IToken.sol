@@ -15,4 +15,6 @@ interface ITokenV1 is IERC20 {
     function stopped() external view returns (bool);
 
     function update() external;
+
+    function lastTouched() external view returns (uint256);
 }

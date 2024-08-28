@@ -130,16 +130,6 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     // Modifiers
 
     /**
-     * Modifier to check if the current time is during the bootstrap period.
-     */
-    modifier onlyDuringBootstrap(uint8 _code) {
-        if (block.timestamp > invitationOnlyTime) {
-            revert CirclesHubOnlyDuringBootstrap(_code);
-        }
-        _;
-    }
-
-    /**
      * Modifier to check if the caller is the migration contract.
      */
     modifier onlyMigration() {
@@ -220,15 +210,21 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
 
     /**
      * @notice Register human allows to register an avatar for a human,
-     * if they have a stopped v1 Circles contract, during the bootstrap period.
+     * if they have a stopped v1 Circles contract, that has been stopped
+     * before the end of the invitation period.
      * @param _metadataDigest (optional) sha256 metadata digest for the avatar metadata
      * should follow ERC1155 metadata standard.
      */
-    function registerHuman(bytes32 _metadataDigest) external onlyDuringBootstrap(0) {
+    function registerHuman(bytes32 _metadataDigest) external {
         // only available for v1 users with stopped v1 mint, for initial bootstrap period
-        address v1CirclesStatus = _registerHuman(msg.sender);
+        (address v1CirclesStatus, uint256 v1LastTouched) = _registerHuman(msg.sender);
+        // check if v1 Circles exists and has been stopped
         if (v1CirclesStatus != CIRCLES_STOPPED_V1) {
-            revert CirclesHubRegisterAvatarV1MustBeStopped(msg.sender, 0);
+            revert CirclesHubRegisterAvatarV1MustBeStoppedBeforeEndOfInvitationPeriod(msg.sender, 0);
+        }
+        // if it has been stopped, did it stop before the end of the invitation period?
+        if (v1LastTouched >= invitationOnlyTime) {
+            revert CirclesHubRegisterAvatarV1MustBeStoppedBeforeEndOfInvitationPeriod(msg.sender, 1);
         }
 
         // store the metadata digest for the avatar metadata
@@ -250,6 +246,9 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         }
 
         // register the invited human; reverts if they already exist
+        // it checks the status of the avatar in v1, but regardless of the status
+        // we can proceed to register the avatar in v2 (they might not be able to mint yet
+        // if they have not stopped their v1 contract)
         _registerHuman(_human);
 
         if (block.timestamp > invitationOnlyTime) {
@@ -961,13 +960,13 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * Additionally set the trust to self indefinitely.
      * @param _human address of the human to be registered
      */
-    function _registerHuman(address _human) internal returns (address v1CirclesStatus) {
+    function _registerHuman(address _human) internal returns (address v1CirclesStatus, uint256 v1LastTouched) {
         // insert avatar into linked list; reverts if it already exists
         _insertAvatar(_human);
 
         // set the last mint time to the current timestamp for invited human
         // and register the v1 Circles contract status
-        v1CirclesStatus = _avatarV1CirclesStatus(_human);
+        (v1CirclesStatus, v1LastTouched) = _avatarV1CirclesStatus(_human);
         MintTime storage mintTime = mintTimes[_human];
         mintTime.mintV1Status = v1CirclesStatus;
         mintTime.lastMintTime = uint96(block.timestamp);
@@ -977,7 +976,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
 
         emit RegisterHuman(_human);
 
-        return v1CirclesStatus;
+        return (v1CirclesStatus, v1LastTouched);
     }
 
     /**
@@ -1058,29 +1057,36 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         // check if v1 Circles is known to be stopped
         if (mintTimes[_human].mintV1Status != CIRCLES_STOPPED_V1) {
             // if v1 Circles is not known to be stopped, check the status
-            address v1MintStatus = _avatarV1CirclesStatus(_human);
+            (address v1MintStatus,) = _avatarV1CirclesStatus(_human);
             _updateMintV1Status(_human, v1MintStatus);
         }
     }
 
     /**
-     * Checks the status of an avatar's Circles in the Hub v1 contract,
+     * @dev Checks the status of an avatar's Circles in the Hub v1 contract,
      * and returns the address of the Circles if it exists and is not stopped.
      * Else, it returns the zero address if no Circles exist,
      * and it returns the address CIRCLES_STOPPED_V1 (0x1) if the Circles contract is stopped.
+     * If a Circles contract exists, it also returns the last touched time of the Circles v1 token.
      * @param _avatar avatar address for which to check registration in Hub v1
+     * @return address of the Circles contract if it exists and is not stopped, or zero address if no Circles exist
+     * or CIRCLES_STOPPED_V1 if the Circles contract is stopped.
+     * Additionally, return the last touched time of the Circles v1 token (ie. the last time it minted CRC),
+     * if the token exists, or zero if it does not.
      */
-    function _avatarV1CirclesStatus(address _avatar) internal view returns (address) {
+    function _avatarV1CirclesStatus(address _avatar) internal view returns (address, uint256) {
         address circlesV1 = hubV1.userToToken(_avatar);
         // no token exists in Hub v1, so return status is zero address
-        if (circlesV1 == address(0)) return address(0);
+        if (circlesV1 == address(0)) return (address(0), uint256(0));
+        // get the last touched time of the Circles v1 token
+        uint256 lastTouched = ITokenV1(circlesV1).lastTouched();
         // return the status of the token
         if (ITokenV1(circlesV1).stopped()) {
-            // return the stopped status of the Circles contract
-            return CIRCLES_STOPPED_V1;
+            // return the stopped status of the Circles contract, and the last touched time
+            return (CIRCLES_STOPPED_V1, lastTouched);
         } else {
             // return the address of the Circles contract if it exists and is not stopped
-            return circlesV1;
+            return (circlesV1, lastTouched);
         }
     }
 
