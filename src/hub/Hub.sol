@@ -212,56 +212,62 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * @notice Register human allows to register an avatar for a human,
      * if they have a stopped v1 Circles contract, that has been stopped
      * before the end of the invitation period.
+     * Otherwise the caller must have been invited by an already registered human avatar.
+     * Humans can invite someone by trusting their address ahead of this call.
+     * After the invitation period, the inviter must burn the invitation cost, and the
+     * newly registered human will receive the welcome bonus.
+     * @param _inviter address of the inviter, who must have trusted the caller ahead of this call.
+     * If the inviter is zero, the caller can self-register if they have a stopped v1 Circles contract
+     * (stopped before the end of the invitation period).
      * @param _metadataDigest (optional) sha256 metadata digest for the avatar metadata
      * should follow ERC1155 metadata standard.
      */
-    function registerHuman(bytes32 _metadataDigest) external {
-        // only available for v1 users with stopped v1 mint, for initial bootstrap period
-        (address v1CirclesStatus, uint256 v1LastTouched) = _registerHuman(msg.sender);
-        // check if v1 Circles exists and has been stopped
-        if (v1CirclesStatus != CIRCLES_STOPPED_V1) {
-            revert CirclesHubRegisterAvatarV1MustBeStoppedBeforeEndOfInvitationPeriod(msg.sender, 0);
-        }
-        // if it has been stopped, did it stop before the end of the invitation period?
-        if (v1LastTouched >= invitationOnlyTime) {
-            revert CirclesHubRegisterAvatarV1MustBeStoppedBeforeEndOfInvitationPeriod(msg.sender, 1);
+    function registerHuman(address _inviter, bytes32 _metadataDigest) external {
+        if (_inviter == address(0)) {
+            // to self-register yourself if you are a stopped v1 user,
+            // leave the inviter address as zero.
+
+            // only available for v1 users with stopped v1 mint, for initial bootstrap period
+            (address v1CirclesStatus, uint256 v1LastTouched) = _registerHuman(msg.sender);
+            // check if v1 Circles exists and has been stopped
+            if (v1CirclesStatus != CIRCLES_STOPPED_V1) {
+                revert CirclesHubRegisterAvatarV1MustBeStoppedBeforeEndOfInvitationPeriod(msg.sender, 0);
+            }
+            // if it has been stopped, did it stop before the end of the invitation period?
+            if (v1LastTouched >= invitationOnlyTime) {
+                revert CirclesHubRegisterAvatarV1MustBeStoppedBeforeEndOfInvitationPeriod(msg.sender, 1);
+            }
+        } else {
+            // if someone has invited you by trusting your address ahead of this call,
+            // they must themselves be a registered human, and they must pay the invitation cost (after invitation period).
+
+            if (!isHuman(_inviter)) {
+                revert CirclesHubMustBeHuman(msg.sender, 0);
+            }
+
+            if (!isTrusted(_inviter, msg.sender)) {
+                revert CirclesHubInvalidTrustReceiver(msg.sender, 0);
+            }
+
+            // register the invited human; reverts if they already exist
+            // it checks the status of the avatar in v1, but regardless of the status
+            // we can proceed to register the avatar in v2 (they might not be able to mint yet
+            // if they have not stopped their v1 contract)
+            _registerHuman(msg.sender);
+
+            if (block.timestamp > invitationOnlyTime) {
+                // after the invitation period, the inviter must burn the invitation cost
+                _burnAndUpdateTotalSupply(_inviter, toTokenId(_inviter), INVITATION_COST);
+
+                // mint the welcome bonus to the newly registered human
+                _mintAndUpdateTotalSupply(msg.sender, toTokenId(msg.sender), WELCOME_BONUS, "");
+            }
         }
 
         // store the metadata digest for the avatar metadata
         if (_metadataDigest != bytes32(0)) {
             nameRegistry.setMetadataDigest(msg.sender, _metadataDigest);
         }
-    }
-
-    /**
-     * @notice Invite human allows to register another human avatar.
-     * The inviter must burn twice the welcome bonus of their own Circles,
-     * and the invited human receives the welcome bonus in their personal Circles.
-     * The inviter is set to trust the invited avatar.
-     * @param _human avatar of the human to invite
-     */
-    function inviteHuman(address _human) external {
-        if (!isHuman(msg.sender)) {
-            revert CirclesHubMustBeHuman(msg.sender, 0);
-        }
-
-        // register the invited human; reverts if they already exist
-        // it checks the status of the avatar in v1, but regardless of the status
-        // we can proceed to register the avatar in v2 (they might not be able to mint yet
-        // if they have not stopped their v1 contract)
-        _registerHuman(_human);
-
-        if (block.timestamp > invitationOnlyTime) {
-            // after the bootstrap period, the inviter must burn the invitation cost
-            _burnAndUpdateTotalSupply(msg.sender, toTokenId(msg.sender), INVITATION_COST);
-
-            // todo: re-discuss desired approach to welcome bonus vs migration
-            // invited receives the welcome bonus in their personal Circles
-            _mintAndUpdateTotalSupply(_human, toTokenId(_human), WELCOME_BONUS, "");
-        }
-
-        // set trust to indefinite future, but avatar can edit this later
-        _trust(msg.sender, _human, INDEFINITE_FUTURE);
     }
 
     /**
@@ -333,7 +339,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     /**
      * @notice Trust allows to trust another address for a certain period of time.
      * Expiry times in the past are set to the current block timestamp.
-     * @param _trustReceiver address that is trusted by the caller
+     * @param _trustReceiver address that is trusted by the caller. The trust receiver
+     * does not (yet) need to be registered as an avatar.
      * @param _expiry expiry time in seconds since unix epoch until when trust is valid
      * @dev Trust is directional and can be set by the caller to any address.
      * The trusted address does not (yet) have to be registered in the Hub contract.
@@ -345,11 +352,11 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         if (_trustReceiver == address(0) || _trustReceiver == SENTINEL) {
             // You cannot trust the zero address or the sentinel address.
             // Reserved addresses for logic.
-            revert CirclesHubInvalidTrustReceiver(_trustReceiver, 0);
+            revert CirclesHubInvalidTrustReceiver(_trustReceiver, 1);
         }
         if (_trustReceiver == msg.sender) {
             // You cannot edit your own trust relation.
-            revert CirclesHubInvalidTrustReceiver(_trustReceiver, 1);
+            revert CirclesHubInvalidTrustReceiver(_trustReceiver, 2);
         }
         // expiring trust cannot be set in the past
         if (_expiry < block.timestamp) _expiry = uint96(block.timestamp);

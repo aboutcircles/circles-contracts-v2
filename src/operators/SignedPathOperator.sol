@@ -42,11 +42,4 @@ contract SignedPathOperator is BaseOperator, TypeDefinitions {
         // Call the hub to operate the flow matrix
         hub.operateFlowMatrix(_flowVertices, _flow, _streams, _packedCoordinates);
     }
-
-    // Internal functions
-
-    // function _extractSource(bytes calldata _packedCoordinates, uint256 _sourceIndex) internal pure returns (uint16) {
-    //     return
-    //         uint16(uint8(_packedCoordinates[_sourceIndex])) << 8 | uint16(uint8(_packedCoordinates[_sourceIndex + 1]));
-    // }
 }
