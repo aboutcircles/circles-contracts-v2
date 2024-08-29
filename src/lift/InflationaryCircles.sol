@@ -11,6 +11,8 @@ import "./ERC20InflationaryBalances.sol";
 contract InflationaryCircles is MasterCopyNonUpgradable, ERC20InflationaryBalances, ERC1155Holder {
     // Constants
 
+    string internal constant INFLATIONARY_SYMBOL_PREFIX = "s-";
+
     // State variables
 
     IHubV2 public hub;
@@ -89,7 +91,7 @@ contract InflationaryCircles is MasterCopyNonUpgradable, ERC20InflationaryBalanc
     }
 
     function symbol() external view returns (string memory) {
-        return nameRegistry.symbol(avatar);
+        return string(abi.encodePacked(INFLATIONARY_SYMBOL_PREFIX, nameRegistry.symbol(avatar)));
     }
 
     function decimals() external pure returns (uint8) {
