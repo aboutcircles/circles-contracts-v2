@@ -107,13 +107,14 @@ contract ERC20DiscountedBalances is ERC20Permit, Demurrage, IERC20 {
             // Balance exceeds maximum value.
             revert CirclesDemurrageAmountExceedsMaxUint190(_account, toTokenId(avatar), _balance, 0);
         }
-        DiscountedBalance storage discountedBalance = discountedBalances[_account];
+        DiscountedBalance memory discountedBalance = discountedBalances[_account];
         discountedBalance.balance = uint192(_balance);
         discountedBalance.lastUpdatedDay = _day;
+        discountedBalances[_account] = discountedBalance;
     }
 
     function _discountAndAddToBalance(address _account, uint256 _value, uint64 _day) internal {
-        DiscountedBalance storage discountedBalance = discountedBalances[_account];
+        DiscountedBalance memory discountedBalance = discountedBalances[_account];
         if (_day < discountedBalance.lastUpdatedDay) {
             // ERC20 DiscountedBalances: day is before last updated day
             revert CirclesDemurrageDayBeforeLastUpdatedDay(
@@ -128,7 +129,7 @@ contract ERC20DiscountedBalances is ERC20Permit, Demurrage, IERC20 {
         unchecked {
             uint256 discountCost = discountedBalance.balance - discountedBalanceOnDay;
             if (discountCost > 0) {
-                emit DiscountCost(_account, toTokenId(avatar), discountCost);
+                emit Transfer(_account, address(0), discountCost);
             }
         }
         uint256 updatedBalance = discountedBalanceOnDay + _value;
@@ -138,6 +139,7 @@ contract ERC20DiscountedBalances is ERC20Permit, Demurrage, IERC20 {
         }
         discountedBalance.balance = uint192(updatedBalance);
         discountedBalance.lastUpdatedDay = _day;
+        discountedBalances[_account] = discountedBalance;
     }
 
     function _transfer(address _from, address _to, uint256 _amount) internal {
@@ -147,7 +149,7 @@ contract ERC20DiscountedBalances is ERC20Permit, Demurrage, IERC20 {
             revert ERC20InsufficientBalance(_from, fromBalance, _amount);
         }
         if (discountCost > 0) {
-            emit DiscountCost(_from, toTokenId(avatar), discountCost);
+            emit Transfer(_from, address(0), discountCost);
         }
         unchecked {
             _updateBalance(_from, fromBalance - _amount, day);
@@ -169,7 +171,7 @@ contract ERC20DiscountedBalances is ERC20Permit, Demurrage, IERC20 {
             revert ERC20InsufficientBalance(_owner, ownerBalance, _amount);
         }
         if (discountCost > 0) {
-            emit DiscountCost(_owner, toTokenId(avatar), discountCost);
+            emit Transfer(_owner, address(0), discountCost);
         }
         unchecked {
             _updateBalance(_owner, ownerBalance - _amount, day);

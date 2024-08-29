@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.8.24;
 
-import "../lib/Math64x64.sol";
+import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "./Demurrage.sol";
 
 contract DiscountedBalances is Demurrage {
@@ -95,9 +95,10 @@ contract DiscountedBalances is Demurrage {
             // DiscountedBalances: balance exceeds maximum value
             revert CirclesDemurrageAmountExceedsMaxUint190(_account, _id, _balance, 0);
         }
-        DiscountedBalance storage discountedBalance = discountedBalances[_id][_account];
+        DiscountedBalance memory discountedBalance = discountedBalances[_id][_account];
         discountedBalance.balance = uint192(_balance);
         discountedBalance.lastUpdatedDay = _day;
+        discountedBalances[_id][_account] = discountedBalance;
     }
 
     /**
@@ -108,7 +109,7 @@ contract DiscountedBalances is Demurrage {
      * @param _day Day since inflation_day_zero to discount the balance to
      */
     function _discountAndAddToBalance(address _account, uint256 _id, uint256 _value, uint64 _day) internal {
-        DiscountedBalance storage discountedBalance = discountedBalances[_id][_account];
+        DiscountedBalance memory discountedBalance = discountedBalances[_id][_account];
         if (_day < discountedBalance.lastUpdatedDay) {
             // DiscountedBalances: day is before last updated day
             revert CirclesDemurrageDayBeforeLastUpdatedDay(_account, _id, _day, discountedBalance.lastUpdatedDay, 1);
@@ -122,7 +123,7 @@ contract DiscountedBalances is Demurrage {
         unchecked {
             uint256 discountCost = discountedBalance.balance - discountedBalanceOnDay;
             if (discountCost > 0) {
-                emit DiscountCost(_account, _id, discountCost);
+                emit IERC1155.TransferSingle(msg.sender, _account, address(0), _id, discountCost);
             }
         }
         uint256 updatedBalance = discountedBalanceOnDay + _value;
@@ -132,5 +133,6 @@ contract DiscountedBalances is Demurrage {
         }
         discountedBalance.balance = uint192(updatedBalance);
         discountedBalance.lastUpdatedDay = _day;
+        discountedBalances[_id][_account] = discountedBalance;
     }
 }

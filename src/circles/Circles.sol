@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.8.24;
 
+import {ABDKMath64x64 as Math64x64} from "lib/abdk-libraries-solidity/ABDKMath64x64.sol";
 import "../errors/Errors.sol";
-import "../lib/Math64x64.sol";
 import "./ERC1155.sol";
 
 contract Circles is ERC1155, ICirclesErrors {
@@ -75,7 +75,7 @@ contract Circles is ERC1155, ICirclesErrors {
         DiscountedBalances(_inflation_day_zero)
     {}
 
-    // Public functions
+    // Internal functions
 
     /**
      * @notice Calculate the demurraged issuance for a human's avatar.
@@ -84,8 +84,8 @@ contract Circles is ERC1155, ICirclesErrors {
      * @return startPeriod The start of the claimable period.
      * @return endPeriod The end of the claimable period.
      */
-    function calculateIssuance(address _human) public view returns (uint256, uint256, uint256) {
-        MintTime storage mintTime = mintTimes[_human];
+    function _calculateIssuance(address _human) internal view returns (uint256, uint256, uint256) {
+        MintTime memory mintTime = mintTimes[_human];
         if (mintTime.mintV1Status != address(0) && mintTime.mintV1Status != CIRCLES_STOPPED_V1) {
             // Circles v1 contract cannot be active.
             revert CirclesERC1155MintBlocked(_human, mintTime.mintV1Status);
@@ -129,72 +129,11 @@ contract Circles is ERC1155, ICirclesErrors {
     }
 
     /**
-     * Inflationary balance of an account for a Circles identifier. Careful,
-     * calculating the inflationary balance can introduce numerical errors
-     * in the least significant digits (order of few attoCircles).
-     * @param _account Address for which the balance is queried.
-     * @param _id Circles identifier for which the balance is queried.
-     */
-    function inflationaryBalanceOf(address _account, uint256 _id) public view returns (uint256) {
-        return _inflationaryBalanceOf(_account, _id);
-    }
-
-    /**
-     * @notice safeInflationaryTransferFrom transfers Circles from one address to another by specifying inflationary units.
-     * @param _from Address from which the Circles are transferred.
-     * @param _to Address to which the Circles are transferred.
-     * @param _id Circles indentifier for which the Circles are transferred.
-     * @param _inflationaryValue Inflationary value of the Circles transferred.
-     * @param _data Data to pass to the receiver.
-     */
-    function safeInflationaryTransferFrom(
-        address _from,
-        address _to,
-        uint256 _id,
-        uint256 _inflationaryValue,
-        bytes memory _data
-    ) public {
-        address sender = _msgSender();
-        if (_from != sender && !isApprovedForAll(_from, sender)) {
-            revert ERC1155MissingApprovalForAll(sender, _from);
-        }
-        // convert inflationary value to todays demurrage value
-        uint256 value = convertInflationaryToDemurrageValue(_inflationaryValue, day(block.timestamp));
-        _safeTransferFrom(_from, _to, _id, value, _data);
-    }
-
-    /**
-     * @notice safeInflationaryBatchTransferFrom transfers Circles from one address to another by specifying inflationary units.
-     * @param _from Address from which the Circles are transferred.
-     * @param _to Address to which the Circles are transferred.
-     * @param _ids Batch of Circles identifiers for which the Circles are transferred.
-     * @param _inflationaryValues Batch of inflationary values of the Circles transferred.
-     * @param _data Data to pass to the receiver.
-     */
-    function safeInflationaryBatchTransferFrom(
-        address _from,
-        address _to,
-        uint256[] memory _ids,
-        uint256[] memory _inflationaryValues,
-        bytes memory _data
-    ) public {
-        address sender = _msgSender();
-        if (_from != sender && !isApprovedForAll(_from, sender)) {
-            revert ERC1155MissingApprovalForAll(sender, _from);
-        }
-        uint64 today = day(block.timestamp);
-        uint256[] memory values = convertBatchInflationaryToDemurrageValues(_inflationaryValues, today);
-        _safeBatchTransferFrom(_from, _to, _ids, values, _data);
-    }
-
-    // Internal functions
-
-    /**
      * @notice Claim issuance for a human's avatar and update the last mint time.
      * @param _human Address of the human's avatar to claim the issuance for.
      */
     function _claimIssuance(address _human) internal {
-        (uint256 issuance, uint256 startPeriod, uint256 endPeriod) = calculateIssuance(_human);
+        (uint256 issuance, uint256 startPeriod, uint256 endPeriod) = _calculateIssuance(_human);
         if (issuance == 0) {
             // No issuance to claim, simply return without reverting
             return;
@@ -211,7 +150,7 @@ contract Circles is ERC1155, ICirclesErrors {
         _mint(_account, _id, _value, _data);
 
         uint64 today = day(block.timestamp);
-        DiscountedBalance storage totalSupplyBalance = discountedTotalSupplies[_id];
+        DiscountedBalance memory totalSupplyBalance = discountedTotalSupplies[_id];
         uint256 newTotalSupply =
             _calculateDiscountedBalance(totalSupplyBalance.balance, today - totalSupplyBalance.lastUpdatedDay) + _value;
         if (newTotalSupply > MAX_VALUE) {
@@ -220,6 +159,7 @@ contract Circles is ERC1155, ICirclesErrors {
         }
         totalSupplyBalance.balance = uint192(newTotalSupply);
         totalSupplyBalance.lastUpdatedDay = today;
+        discountedTotalSupplies[_id] = totalSupplyBalance;
     }
 
     function _burnAndUpdateTotalSupply(address _account, uint256 _id, uint256 _value) internal {
@@ -227,7 +167,7 @@ contract Circles is ERC1155, ICirclesErrors {
         _burn(_account, _id, _value);
 
         uint64 today = day(block.timestamp);
-        DiscountedBalance storage totalSupplyBalance = discountedTotalSupplies[_id];
+        DiscountedBalance memory totalSupplyBalance = discountedTotalSupplies[_id];
         uint256 discountedTotalSupply =
             _calculateDiscountedBalance(totalSupplyBalance.balance, today - totalSupplyBalance.lastUpdatedDay);
         if (discountedTotalSupply < _value) {
@@ -242,6 +182,7 @@ contract Circles is ERC1155, ICirclesErrors {
             totalSupplyBalance.balance = uint192(discountedTotalSupply - _value);
         }
         totalSupplyBalance.lastUpdatedDay = today;
+        discountedTotalSupplies[_id] = totalSupplyBalance;
     }
 
     // Private functions

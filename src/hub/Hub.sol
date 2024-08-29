@@ -39,21 +39,19 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      */
     address private constant SENTINEL = address(0x1);
 
-    bytes32 private constant ADVANCED_FLAG_OPTOUT_CONSENTEDFLOW = bytes32(uint256(1));
-
     // State variables
 
-    // /**
-    //  * @notice The global name of Circles.
-    //  * todo, change this to "Circles" for the production deployment
-    //  */
-    // string public name = "Rings";
+    /**
+     * @notice The global name of Circles.
+     * todo, change this to "Circles" for the production deployment
+     */
+    string public name = "Rings";
 
-    // /**
-    //  * @notice The global symbol ticker for Circles.
-    //  * todo, change this to "CRC" for the production deployment
-    //  */
-    // string public symbol = "RING";
+    /**
+     * @notice The global symbol ticker for Circles.
+     * todo, change this to "CRC" for the production deployment
+     */
+    string public symbol = "RING";
 
     /**
      * @notice The Hub v1 contract address.
@@ -108,12 +106,6 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     mapping(address => address) public treasuries;
 
     /**
-     * @notice By default the advanced usage flags should remain set to zero.
-     * Only for advanced purposes people can consider enabling flags.
-     */
-    mapping(address => bytes32) public advancedUsageFlags;
-
-    /**
      * @notice The iterable mapping of directional trust relations between avatars and
      * their expiry times.
      */
@@ -131,6 +123,10 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     event Trust(address indexed truster, address indexed trustee, uint256 expiryTime);
 
     event Stopped(address indexed avatar);
+
+    event StreamCompleted(
+        address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] amounts
+    );
 
     // Modifiers
 
@@ -382,6 +378,22 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     }
 
     /**
+     * @notice Calculate the demurraged issuance for a human's avatar.
+     * @param _human Address of the human's avatar to calculate the issuance for.
+     * @return issuance The issuance in attoCircles.
+     * @return startPeriod The start of the claimable period.
+     * @return endPeriod The end of the claimable period.
+     */
+    function calculateIssuance(address _human) external view returns (uint256, uint256, uint256) {
+        if (!isHuman(_human)) {
+            // Only avatars registered as human can calculate issuance.
+            // If the avatar is not registered as human, return 0 issuance.
+            return (0, 0, 0);
+        }
+        return _calculateIssuance(_human);
+    }
+
+    /**
      * @notice Calculate issuance allows to calculate the issuance for a human avatar with a check
      * to update the v1 mint status if updated.
      * @param _human address of the human avatar to calculate the issuance for
@@ -393,7 +405,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         // check if v1 Circles is known to be stopped and update status
         _checkHumanV1CirclesStatus(_human);
         // calculate issuance for the human avatar, but don't mint
-        return calculateIssuance(_human);
+        return _calculateIssuance(_human);
     }
 
     /**
@@ -401,7 +413,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * @param _group address of the group avatar to mint Circles of
      * @param _collateralAvatars array of (personal or group) avatar addresses to be used as collateral
      * @param _amounts array of amounts of collateral to be used for minting
-     * @param _data (optional) additional data to be passed to the mint policy, treasury and minter
+     * @param _data (optional) additional data to be passed to the mint policy, treasury and minter (caller)
      */
     function groupMint(
         address _group,
@@ -413,7 +425,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         for (uint256 i = 0; i < _collateralAvatars.length; i++) {
             collateral[i] = toTokenId(_collateralAvatars[i]);
         }
-        _groupMint(msg.sender, _group, collateral, _amounts, _data);
+        _groupMint(msg.sender, msg.sender, _group, collateral, _amounts, _data);
     }
 
     /**
@@ -546,27 +558,20 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             }
         }
 
-        // if no streams are provided, then only closed paths are allowed
-        bool closedPath = (_streams.length == 0);
+        // if no streams are provided, the streams will nett to zero for all vertices
+        // so to pass the acceptance checks, the flow matrix must also nett to zero
+        // which can be true if for all vertices the sum of incoming and outgoing flow is zero
 
         // verify the correctness of the flow matrix describing the path itself,
         // ie. well-definedness of the flow matrix itself,
         // check all entities are registered, and the trust relations are respected.
-        int256[] memory matrixNettedFlow = _verifyFlowMatrix(_flowVertices, _flow, coordinates, closedPath);
+        int256[] memory matrixNettedFlow = _verifyFlowMatrix(_flowVertices, _flow, coordinates);
 
         _effectPathTransfers(_flowVertices, _flow, _streams, coordinates);
 
         int256[] memory streamsNettedFlow = _callAcceptanceChecks(_flowVertices, _flow, _streams, coordinates);
 
         _matchNettedFlows(streamsNettedFlow, matrixNettedFlow);
-    }
-
-    function setAdvancedUsageFlag(bytes32 _flag) external {
-        if (avatars[msg.sender] == address(0)) {
-            // Only registered avatars can set advanced usage flags.
-            revert CirclesAvatarMustBeRegistered(msg.sender, 3);
-        }
-        advancedUsageFlags[msg.sender] = _flag;
     }
 
     // Public functions
@@ -606,15 +611,18 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         return uint256(trustMarkers[_truster][_trustee].expiry) >= block.timestamp;
     }
 
+    /**
+     * @notice Returns true if the flow to the receiver is permitted.
+     * The receiver must trust the Circles being sent, and the Circles avatar associated with
+     * the Circles must trust the receiver.
+     * @param _to Address of the receiver
+     * @param _circlesAvatar Address of the Circles avatar of the Circles being sent
+     * @return permitted true if the flow is permitted, false otherwise
+     */
     function isPermittedFlow(address _to, address _circlesAvatar) public view returns (bool) {
-        // if receiver does not trust the Circles being sent, then the flow is not consented regardless
+        // if receiver does not trust the Circles being sent, then the flow is not permitted regardless
         if (uint256(trustMarkers[_to][_circlesAvatar].expiry) < block.timestamp) return false;
-        // if the advanced usage flag is set to opt-out of consented flow,
-        // then the uni-directional trust is sufficient
-        if (advancedUsageFlags[_circlesAvatar] & ADVANCED_FLAG_OPTOUT_CONSENTEDFLOW != bytes32(0)) {
-            return true;
-        }
-        // however, by default the consented flow requires bi-directional trust from center to receiver
+        // however, consented flow also requires bi-directional trust from center to receiver
         return uint256(trustMarkers[_circlesAvatar][_to].expiry) >= block.timestamp;
     }
 
@@ -622,7 +630,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
 
     /**
      * @notice Group mint allows to mint group Circles by providing the required collateral.
-     * @param _sender address of the sender of the group mint, and receiver of minted group Circles
+     * @param _sender address of the sender of the group mint
+     * @param _receiver address of the receiver of minted group Circles
      * @param _group address of the group avatar to mint Circles of
      * @param _collateral array of (personal or group) avatar addresses to be used as collateral
      * @param _amounts array of amounts of collateral to be used for minting
@@ -630,6 +639,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      */
     function _groupMint(
         address _sender,
+        address _receiver,
         address _group,
         uint256[] memory _collateral,
         uint256[] memory _amounts,
@@ -655,9 +665,9 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         for (uint256 i = 0; i < _amounts.length; i++) {
             // _groupMint is only called from the public groupMint function,
             // or from operateFlowMatrix, and both ensure the collateral ids are derived
-            // from an address, so we can cast here without checks.
+            // from a registered address, so we can cast here without checking valid registration
             if (!isPermittedFlow(_group, _validateAddressFromId(_collateral[i], 2))) {
-                // Group does not trust collateral.
+                // Group does not trust collateral, or flow edge is not permitted
                 revert CirclesHubFlowEdgeIsNotPermitted(_group, _collateral[i], 0);
             }
 
@@ -683,15 +693,23 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         // note: treasury.on1155Received must implement and unpack the GroupMintMetadata to know the group
         safeBatchTransferFrom(_sender, treasuries[_group], _collateral, _amounts, dataWithGroup);
 
-        // mint group Circles to the sender and send the original _data onwards
-        _mintAndUpdateTotalSupply(_sender, toTokenId(_group), sumAmounts, _data);
+        // mint group Circles to the receiver and send the original _data onwards
+        _mintAndUpdateTotalSupply(_receiver, toTokenId(_group), sumAmounts, _data);
     }
 
+    /**
+     * @dev Verify the correctness of the flow matrix describing the path transfer
+     * @param _flowVertices an ordered list of avatar addresses as the vertices which the path touches
+     * @param _flow array of flow edges, each edge is a struct with the amount (uint192)
+     * and streamSinkId (reference to a stream, where for non-terminal flow edges this is 0, and for terminal flow edges
+     * this must reference the index of the stream in the streams array, starting from 1)
+     * @param _coordinates unpacked array of coordinates of the flow edges, with 3 coordinates per flow edge:
+     * Circles identifier being transfered, sender, receiver, each a uint16 referencing the flow vertex.
+     */
     function _verifyFlowMatrix(
         address[] calldata _flowVertices,
         FlowEdge[] calldata _flow,
-        uint16[] memory _coordinates,
-        bool _closedPath
+        uint16[] memory _coordinates
     ) internal view returns (int256[] memory) {
         if (3 * _flow.length != _coordinates.length) {
             // Mismatch in flow and coordinates length.
@@ -747,18 +765,11 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
                     // Flow edge is not permitted.
                     revert CirclesHubFlowEdgeIsNotPermitted(to, toTokenId(circlesId), 1);
                 }
-                if (_closedPath && (to != circlesId || isGroup(circlesId))) {
-                    // Closed paths can only return personal Circles to source.
-                    revert CirclesHubOnClosedPathOnlyPersonalCirclesCanReturnToAvatar(to, toTokenId(circlesId));
-                }
 
                 // nett the flow, dividing out the different Circle identifiers
-                // expect for all edges to a group, as they are interpreted
-                // as a request for group mint in _effectPathTransfers
-                if (!isGroup(to)) {
-                    nettedFlow[_coordinates[index + 1]] -= flow;
-                    nettedFlow[_coordinates[index + 2]] += flow;
-                }
+                nettedFlow[_coordinates[index + 1]] -= flow;
+                nettedFlow[_coordinates[index + 2]] += flow;
+
                 index = index + 3;
             }
         }
@@ -766,6 +777,14 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         return nettedFlow;
     }
 
+    /**
+     * @dev Effect the flow edges of the path transfer, this will revert if any balance is insufficient
+     * @param _flowVertices an ordered list of avatar addresses as the vertices which the path touches
+     * @param _flow array of flow edges, each edge is a struct with the amount and streamSinkId
+     * @param _streams array of streams, each stream is a struct that references the source vertex coordinate,
+     * the ids of the terminal flow edges of this stream, and the data that is passed to the ERC1155 acceptance check
+     * @param _coordinates unpacked array of coordinates of the flow edges
+     */
     function _effectPathTransfers(
         address[] calldata _flowVertices,
         FlowEdge[] calldata _flow,
@@ -820,13 +839,14 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
                         amounts
                     );
                 } else {
-                    // do group mint, and the sender receives the minted group Circles
+                    // do group mint, and the group itself receives the minted group Circles
                     _groupMint(
                         _flowVertices[_coordinates[index + 1]], // sender, from coordinate
-                        to, // group
+                        to, // receiver, to coordinate
+                        to, // group; for triggering group mint, to == the group to mint for
                         ids, // collateral
                         amounts, // amounts
-                        ""
+                        "" // path-based group mints never send data to the mint policy
                     );
                 }
 
@@ -847,13 +867,20 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         }
     }
 
+    /**
+     * @dev Call the acceptance checks for the streams, and return the netted streams
+     * @param _flowVertices sorted array of avatar addresses as the vertices which the path touches
+     * @param _flow array of flow edges
+     * @param _streams array of streams
+     * @param _coordinates unpacked array of coordinates of the flow edges
+     */
     function _callAcceptanceChecks(
         address[] calldata _flowVertices,
         FlowEdge[] calldata _flow,
         Stream[] calldata _streams,
         uint16[] memory _coordinates
     ) internal returns (int256[] memory) {
-        // initialize netted flow
+        // initialize netted flow to zero
         int256[] memory nettedFlow = new int256[](_flowVertices.length);
 
         // effect the stream transfers with acceptance calls
@@ -881,6 +908,10 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             nettedFlow[_streams[i].sourceCoordinate] -= int256(streamTotal);
             // to recover the receiver coordinate, get the first sink
             nettedFlow[receiverCoordinate] += int256(streamTotal);
+
+            // emit the stream completed event which expresses the effective "ERC1155:BatchTransfer" event
+            // for the stream as part of a batch of path transfers.
+            emit StreamCompleted(msg.sender, _flowVertices[_streams[i].sourceCoordinate], receiver, ids, amounts);
         }
 
         return nettedFlow;
