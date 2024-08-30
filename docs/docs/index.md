@@ -8,6 +8,7 @@ Welcome to the Circles documentation. This guide will help you understand the Ci
     - Brief overview of the Circles project
     - Purpose and goals of Circles
     - Key concepts: personal currencies, trust networks, and demurrage
+    - Total Supply and Equilibrium
 
 2. [Architectural Overview](architecture.md)
     - High-level system architecture
