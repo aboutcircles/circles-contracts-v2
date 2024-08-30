@@ -3,7 +3,7 @@ name: Deploy MkDocs to GitHub Pages
 on:
   push:
     branches:
-      - 20240821-docs
+      - v0.3.6-docs
 
 jobs:
   deploy:
