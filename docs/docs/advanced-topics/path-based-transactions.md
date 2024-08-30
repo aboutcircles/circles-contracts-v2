@@ -103,11 +103,21 @@ Note: flow edge arrays and flow vertices arrays are indexed from 0. Streams are 
     - `flowEdgeIds = [4]` (fifth edge C-E terimates stream 3)
     - `data`
 
-#### Net Flow and consistency check
+## Net Flow and Consistency Check
 
 The net flow is not sent as input to the contracts, rather it is included in the diagram to illustrate the consistency check that the contract performs.
 For an explicit path of flow edges to be a valid solution to the set of intents expressed in the streams, it must hold that
 for every vertex the sum over all flow edges (modulo Circles Id) must equal the sum over all streams (ie. summing the columns).
+
+Streams themselves don't specify an amount though - both to compactify the representation but also to not over-determine the representation. Instead it is checked that for each stream:
+
+- all the terminal edges that reference this stream have the same receiver.
+- that each stream lists their terminal flow edge ids in ascending order.
+- and that the count of terminal edges that reference a stream, matches the length of the `flowEdgeIds` array of that stream.
+
+By cross-referencing, and checking consistency we ensure that we can use the sum of the terminal edges for a stream as the amount intended to send by that stream.
+
+In our example, all streams only had one terminal flow edge, but in general a flow matrix can have multiple terminal flow edges for a single stream.
 
 ## Technical Implementation
 
