@@ -101,5 +101,5 @@ This equilibrium mechanism is crucial for several reasons:
 - It maintains fairness by preventing early adopters from gaining disproportionate economic power.
 - It creates a predictable and sustainable monetary policy for the Circles ecosystem.
 
-The total supply mechanism is implemented through the interaction of the `personalMint()` function and the demurrage calculations in the Circles contract. The `calculateIssuance()` function takes into account both the time elapsed since the last mint and the demurrage rate to determine the appropriate amount of new Circles to issue, ensuring that the system remains in balance.
-By carefully managing the total supply through this issuance and demurrage equilibrium, Circles creates a fair, stable, and sustainable economic system that aligns with its goals of reducing inequality and fostering community connections.
+The total supply mechanism is implemented through the interaction of the `personalMint()` function and the demurrage calculations in the Circles contract.
+By dynamically managing the total supply through this issuance and demurrage equilibrium, Circles creates a fair, stable, and sustainable economic system that aligns with its goals of reducing inequality and fostering community connections.
