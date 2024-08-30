@@ -8,7 +8,7 @@ Path-based transactions allow Circles to be transferred along a path of trust re
 
 ## Flow Matrices
 
-Flow matrices are the mathematical representation of these path-based transactions. They describe the movement of Circles tokens through the network for a given transaction (or a batch of transactions).
+Flow matrices are structured representations for these path-based transactions. They describe the movement of Circles tokens through the network for a given transaction (or a batch of transactions).
 
 ### Structure of a Flow Matrix
 
@@ -22,7 +22,7 @@ A flow matrix consists of the following components:
 4. **Streams**: A stream represents the actual intent of a sender to send an amount of Circles to a receiver - without specifying which Circles to send or over which path, simply that the receiver only ever receives Circles they trust. A stream specifies a `sourceCoordinate` as the index of the source (or sender) in the flow vertices array, an array of the `flowEdgeIds` to cross-reference with the flow edges the correct terminal edges of this stream; and `bytes data` that will be sent to the receiver of the stream in the acceptance call. A flow matrix can have:
     - zero streams provided: All edges combined must form a closed path where no sender and no receiver nett-receives or nett-sends an amount of Circles. This can be used to reorganise the balances of Circles across the graph.
     - one stream provided: The flow matrix represents the path of a single intended transfer between a sender and receiver.
-    - two or more streams: The flow matrix represents a batch of intents of multiple senders to send Circles to receivers as a single path settled (while still performing the acceptance checks for each stream's receiver).
+    - two or more streams: The flow matrix represents a batch of intents of multiple senders to send Circles to receivers, and they get settled on-chain as single path (while still performing the acceptance checks for each stream's receiver).
 
 ### An example of a flow matrix
 
@@ -36,9 +36,9 @@ D: David
 E: Eva
 ```
 
-Let's assume Alice wants to send 3 CRC to David, and 5 CRC to Eva. Bob wants to send 4 CRC to David as well. Let's assume they have the following trust graph among them.
+Let's assume Alice wants to send 3 CRC to David, and 5 CRC to Eva. Bob wants to send 4 CRC to David as well. Let's assume they have the following trust graph among them (where the arrow means "trusts"):
 
-![Local image](./advanced-flow-matrix-trust-graph.png "Trust graph")
+<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MDAgMzAwIj4KICA8c3R5bGU+CiAgICAubm9kZSB7IGZpbGw6ICNmZjk3ODY7IHN0cm9rZTogIzM4MzE4Yjsgc3Ryb2tlLXdpZHRoOiAyOyB9CiAgICAubGFiZWwgeyBmaWxsOiAjMzgzMThiOyBmb250LWZhbWlseTogQXJpYWwsIHNhbnMtc2VyaWY7IGZvbnQtc2l6ZTogMTRweDsgfQogICAgLmFycm93IHsgZmlsbDogbm9uZTsgc3Ryb2tlOiAjMzgzMThiOyBzdHJva2Utd2lkdGg6IDI7IH0KICAgIC5hcnJvd2hlYWQgeyBmaWxsOiAjMzgzMThiOyB9CiAgPC9zdHlsZT4KICAKICA8IS0tIE5vZGVzIC0tPgogIDxjaXJjbGUgY2xhc3M9Im5vZGUiIGN4PSIxMDAiIGN5PSIxNTAiIHI9IjMwIiAvPgogIDxjaXJjbGUgY2xhc3M9Im5vZGUiIGN4PSIyMDAiIGN5PSIxNTAiIHI9IjMwIiAvPgogIDxjaXJjbGUgY2xhc3M9Im5vZGUiIGN4PSIzMDAiIGN5PSIxNTAiIHI9IjMwIiAvPgogIDxjaXJjbGUgY2xhc3M9Im5vZGUiIGN4PSI0MDAiIGN5PSIxMDAiIHI9IjMwIiAvPgogIDxjaXJjbGUgY2xhc3M9Im5vZGUiIGN4PSI0MDAiIGN5PSIyMDAiIHI9IjMwIiAvPgogIAogIDwhLS0gTGFiZWxzIC0tPgogIDx0ZXh0IGNsYXNzPSJsYWJlbCIgeD0iMTAwIiB5PSIxNTUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkE8L3RleHQ+CiAgPHRleHQgY2xhc3M9ImxhYmVsIiB4PSIyMDAiIHk9IjE1NSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+QjwvdGV4dD4KICA8dGV4dCBjbGFzcz0ibGFiZWwiIHg9IjMwMCIgeT0iMTU1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5DPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJsYWJlbCIgeD0iNDAwIiB5PSIxMDUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkQ8L3RleHQ+CiAgPHRleHQgY2xhc3M9ImxhYmVsIiB4PSI0MDAiIHk9IjIwNSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+RTwvdGV4dD4KICAKICA8IS0tIEFycm93cyAtLT4KICA8cGF0aCBjbGFzcz0iYXJyb3ciIGQ9Ik0xNzAgMTUwIEwxMzAgMTUwIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93aGVhZCkiIC8+CiAgPHBhdGggY2xhc3M9ImFycm93IiBkPSJNMjMwIDE1MCBMMjcwIDE1MCIgbWFya2VyLWVuZD0idXJsKCNhcnJvd2hlYWQpIiAvPgogIDxwYXRoIGNsYXNzPSJhcnJvdyIgZD0iTTI3MCAxNTAgTDIzMCAxNTAiIG1hcmtlci1lbmQ9InVybCgjYXJyb3doZWFkKSIgLz4KICA8cGF0aCBjbGFzcz0iYXJyb3ciIGQ9Ik0zMzAgMTUwIEwzNzAgMTEwIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93aGVhZCkiIC8+CiAgPHBhdGggY2xhc3M9ImFycm93IiBkPSJNMzcwIDExMCBMMzMwIDE1MCIgbWFya2VyLWVuZD0idXJsKCNhcnJvd2hlYWQpIiAvPgogIDxwYXRoIGNsYXNzPSJhcnJvdyIgZD0iTTQwMCAxNzAgTDQwMCAxMzAiIG1hcmtlci1lbmQ9InVybCgjYXJyb3doZWFkKSIgLz4KICAKICA8IS0tIEFycm93aGVhZCBkZWZpbml0aW9uIC0tPgogIDxkZWZzPgogICAgPG1hcmtlciBpZD0iYXJyb3doZWFkIiBtYXJrZXJXaWR0aD0iMTAiIG1hcmtlckhlaWdodD0iNyIgcmVmWD0iOSIgcmVmWT0iMy41IiBvcmllbnQ9ImF1dG8iPgogICAgICA8cG9seWdvbiBjbGFzcz0iYXJyb3doZWFkIiBwb2ludHM9IjAgMCwgMTAgMy41LCAwIDciIC8+CiAgICA8L21hcmtlcj4KICA8L2RlZnM+Cjwvc3ZnPg==" alt="Circles Trust Graph" style="max-width: 500px; width: 100%; height: auto;">
 
 We can assume that everyone already holds some balances of the tokens of the people they trust. A possible path could look like the following:
 
