@@ -38,7 +38,7 @@ E: Eva
 
 Let's assume Alice wants to send 3 CRC to David, and 5 CRC to Eva. Bob wants to send 4 CRC to David as well. Let's assume they have the following trust graph among them.
 
-![Docs directory image](/images/advanced-flow-matrix-trust-graph.png "Trust graph")
+![Local image](./advanced-flow-matrix-trust-graph.png "Trust graph")
 
 We can assume that everyone already holds some balances of the tokens of the people they trust. A possible path could look like the following:
 
