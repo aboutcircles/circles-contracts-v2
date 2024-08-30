@@ -538,8 +538,6 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         return erc20Wrapper;
     }
 
-    // todo: if we have space, possibly have a wrapBatch function
-
     function operateFlowMatrix(
         address[] calldata _flowVertices,
         FlowEdge[] calldata _flow,
