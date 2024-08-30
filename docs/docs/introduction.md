@@ -90,8 +90,8 @@ Key aspects of the total supply mechanism:
     - Solving for x: x = 8760 / 0.07 = 125,142.86 Circles
 5. Dynamic Balance: As new Circles are minted, they contribute to the total supply. However, the demurrage mechanism ensures that the total value of existing Circles decreases over time. This creates a dynamic where the total supply approaches but never exceeds the equilibrium point.
 6. Practical Implications:
-    - For a new participant, it would take approximately 14.3 years of continuous minting to reach the maximum supply, assuming no spending.
-    - In practice, as people might not mint all their Circles, or they get burnt in usage the total supply of their personal Circles token will fluctuate below this theoretical maximum.
+    - For a new participant, after 14 years of continuous minting they would reach 62% of the maximum supply, assuming no spending. To reach 95% of the total supply, 42.79 years of minting is required.
+    - In practice, as people might not mint all their Circles, or Circles get burnt in usage the total supply of their personal Circles token will fluctuate below this theoretical maximum.
     - Each person, organization, group or account can earn Circles from others though in an open economy so anyone's balance can well exceed 125k Circles by holding a variety of different Circles in their wallet.
 7. System-wide Effects: While each personal currency has its own maximum supply, the trust network and transferability of Circles create a larger, interconnected economy. The total supply in effect can be thought of as a multiple of 125k CRC for every non-sybil human participating in the network.
 
