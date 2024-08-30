@@ -64,13 +64,19 @@ contract V1MintStatusUpdateTest is Test, TimeCirclesSetup, HumanRegistration {
         vm.startPrank(addresses[0]);
         tokenAlice.stop();
         assertTrue(tokenAlice.stopped(), "Token not stopped");
-        mockHub.registerHuman(bytes32(0));
+        mockHub.registerHuman(address(0), bytes32(0));
         vm.stopPrank();
         assertTrue(mockHub.isHuman(addresses[0]), "Alice not registered");
 
         // Alice invites Bob, while he is still active in V1
+        // to do that she must trust Bob, and then he can register with Alice as inviter
         vm.prank(addresses[0]);
-        mockHub.inviteHuman(addresses[1]);
+        // Alice trusts Bob
+        mockHub.trust(addresses[1], type(uint96).max);
+        // Bob registers with Alice as inviter
+        vm.prank(addresses[1]);
+        // Bob calls register Human with Alice as inviter
+        mockHub.registerHuman(addresses[0], bytes32(0));
         assertTrue(mockHub.isHuman(addresses[1]), "Bob not registered");
 
         // move time

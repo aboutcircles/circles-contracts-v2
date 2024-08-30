@@ -192,23 +192,20 @@ contract Demurrage is ICirclesDemurrageErrors {
     }
 
     /**
-     * @notice Converts a batch of inflationary values to demurrage values for a given day since inflation_day_zero.
-     * @param _inflationaryValues Batch of inflationary values to convert to demurrage values.
-     * @param _day Day since inflation_day_zero to convert the inflationary values to demurrage values.
+     * @notice Converts a demurrage value to an inflationary value for a given day since inflation_day_zero.
+     * @param _demurrageValue Demurrage value to convert to inflationary value
+     * @param _dayUpdated The day the demurrage value was last updated since inflation_day_zero
      */
-    function convertBatchInflationaryToDemurrageValues(uint256[] memory _inflationaryValues, uint64 _day)
+    function convertDemurrageToInflationaryValue(uint256 _demurrageValue, uint64 _dayUpdated)
         public
         pure
-        returns (uint256[] memory)
+        returns (uint256)
     {
-        // calculate the demurrage value by multiplying the value by GAMMA^days
-        // note: same remark on precision as in convertInflationaryToDemurrageValue
-        int128 r = Math64x64.pow(GAMMA_64x64, uint256(_day));
-        uint256[] memory demurrageValues = new uint256[](_inflationaryValues.length);
-        for (uint256 i = 0; i < _inflationaryValues.length; i++) {
-            demurrageValues[i] = Math64x64.mulu(r, _inflationaryValues[i]);
-        }
-        return demurrageValues;
+        // calculate the inflationary value by dividing the value by GAMMA^days
+        // note: GAMMA < 1, so dividing by a power of it, returns a bigger number,
+        //       so the numerical imprecision is introduced in the least significant bits.
+        int128 f = Math64x64.pow(BETA_64x64, uint256(_dayUpdated));
+        return Math64x64.mulu(f, _demurrageValue);
     }
 
     // Internal functions
