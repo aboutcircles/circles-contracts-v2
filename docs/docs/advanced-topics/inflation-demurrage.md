@@ -18,28 +18,31 @@ Circles extends the standard ERC1155 interface to handle demurrage. Key function
 
 ### Balance Queries
 
-```solidity
+```js
 function balanceOf(address account, uint256 id) public view returns (uint256)
 ```
 Returns the current demurraged balance of `account` for token `id`. This function internally calls `balanceOfOnDay` with the current day.
 
-```solidity
-function balanceOfOnDay(address account, uint256 id, uint64 day) public view returns (uint256 balance, uint256 discountCost)
+```js
+function balanceOfOnDay(address account, uint256 id, uint64 day)
+    public view returns (uint256 balance, uint256 discountCost)
 ```
 Returns the demurraged balance for `account` and `id` as of the specified `day`, along with the `discountCost` (amount of tokens "burned" due to demurrage).
 
 ### Transfers
 
-```solidity
+```js
 function safeTransferFrom(address from, address to, uint256 id, uint256 value, bytes memory data) public
 ```
-Transfers `value` amount of token `id` from `from` to `to`, applying demurrage before transfer.
+Transfers `value` amount of token `id` from `from` to `to`, applying demurrage before transfer to both sender and receiver if applicable.
 
 ### Token ID Convention
 
 Token IDs in Circles are derived from addresses:
-```solidity
-function toTokenId(address _address) public pure returns (uint256)
+```js
+function toTokenId(address _avatar) public pure returns (uint256) {
+    return uint256(uint160(_avatar));
+}
 ```
 
 ## Demurrage Calculation
@@ -47,7 +50,7 @@ function toTokenId(address _address) public pure returns (uint256)
 ### Balance Reduction
 
 The system reduces token balances daily by a factor calculated as:
-```
+```sh
 Daily Factor = (1 - 0.07)^(1/365.25) ≈ 0.99980813
 ```
 This results in a compound 7% reduction over a full year.
@@ -59,30 +62,35 @@ This results in a compound 7% reduction over a full year.
 
 ## Implementation Considerations
 
-1. **On-Demand Calculation**: Balance reductions are computed when balances are accessed or modified, not on a fixed schedule.
-2. **Token Burning**: The reduction in balance effectively burns tokens, removing them from circulation.
+1. **On-Demand Calculation**: Balance reductions are computed when balances are accessed (through view functions) or computed and updated when modified (through transfers).
+2. **Token Burning**: The reduction in balance burns the amount that gets demurraged, effectively removing these tokens from circulation.
 3. **Gas Efficiency**: On-demand calculation avoids the need for daily update transactions.
-4. **Precision**: Fixed-point arithmetic ensures high accuracy in calculations.
+4. **Precision**: 128-bit fixed-point arithmetic ensures high accuracy in calculations, allowing for daily updates.
 
 ## Development Guidelines
 
 1. Always use `balanceOf()` or `balanceOfOnDay()` to get current, demurraged balances.
 2. On the hub contract, all amounts are to be understood as demurraged amounts on the current day.
 3. Be aware that token balances decrease over time, even without explicit transfers or actions.
+3. If your application expects static (ie. inflationary) balances or to interface with external systems:
+    - Use the provided `InflationaryOperator` contract to interact with ERC1155 Circles.
+    - Alternatively, wrap the (group) Circles you want to interact with in an inflationary ERC20 contract, where you can treat them as regular ERC20 tokens.
 
 ## Helper Functions for Inflationary Conversion
 
 Circles provides two helper functions to convert between demurraged and inflationary representations:
 
-```solidity
-function convertInflationaryToDemurrageValue(uint256 _amount, uint64 _currentDay) public view returns (uint256)
+```js
+function convertInflationaryToDemurrageValue(uint256 _amount, uint64 _day)
+    public view returns (uint256)
 ```
 Converts an inflationary amount to its demurraged equivalent as of the specified day.
 
-```solidity
-function convertDemurrageToInflationaryValue(uint256 _amount, uint64 _currentDay) public view returns (uint256)
+```js
+function convertDemurrageToInflationaryValue(uint256 _amount, uint64 _dayUpdated)
+    public view returns (uint256)
 ```
-Converts a demurraged amount to its inflationary equivalent as of the specified day.
+Converts a demurraged amount as on the day provided to its inflationary equivalent (day independent).
 
 These functions are particularly useful when interacting with external systems or when a non-demurraged representation is needed for certain calculations or displays.
 
