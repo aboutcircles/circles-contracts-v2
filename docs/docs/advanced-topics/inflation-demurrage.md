@@ -76,6 +76,41 @@ This results in a compound 7% reduction over a full year.
     - Use the provided `InflationaryOperator` contract to interact with ERC1155 Circles.
     - Alternatively, wrap the (group) Circles you want to interact with in an inflationary ERC20 contract, where you can treat them as regular ERC20 tokens.
 
+## Time and Day Calculation in Circles
+
+Understanding how Circles handles time is crucial for working with demurraged balances. The system uses a concept of "days" since a fixed starting point to calculate demurrage.
+
+### The `day` Function
+
+```js
+function day(uint256 timestamp) internal view returns (uint64) {
+    return uint64((timestamp - inflationDayZero) / 1 days);
+}
+```
+
+This function converts a Unix timestamp to a day number used in demurrage calculations. Key points:
+
+1. **Inflation Day Zero**: This is the starting point for all time calculations in Circles. It's set to October 15, 2020, at 00:00:00 UTC (Unix timestamp: 1602720000).
+
+2. **Day Calculation**: Days are calculated as the number of whole days passed since Inflation Day Zero.
+
+3. **Usage**: This day number is used in all demurrage calculations to determine how much a balance has decreased over time.
+
+### Demurrage vs Inflationary Balances
+
+- **Demurrage Balances**: These are time-dependent. The actual balance at any given moment is a function of the stored balance, the last update day, and the current day.
+- **Inflationary Balances**: These are static in time. They represent an equivalent way of representing the 7% p.a. "inflation", but through an ever-increasing money supply. In the inflationary representation, Circles mints slightly more tokens per hour each day than the previous day, to offset the existing Circles already in circulation.
+
+Note that the ground-truth for Circles is the demurrage representation, where exactly one Circle is minted per person per hour, offset by the daily burning of Circles at a rate equivalent to 7% p.a.
+
+### Practical Implications
+
+1. When querying balances, the current day is always used to calculate the up-to-date demurraged balance.
+
+2. For future projections, you can specify a different day using `balanceOfOnDay()`.
+
+3. When converting between demurrage and inflationary representations, the day parameter determines the point in time for the conversion.
+
 ## Helper Functions for Inflationary Conversion
 
 Circles provides two helper functions to convert between demurraged and inflationary representations:
@@ -90,9 +125,7 @@ Converts an inflationary amount to its demurraged equivalent as of the specified
 function convertDemurrageToInflationaryValue(uint256 _amount, uint64 _dayUpdated)
     public view returns (uint256)
 ```
-Converts a demurraged amount as on the day provided to its inflationary equivalent (day independent).
-
-These functions are particularly useful when interacting with external systems or when a non-demurraged representation is needed for certain calculations or displays.
+Converts a demurraged amount as on the day provided to its inflationary equivalent.
 
 ## Conclusion
 
