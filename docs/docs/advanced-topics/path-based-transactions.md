@@ -213,25 +213,78 @@ if (!isGroup(to)) {
 ### Implications and Benefits
 
 - **Dynamic Token Creation**: Allows for the creation of new group tokens as part of complex transfer paths.
-- **Increased Liquidity**: Facilitates the conversion from personal (or group Circles) into (other) group Circles within a single flow edge. Group Circles are likely to be trusted by more and hence accepted by more, reducing the number of hops in the graph a path needs to include to reach far away recipients.
+- **Increased Liquidity**: Facilitates the conversion from personal (or group Circles) into (other) group Circles within a single flow edge. Group Circles are likely to be trusted by more and hence accepted by more, reducing the number of hops in the graph a path needs to traverse to reach far away recipients.
 - **Flexible Economic Structures**: Enables more complex economic interactions and structures within the Circles ecosystem.
 - **Seamless Integration**: Group minting is seamlessly integrated into the path-based transaction system, requiring no special handling from the transaction initiator.
 
 This feature significantly enhances the capabilities of path-based transactions in Circles, allowing for dynamic and flexible token interactions that can adapt to the needs of the network and its participants.
+[Previous content remains unchanged]
 
-## Trust and Permissions
+## Trust and Consented Flow
 
-The system uses two key functions to manage trust and permissions:
+### Trust Implies a Flow Edge
 
-1. `isTrusted(address _truster, address _trustee)`: Checks if the truster trusts the trustee.
-2. `isPermittedFlow(address _to, address _circlesAvatar)`: Ensures both that the receiver trusts the Circles being sent and that the Circles avatar trusts the receiver.
+The default behavior for Circles is such that if one avatar trusts another avatar, they attest that:
 
-## Challenges and Considerations
+1. **Token Acceptance**: They are willing to accept the trusted avatar's personal Circles tokens as payment.
 
-1. **Complexity**: Path-based transactions involve multiple checks and operations, making them computationally intensive.
-2. **Gas Costs**: The complexity of these transactions can lead to higher gas costs, which needs to be balanced against the benefits of the system.
-3. **Trust Dynamics**: The system relies on up-to-date trust relationships, which can change over time.
+2. **Implicit Flow Permission**: They allow their balance of the trusted avatar's tokens to be used in path-based transactions, potentially without their direct involvement in each transaction.
+
+3. **Network Facilitation**: They contribute to the overall liquidity and connectivity of the Circles network by creating a potential path for transactions.
+
+4. **Value Recognition**: They recognize some form of value or merit in the trusted avatar's economic activity or contribution to the community.
+
+5. **Transitive Trust**: While not directly trusting the entire network of the trusted avatar, they implicitly allow for multi-hop transactions that may involve avatars further down the trust chain.
+
+6. **Time-Bound Relationship**: Trust relationships have an expiry time, allowing for dynamic changes in the trust network over time.
+
+This default behavior enables the Circles system to create paths for transactions between avatars who may not directly trust each other, facilitating a more interconnected and fluid economy.
+
+### Consented Flow
+
+Consented flow is an advanced feature in the Circles ecosystem that provides additional control over path-based transfers. It's an opt-in mechanism that allows people (and groups or organizations) to have more granular control over how their Circles tokens are used in path-based transactions.
+
+#### Key Aspects of Consented Flow
+
+1. **Opt-In Feature**: Avatars must explicitly enable consented flow by setting an advanced usage flag.
+2. **Bidirectional Trust Requirement**: When consented flow is enabled, a valid flow edge requires:
+    - The receiver trusts the Circles avatar of the tokens being sent (standard requirement).
+    - The sender trusts the receiver.
+    - The receiver must also have consented flow enabled.
+3. **Recursive Protection**: The requirement for the receiver to also have consented flow enabled ensures that the protection extends through multiple hops in a transaction path, for those flow edges that enter a region of consented flow.
+4. **Enhanced Control**: Provides more precise control over how an avatar's tokens can be used in the network, potentially reducing unexpected or undesired token movements.
+5. **Impact on Liquidity**: While offering more security, consented flow may make some transactions more challenging to complete, as it requires more tightly-knit web of trust relationships.
+
+#### Behaviour Details
+
+The `isPermittedFlow` function in the Hub contract implements the logic for checking whether a flow edge is permitted (with or without consented flow enabled for the sender):
+
+1. **Basic Trust Check**: 
+    - Always checks if the receiver trusts the Circles being sent.
+    - If this basic trust doesn't exist, the flow is never permitted.
+2. **Consented Flow Check**:
+    - If the sender has consented flow enabled (checked via `advancedUsageFlags`), additional checks are performed:
+        1. The sender must trust the receiver.
+        2. The receiver must also have consented flow enabled.
+3. **Return Value**: 
+    - Returns `true` if the flow is permitted based on the above checks.
+    - Returns `false` otherwise.
+
+#### Implications of Consented Flow
+
+1. **Enhanced Security**: Provides an additional layer of control for avatars concerned about unauthorized use of their tokens.
+2. **Potential Complexity**: May increase the complexity of finding valid paths for transactions, especially if a sender with consented flow is trying to send tokens to a receiver outside the consented flow perimeter (ie. a receiver without consented flow enabled). The sender may be required to sandwich their path-transfer between disabling and re-enabling consented flow for themselves, so that their path can start from outside the local consented flow perimeter.
+3. **Network Dynamics**: Could influence the overall structure and behavior of the Circles trust network, potentially leading to more tightly-knit, high-trust sub-networks.
+4. **Flexibility**: Allows for different trust models within the same network, catering to varying preferences for control and openness.
+
+Consented flow represents an advanced usage of the Circles system, allowing for a more nuanced approach to trust and token flow within the network. It balances the need for additional control with the system's goal of creating a fluid, interconnected economy.
 
 ## Conclusion
 
-Path-based transactions and flow matrices form the backbone of Circles' unique approach to creating a trust-based economy. By enabling multi-hop transfers through trust networks, Circles can facilitate transactions between individuals who don't directly trust each other, expanding the utility and reach of the system.
+The Circles ecosystem implements path-based transactions using flow matrices to enable multi-hop transfers of personal and group tokens. This system allows for:
+
+1. Complex transfers between indirectly connected avatars
+2. Automatic group token minting within transaction paths
+3. Flexible trust models, including opt-in consented flow for enhanced control
+
+These mechanisms collectively form a decentralized currency network capable of supporting diverse economic interactions and trust relationships. The technical infrastructure provides a foundation for a social currency system that can adapt to various community needs and transaction complexities.
