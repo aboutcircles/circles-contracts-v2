@@ -8,7 +8,9 @@ on:
 jobs:
   deploy:
     permissions:
-      contents: write
+      contents: write      # This allows writing to the repository contents
+      pages: write         # This allows deploying to GitHub Pages
+      id-token: write      # This is required for requesting the JWT
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -34,5 +36,5 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.GH_PAT }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs/site
