@@ -159,18 +159,41 @@ This system provides a flexible framework for creating and managing group curren
 
 ### Circles (ERC1155)
 
-The core representation of Circles currencies uses the ERC1155 standard, allowing for efficient management of multiple token types (personal and group currencies) within a single contract.
+The core representation of Circles currencies uses the ERC1155 standard, allowing for efficient management of multiple token types (personal and group currencies) within a single contract:
 
-### Wrappers
+- <a href="https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/circles/Circles.sol" target="_blank" rel="noopener noreferrer">Code: /src/circles/Circles.sol</a>
+- <a href="https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/circles/ERC1155.sol" target="_blank" rel="noopener noreferrer">Code: /src/circles/ERC1155.sol</a>
+- <a href="https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/circles/DiscountedBalances.sol" target="_blank" rel="noopener noreferrer">Code: /src/circles/DiscountedBalances.sol</a>
+- <a href="https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/circles/Demurrage.sol" target="_blank" rel="noopener noreferrer">Code: /src/circles/Demurrage.sol</a>
 
-To enhance compatibility with existing DeFi ecosystems, Circles provides ERC20 wrappers:
+### ERC20 Wrappers
+To enhance compatibility with existing smart contract ecosystems, Circles provides two types of ERC20 wrappers:
 
-1. **Demurrage ERC20**: Represents Circles with the demurrage (decay) factor applied.
-2. **Inflationary ERC20**: Represents Circles in their inflationary form, without demurrage applied.
+- **Demurrage ERC20**: This wrapper represents Circles with demurrage applied. It results in rebalancing amounts, reflecting the daily decrease in the balances over time over all Circles.
+- **Inflationary ERC20**: This wrapper represents Circles in their inflationary form. Balances remain static (when not transacted), but the issuance rate for personal Circles mints increases daily. This mechanism offsets the static supply of Circles in circulation.
+
+For every Circles identifier (human or group Circles) either/both ERC20 contract can be deployed upon demand by calling `hub:wrap()`, and it will ensure the ERC20 contract is deployed if it doesn't already exist. ERC20 contracts can also be created explicitly before wrapping.
+
+If the ERC20 contract already exists, one can also wrap the ERC1155 Circles into ERC20 by directly sending (the correct Circles) to the relevant ERC20 contract.
+
+Both demurrage and inflationary ERC20 Circles can be converted back into demurraged ERC1155 Circles by calling `ECR20:unwrap()` as the owner of a balance on the desired ERC20 contract.
+
+Both approaches allow Circles to interact more seamlessly with standard ERC20-compatible platforms and protocols while preserving the core economic principles of the Circles system.
+
+ERC20 contracts also implement [ERC-2612](https://eips.ethereum.org/EIPS/eip-2612), aka `ERC20Permit`.
+
+- <a href="https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/lift/DemurrageCircles.sol" target="_blank" rel="noopener noreferrer">Code: /src/lift/DemurrageCircles.sol</a>
+- <a href="https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/lift/ERC20DiscountedBalances.sol" target="_blank" rel="noopener noreferrer">Code: /src/lift/ERC20DiscountedBalances.sol</a>
+- <a href="https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/lift/InflationaryCircles.sol" target="_blank" rel="noopener noreferrer">Code: /src/lift/InflationaryCircles.sol</a>
+- <a href="https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/lift/ERC20InflationaryBalances.sol" target="_blank" rel="noopener noreferrer">Code: /src/lift/ERC20InflationaryBalances.sol</a>
+- <a href="https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/circles/BatchedDemurrage.sol" target="_blank" rel="noopener noreferrer">Code: /src/circles/BatchedDemurrage.sol</a>
+- <a href="https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/circles/Demurrage.sol" target="_blank" rel="noopener noreferrer">Code: /src/circles/Demurrage.sol</a>
 
 ### ERC20Lift
 
-The ERC20Lift contract serves as a bridge between the ERC1155 and ERC20 representations, allowing users to wrap and unwrap their Circles tokens as needed.
+The ERC20Lift contract serves as a factory-bridge between the ERC1155 and ERC20 representations, ensuring ERC20 contracts are deployed (ahead of time).
+
+<a href="https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/lift/ERC20Lift.sol" target="_blank" rel="noopener noreferrer">Code: /src/lift/ERC20Lift.sol</a>
 
 ## Circles v1 Components (Legacy)
 
