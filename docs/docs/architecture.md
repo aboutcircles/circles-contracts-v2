@@ -4,8 +4,6 @@
 
 Circles is a decentralized economic system built on the Gnosis Chain, designed to create and distribute fair and social money through personal currencies. This overview provides a high-level understanding of the system's architecture and how its various components interact.
 
-# Circles Architectural Overview
-
 ## System Architecture Diagram
 
 ![Alt text](./20240321-Circles-contracts.svg)
@@ -25,7 +23,8 @@ The central contract in the Circles ecosystem is the Hub v2, which serves as the
 - Trust relationships between entities
 - Group creation and management
 - Minting collateral into group currencies
-- wrapping ERC1155 Circles Ids tokens into ERC20 wrappers
+- Wrapping ERC1155 Circles Ids tokens into ERC20 wrappers
+- Demurrage of all Circles tokens equally 
 
 The Hub v2 contract implements the ERC1155 standard, allowing it to handle multiple token types efficiently.
 
@@ -33,11 +32,32 @@ The Hub v2 contract implements the ERC1155 standard, allowing it to handle multi
 
 ### NameRegistry
 
-The NameRegistry contract manages the names and metadata associated with Circles accounts. It allows users to set custom names, symbols, and metadata for their personal or group currencies.
+The NameRegistry contract manages names, symbols and metadata for avatars (humans, groups, and organizations):
 
-### Migration Contract
+- Allows humans to register a unique short name (12 characters, base58 encoding)
+- Stores custom names for groups and organizations
+- Manages custom symbols for group currencies
+- Stores and updates metadata digests (eg IPFS CIDs) for avatar profiles
+- Names are read by ERC20 contracts for name and symbol
 
-This contract facilitates the migration of tokens and data from Circles v1 to v2. It ensures a smooth transition for existing users and their balances.
+The NameRegistry plays a role in identity management and human-readable addressing within the Circles system, enhancing user experience and facilitating easier identification of avatars and their associated currencies.
+
+[Code: /src/names/NameRegistry.sol](https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/names/NameRegistry.sol)
+
+### Migration
+
+The Migration contract facilitates the transition from Circles v1 to v2, ensuring the ability to migrate token balances:
+
+- Converts v1 Circles to v2 Circles, accounting for inflation and demurrage
+- Uses a linear interpolation method to calculate the conversion rate. Corrects for the original convention in hub v1 where 1/3 CRC per hour is issued (8 CRC per day)
+- Allows migration of multiple types of Circles balances in a single transaction by one owner
+- Locks v1 tokens in the Migration contract and mints equivalent v2 tokens.
+- Ensures upon migrating balances that humans are auto-registered in Hub v2 - so that their token is defined
+- owners of Circles in v1 can migrate their balances at any time and for any amount they chose to Circles v2.
+
+This Migration system ensures a controlled and secure transition from Circles v1 to v2, maintaining integrity throughout the upgrade process.
+
+[Code: /src/migration/Migration.sol](https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/migration/Migration.sol)
 
 ### Standard Treasury
 
