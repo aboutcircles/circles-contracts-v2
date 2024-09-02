@@ -15,6 +15,10 @@ Circles is a decentralized protocol for creating and distributing fair and socia
 - Flexible economic interactions between individuals, organizations, and groups
 - Equilibrium mechanism balancing issuance and demurrage
 
+## Documentation
+
+For more details on Circles and details of the implementation please refer to [https://aboutcircles.github.io/circles-contracts-v2/](https://aboutcircles.github.io/circles-contracts-v2/)
+
 ## Getting Started
 
 🐲 **Beta Status**: This repository is in beta and actively developed in the open. While initial reviews are on-going, we welcome community engagement for wider testing and integration. As AGPL-licensed software, it's provided as-is. We encourage thorough review and testing before any production use.
