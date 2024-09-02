@@ -12,7 +12,7 @@ Welcome to the Circles documentation. This guide will help you understand the Ci
 
 2. [Architectural Overview](architecture.md)
 
-2. [Advanced Topics](advanced-topics/index.md)
+3. [Advanced Topics](advanced-topics/index.md)
     - [Inflation and demurrage calculations](advanced-topics/inflation-demurrage.md)
     - [Path-based transactions and flow matrices](advanced-topics/path-based-transactions.md)
     - [Group mint policies and treasuries](advanced-topics/group-mint-policies.md)
