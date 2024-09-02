@@ -102,34 +102,6 @@
     </li>
         </ul>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#external-interactions">External Interactions</a>
-        <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#gnosis-chain">Gnosis Chain</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#safe">Safe</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#eoa-externally-owned-accounts">EoA (Externally Owned Accounts)</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#advanced-features-and-extensions">Advanced Features and Extensions</a>
-        <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#intent-solver-competition">Intent Solver Competition</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#pre-post-hooks-on-intents">Pre-/Post-hooks on Intents</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#flow-matrix-and-erc1155">Flow Matrix and ERC1155</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#single-transferthrough-for-v1-pathfinder">Single TransferThrough for v1 Pathfinder</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#account-abstraction">Account Abstraction</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#custom-treasuries">Custom Treasuries</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#community-dapps">Community dApps</a>
-    </li>
-        </ul>
-    </li>
     <li class="toctree-l2"><a class="reference internal" href="#conclusion">Conclusion</a>
     </li>
     </ul>
@@ -341,33 +313,19 @@
 <li><a href="https://handbook.joincircles.net/" target="_blank" rel="noopener noreferrer">Legacy Documentation: Join Circles handbook (v1)</a></li>
 </ul>
 <h3 id="token">Token</h3>
-<p>The individual ERC20 token contracts for personal currencies in Circles v1 are deployed from the hub as a factory pattern upon a user registering.</p>
+<p>The individual ERC20 token contracts for personal currencies in Circles v1 are deployed from the hub as a factory pattern upon a user (human) registering.</p>
 <p><a href="https://github.com/CirclesUBI/circles-contracts/blob/master/contracts/Token.sol" target="_blank" rel="noopener noreferrer">Legacy Code: Circles-Contracts/contracts/Token.sol (v1)</a></p>
-<h2 id="external-interactions">External Interactions</h2>
-<h3 id="gnosis-chain">Gnosis Chain</h3>
-<p>Circles is built on the Gnosis Chain, leveraging its security and efficiency.</p>
-<h3 id="safe">Safe</h3>
-<p>Integration with Safe (formerly Gnosis Safe) provides secure multi-signature wallet functionality for Circles users.</p>
-<h3 id="eoa-externally-owned-accounts">EoA (Externally Owned Accounts)</h3>
-<p>Standard Ethereum accounts that can interact with the Circles system.</p>
-<h2 id="advanced-features-and-extensions">Advanced Features and Extensions</h2>
-<h3 id="intent-solver-competition">Intent Solver Competition</h3>
-<p>(Placeholder) A mechanism for optimizing transactions and transfers within the Circles network.</p>
-<h3 id="pre-post-hooks-on-intents">Pre-/Post-hooks on Intents</h3>
-<p>(Placeholder) Additional logic that can be executed before or after certain operations in the system.</p>
-<h3 id="flow-matrix-and-erc1155">Flow Matrix and ERC1155</h3>
-<p>A system for managing and executing complex transfers and exchanges of Circles currencies between multiple parties.</p>
-<h3 id="single-transferthrough-for-v1-pathfinder">Single TransferThrough for v1 Pathfinder</h3>
-<p>A mechanism to facilitate transfers using trust pathways, likely a carryover or adaptation from the v1 system.</p>
-<h3 id="account-abstraction">Account Abstraction</h3>
-<p>(Placeholder) Advanced account management features that may simplify user interactions with the system.</p>
-<h3 id="custom-treasuries">Custom Treasuries</h3>
-<p>In addition to the Standard Treasury, the system allows for custom treasury implementations to cater to specific group needs.</p>
-<h3 id="community-dapps">Community dApps</h3>
-<p>The architecture supports the development of community-driven decentralized applications, such as a potential CowSwap v2 integration.</p>
 <h2 id="conclusion">Conclusion</h2>
-<p>The Circles v2 architecture represents a significant evolution from its predecessor, offering a more flexible and scalable system for personal and group currencies. By leveraging advanced smart contract standards like ERC1155 and providing multiple token representations, Circles aims to create a robust ecosystem for social money that can integrate seamlessly with the broader DeFi landscape.</p>
-<p>This architecture balances the need for a cohesive, centralized hub with the flexibility required for diverse use cases and future extensions. As the system continues to evolve, this modular design will allow for the integration of new features and improvements while maintaining backward compatibility and supporting the migration from v1.</p>
+<p>Circles v2 architecture key points:</p>
+<ul>
+<li>ERC1155 implementation for improved token management</li>
+<li>Dual token representation: Demurrage and Inflationary ERC20 wrappers</li>
+<li>Native group functionality with customizable treasury and mint policies</li>
+<li>Improved settlement efficiency through batched path-transfers using flow matrix representation</li>
+<li>Backward compatibility with v1 through migration support, and reactivation of frozen accounts in v1</li>
+<li>Technical debt reduction from Hub v1</li>
+</ul>
+<p>The architecture maintains a centralized hub while allowing component-level flexibility. This design facilitates future extensions and improvements without compromising system integrity or existing functionality. The flow matrix representation for batched transfers significantly enhances the system's scalability and transaction throughput.</p>
               
             </div>
           </div><footer>
