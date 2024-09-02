@@ -206,56 +206,19 @@ The original Hub contract from Circles v1. Hub v1 only has a concept of human av
 
 ### Token
 
-The individual ERC20 token contracts for personal currencies in Circles v1 are deployed from the hub as a factory pattern upon a user registering.
+The individual ERC20 token contracts for personal currencies in Circles v1 are deployed from the hub as a factory pattern upon a user (human) registering.
 
 <a href="https://github.com/CirclesUBI/circles-contracts/blob/master/contracts/Token.sol" target="_blank" rel="noopener noreferrer">Legacy Code: Circles-Contracts/contracts/Token.sol (v1)</a>
 
-## External Interactions
-
-### Gnosis Chain
-
-Circles is built on the Gnosis Chain, leveraging its security and efficiency.
-
-### Safe
-
-Integration with Safe (formerly Gnosis Safe) provides secure multi-signature wallet functionality for Circles users.
-
-### EoA (Externally Owned Accounts)
-
-Standard Ethereum accounts that can interact with the Circles system.
-
-## Advanced Features and Extensions
-
-### Intent Solver Competition
-
-(Placeholder) A mechanism for optimizing transactions and transfers within the Circles network.
-
-### Pre-/Post-hooks on Intents
-
-(Placeholder) Additional logic that can be executed before or after certain operations in the system.
-
-### Flow Matrix and ERC1155
-
-A system for managing and executing complex transfers and exchanges of Circles currencies between multiple parties.
-
-### Single TransferThrough for v1 Pathfinder
-
-A mechanism to facilitate transfers using trust pathways, likely a carryover or adaptation from the v1 system.
-
-### Account Abstraction
-
-(Placeholder) Advanced account management features that may simplify user interactions with the system.
-
-### Custom Treasuries
-
-In addition to the Standard Treasury, the system allows for custom treasury implementations to cater to specific group needs.
-
-### Community dApps
-
-The architecture supports the development of community-driven decentralized applications, such as a potential CowSwap v2 integration.
-
 ## Conclusion
 
-The Circles v2 architecture represents a significant evolution from its predecessor, offering a more flexible and scalable system for personal and group currencies. By leveraging advanced smart contract standards like ERC1155 and providing multiple token representations, Circles aims to create a robust ecosystem for social money that can integrate seamlessly with the broader DeFi landscape.
+Circles v2 architecture key points:
 
-This architecture balances the need for a cohesive, centralized hub with the flexibility required for diverse use cases and future extensions. As the system continues to evolve, this modular design will allow for the integration of new features and improvements while maintaining backward compatibility and supporting the migration from v1.
+- ERC1155 implementation for improved token management
+- Dual token representation: Demurrage and Inflationary ERC20 wrappers
+- Native group functionality with customizable treasury and mint policies
+- Improved settlement efficiency through batched path-transfers using flow matrix representation
+- Backward compatibility with v1 through migration support, and reactivation of frozen accounts in v1
+- Technical debt reduction from Hub v1
+
+The architecture maintains a centralized hub while allowing component-level flexibility. This design facilitates future extensions and improvements without compromising system integrity or existing functionality. The flow matrix representation for batched transfers significantly enhances the system's scalability and transaction throughput.
