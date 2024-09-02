@@ -199,11 +199,16 @@ The ERC20Lift contract serves as a factory-bridge between the ERC1155 and ERC20 
 
 ### Hub v1
 
-The original Hub contract from Circles v1, which is being phased out but remains relevant for migration purposes.
+The original Hub contract from Circles v1. Hub v1 only has a concept of human avatars ("users") and organizations. Groups have been built on top of Hub v1. Therefore when migrating tokens from Hub v1 to Hub v2, all tokens are all associated to a human avatar (as an organization does not have its own token).
+
+- <a href="https://github.com/CirclesUBI/circles-contracts/blob/master/contracts/Hub.sol" target="_blank" rel="noopener noreferrer">Legacy Code: Circles-Contracts/contracts/Hub.sol (v1)</a>
+- <a href="https://handbook.joincircles.net/" target="_blank" rel="noopener noreferrer">Legacy Documentation: Join Circles handbook (v1)</a>
 
 ### Token
 
-The individual ERC20 token contracts for personal currencies in Circles v1.
+The individual ERC20 token contracts for personal currencies in Circles v1 are deployed from the hub as a factory pattern upon a user registering.
+
+<a href="https://github.com/CirclesUBI/circles-contracts/blob/master/contracts/Token.sol" target="_blank" rel="noopener noreferrer">Legacy Code: Circles-Contracts/contracts/Token.sol (v1)</a>
 
 ## External Interactions
 
