@@ -1,2 +1,0 @@
-# Native Group Circles
-
