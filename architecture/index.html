@@ -335,9 +335,14 @@
 <p><a href="https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/lift/ERC20Lift.sol" target="_blank" rel="noopener noreferrer">Code: /src/lift/ERC20Lift.sol</a></p>
 <h2 id="circles-v1-components-legacy">Circles v1 Components (Legacy)</h2>
 <h3 id="hub-v1">Hub v1</h3>
-<p>The original Hub contract from Circles v1, which is being phased out but remains relevant for migration purposes.</p>
+<p>The original Hub contract from Circles v1. Hub v1 only has a concept of human avatars ("users") and organizations. Groups have been built on top of Hub v1. Therefore when migrating tokens from Hub v1 to Hub v2, all tokens are all associated to a human avatar (as an organization does not have its own token).</p>
+<ul>
+<li><a href="https://github.com/CirclesUBI/circles-contracts/blob/master/contracts/Hub.sol" target="_blank" rel="noopener noreferrer">Legacy Code: Circles-Contracts/contracts/Hub.sol (v1)</a></li>
+<li><a href="https://handbook.joincircles.net/" target="_blank" rel="noopener noreferrer">Legacy Documentation: Join Circles handbook (v1)</a></li>
+</ul>
 <h3 id="token">Token</h3>
-<p>The individual ERC20 token contracts for personal currencies in Circles v1.</p>
+<p>The individual ERC20 token contracts for personal currencies in Circles v1 are deployed from the hub as a factory pattern upon a user registering.</p>
+<p><a href="https://github.com/CirclesUBI/circles-contracts/blob/master/contracts/Token.sol" target="_blank" rel="noopener noreferrer">Legacy Code: Circles-Contracts/contracts/Token.sol (v1)</a></p>
 <h2 id="external-interactions">External Interactions</h2>
 <h3 id="gnosis-chain">Gnosis Chain</h3>
 <p>Circles is built on the Gnosis Chain, leveraging its security and efficiency.</p>
