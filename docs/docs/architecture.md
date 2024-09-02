@@ -59,13 +59,70 @@ This Migration system ensures a controlled and secure transition from Circles v1
 
 [Code: /src/migration/Migration.sol](https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/migration/Migration.sol)
 
-### Standard Treasury
 
-The Standard Treasury contract handles the collateral for group currencies. It receives and manages the assets backing group Circles.
+### Groups, Policies and Treasury
 
-### Vault
+The Circles ecosystem includes a sophisticated system for managing group currencies, which involves several interconnected components:
 
-The Vault contract (placeholder - details to be added) likely serves as a secure storage for certain assets or data within the Circles ecosystem.
+#### Groups
+
+- Defined in the Hub contract
+- Require a Mint Policy and Treasury for creation
+- Can be registered using `hub.registerGroup()`
+
+#### Standard Treasury
+
+1. **Purpose**: Manages collateral for group currencies
+2. **Key Features**:
+   - Acts as a factory for Vaults
+   - Handles minting and redemption of group Circles
+   - Interacts with Mint Policies for redemption logic
+3. **Functions**:
+   - `onERC1155Received`: Handles single token transfers (minting or redemption)
+   - `onERC1155BatchReceived`: Handles batch token transfers (minting)
+   - Creates Vaults for groups as needed
+
+#### Vaults
+
+1. **Purpose**: Securely store collateral for group currencies
+2. **Key Features**:
+   - Deployed by Standard Treasury using a factory pattern
+   - Each group has its own Vault
+3. **Functions**:
+   - `returnCollateral`: Sends collateral back to users during redemption
+   - `burnCollateral`: Burns collateral as specified by Mint Policy
+
+#### Base Mint Policy
+
+1. **Purpose**: Defines rules for minting, burning, and redeeming group currencies
+2. **Key Features**:
+   - Customizable for different group needs
+   - Default implementation allows all mints/burns and user-specified redemptions
+3. **Functions**:
+   - `beforeMintPolicy`: Validates minting requests
+   - `beforeBurnPolicy`: Validates burning requests
+   - `beforeRedeemPolicy`: Specifies redemption logic
+
+#### System Interaction
+
+1. **Group Creation**:
+   - User calls `hub.registerGroup()`
+   - Hub assigns Standard Treasury
+   - Standard Treasury creates a Vault for the group
+
+2. **Minting Group Circles**:
+   - Collateral transferred to Treasury
+   - Treasury forwards collateral to group's Vault
+   - Mint Policy consulted for approval
+   - Group Circles minted to user
+
+3. **Redeeming Group Circles**:
+   - User sends group Circles to Treasury
+   - Treasury consults Mint Policy for redemption logic
+   - Vault returns specified collateral to user
+   - Excess collateral burned if specified by policy
+
+This system provides a flexible and secure framework for creating and managing group currencies within the Circles ecosystem. It allows for customizable minting and redemption policies while ensuring proper collateralization and secure storage of assets.
 
 ## Token Representations
 
