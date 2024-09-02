@@ -9,7 +9,9 @@ Welcome to the Circles documentation. This guide will help you understand the Ci
     - Purpose and goals of Circles
     - Key concepts: personal currencies, trust networks, and demurrage
     - Total Supply and Equilibrium
- 
+
+2. [Architectural Overview](architecture.md)
+
 2. [Advanced Topics](advanced-topics/index.md)
     - [Inflation and demurrage calculations](advanced-topics/inflation-demurrage.md)
     - [Path-based transactions and flow matrices](advanced-topics/path-based-transactions.md)
