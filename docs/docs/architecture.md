@@ -62,7 +62,7 @@ This Migration system ensures a controlled and secure transition from Circles v1
 
 ### Groups, Policies and Treasury
 
-The Circles ecosystem includes a sophisticated system for managing group currencies, which involves several interconnected components:
+Circles allows the definition of group currencies, which involves several interconnected components:
 
 #### Groups
 

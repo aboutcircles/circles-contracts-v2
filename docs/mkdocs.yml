@@ -17,7 +17,7 @@ nav:
     # - Overview: advanced-topics/index.md
     - Inflation and Demurrage: advanced-topics/inflation-demurrage.md
     - Path-based Transactions: advanced-topics/path-based-transactions.md
-    - Group Mint Policies: advanced-topics/group-mint-policies.md
+    # - Group Mint Policies: advanced-topics/group-mint-policies.md
   # - User Guides:
   #   - Overview: user-guides/index.md
   #   - Registration: user-guides/registration.md

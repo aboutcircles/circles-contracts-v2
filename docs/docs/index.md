@@ -11,11 +11,15 @@ Welcome to the Circles documentation. This guide will help you understand the Ci
     - Total Supply and Equilibrium
 
 2. [Architectural Overview](architecture.md)
+    - System Architecture Diagram
+    - Core Components
+    - Token Representations
+    - Circles v1 Components (legacy)
 
 3. [Advanced Topics](advanced-topics/index.md)
     - [Inflation and demurrage calculations](advanced-topics/inflation-demurrage.md)
     - [Path-based transactions and flow matrices](advanced-topics/path-based-transactions.md)
-    - [Group mint policies and treasuries](advanced-topics/group-mint-policies.md)
+    <!-- - [Group mint policies and treasuries](advanced-topics/group-mint-policies.md) -->
 
    
 <!-- 
