@@ -54,6 +54,8 @@
               <ul class="current">
                 <li class="toctree-l1 current"><a class="reference internal current" href="#">Architectural Overview</a>
     <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a>
+    </li>
     </ul>
                 </li>
               </ul>
@@ -89,7 +91,77 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h2 id="architecture">Architecture</h2>
+                <h1 id="circles-architectural-overview">Circles Architectural Overview</h1>
+<h2 id="introduction">Introduction</h2>
+<p>Circles is a decentralized economic system built on the Gnosis Chain, designed to create and distribute fair and social money through personal currencies. This overview provides a high-level understanding of the system's architecture and how its various components interact.</p>
+<h1 id="circles-architectural-overview_1">Circles Architectural Overview</h1>
+<h2 id="system-architecture-diagram">System Architecture Diagram</h2>
+<p><img alt="Alt text" src="../20240321-Circles-contracts.svg" /></p>
+<p><a href="https://link.excalidraw.com/readonly/EuVbVxV3LE0AZ3Od5rpP" target="_blank" rel="noopener noreferrer">
+  Open Circles Architecture diagram in new tab
+</a></p>
+<h2 id="core-components">Core Components</h2>
+<h3 id="hub-v2-circles">Hub v2 (Circles)</h3>
+<p>The central contract in the Circles ecosystem is the Hub v2, which serves as the main entry point for interactions with the system. It manages:</p>
+<ul>
+<li>Registration of humans, organizations, and groups</li>
+<li>Minting of personal currencies</li>
+<li>Trust relationships between entities</li>
+<li>Group creation and management</li>
+<li>Minting collateral into group currencies</li>
+<li>wrapping ERC1155 Circles Ids tokens into ERC20 wrappers</li>
+</ul>
+<p>The Hub v2 contract implements the ERC1155 standard, allowing it to handle multiple token types efficiently.</p>
+<p><a href="https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/hub/Hub.sol">Code: /src/hub/Hub.sol</a></p>
+<h3 id="nameregistry">NameRegistry</h3>
+<p>The NameRegistry contract manages the names and metadata associated with Circles accounts. It allows users to set custom names, symbols, and metadata for their personal or group currencies.</p>
+<h3 id="migration-contract">Migration Contract</h3>
+<p>This contract facilitates the migration of tokens and data from Circles v1 to v2. It ensures a smooth transition for existing users and their balances.</p>
+<h3 id="standard-treasury">Standard Treasury</h3>
+<p>The Standard Treasury contract handles the collateral for group currencies. It receives and manages the assets backing group Circles.</p>
+<h3 id="vault">Vault</h3>
+<p>The Vault contract (placeholder - details to be added) likely serves as a secure storage for certain assets or data within the Circles ecosystem.</p>
+<h2 id="token-representations">Token Representations</h2>
+<h3 id="circles-erc1155">Circles (ERC1155)</h3>
+<p>The core representation of Circles currencies uses the ERC1155 standard, allowing for efficient management of multiple token types (personal and group currencies) within a single contract.</p>
+<h3 id="wrappers">Wrappers</h3>
+<p>To enhance compatibility with existing DeFi ecosystems, Circles provides ERC20 wrappers:</p>
+<ol>
+<li><strong>Demurrage ERC20</strong>: Represents Circles with the demurrage (decay) factor applied.</li>
+<li><strong>Inflationary ERC20</strong>: Represents Circles in their inflationary form, without demurrage applied.</li>
+</ol>
+<h3 id="erc20lift">ERC20Lift</h3>
+<p>The ERC20Lift contract serves as a bridge between the ERC1155 and ERC20 representations, allowing users to wrap and unwrap their Circles tokens as needed.</p>
+<h2 id="circles-v1-components-legacy">Circles v1 Components (Legacy)</h2>
+<h3 id="hub-v1">Hub v1</h3>
+<p>The original Hub contract from Circles v1, which is being phased out but remains relevant for migration purposes.</p>
+<h3 id="token">Token</h3>
+<p>The individual ERC20 token contracts for personal currencies in Circles v1.</p>
+<h2 id="external-interactions">External Interactions</h2>
+<h3 id="gnosis-chain">Gnosis Chain</h3>
+<p>Circles is built on the Gnosis Chain, leveraging its security and efficiency.</p>
+<h3 id="safe">Safe</h3>
+<p>Integration with Safe (formerly Gnosis Safe) provides secure multi-signature wallet functionality for Circles users.</p>
+<h3 id="eoa-externally-owned-accounts">EoA (Externally Owned Accounts)</h3>
+<p>Standard Ethereum accounts that can interact with the Circles system.</p>
+<h2 id="advanced-features-and-extensions">Advanced Features and Extensions</h2>
+<h3 id="intent-solver-competition">Intent Solver Competition</h3>
+<p>(Placeholder) A mechanism for optimizing transactions and transfers within the Circles network.</p>
+<h3 id="pre-post-hooks-on-intents">Pre-/Post-hooks on Intents</h3>
+<p>(Placeholder) Additional logic that can be executed before or after certain operations in the system.</p>
+<h3 id="flow-matrix-and-erc1155">Flow Matrix and ERC1155</h3>
+<p>A system for managing and executing complex transfers and exchanges of Circles currencies between multiple parties.</p>
+<h3 id="single-transferthrough-for-v1-pathfinder">Single TransferThrough for v1 Pathfinder</h3>
+<p>A mechanism to facilitate transfers using trust pathways, likely a carryover or adaptation from the v1 system.</p>
+<h3 id="account-abstraction">Account Abstraction</h3>
+<p>(Placeholder) Advanced account management features that may simplify user interactions with the system.</p>
+<h3 id="custom-treasuries">Custom Treasuries</h3>
+<p>In addition to the Standard Treasury, the system allows for custom treasury implementations to cater to specific group needs.</p>
+<h3 id="community-dapps">Community dApps</h3>
+<p>The architecture supports the development of community-driven decentralized applications, such as a potential CowSwap v2 integration.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>The Circles v2 architecture represents a significant evolution from its predecessor, offering a more flexible and scalable system for personal and group currencies. By leveraging advanced smart contract standards like ERC1155 and providing multiple token representations, Circles aims to create a robust ecosystem for social money that can integrate seamlessly with the broader DeFi landscape.</p>
+<p>This architecture balances the need for a cohesive, centralized hub with the flexibility required for diverse use cases and future extensions. As the system continues to evolve, this modular design will allow for the integration of new features and improvements while maintaining backward compatibility and supporting the migration from v1.</p>
               
             </div>
           </div><footer>
