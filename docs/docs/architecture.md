@@ -28,7 +28,7 @@ The central contract in the Circles ecosystem is the Hub v2, which serves as the
 
 The Hub v2 contract implements the ERC1155 standard, allowing it to handle multiple token types efficiently.
 
-[Code: /src/hub/Hub.sol](https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/hub/Hub.sol)
+<a href="https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/hub/Hub.sol" target="_blank" rel="noopener noreferrer">Code: /src/hub/Hub.sol</a>
 
 ### NameRegistry
 
@@ -42,7 +42,7 @@ The NameRegistry contract manages names, symbols and metadata for avatars (human
 
 The NameRegistry plays a role in identity management and human-readable addressing within the Circles system, enhancing user experience and facilitating easier identification of avatars and their associated currencies.
 
-[Code: /src/names/NameRegistry.sol](https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/names/NameRegistry.sol)
+<a href="https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/names/NameRegistry.sol" target="_blank" rel="noopener noreferrer">Code: /src/names/NameRegistry.sol</a>
 
 ### Migration
 
@@ -57,51 +57,75 @@ The Migration contract facilitates the transition from Circles v1 to v2, ensurin
 
 This Migration system ensures a controlled and secure transition from Circles v1 to v2, maintaining integrity throughout the upgrade process.
 
-[Code: /src/migration/Migration.sol](https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/migration/Migration.sol)
-
+<a href="https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/migration/Migration.sol" target="_blank" rel="noopener noreferrer">Code: /src/migration/Migration.sol</a>
 
 ### Groups, Policies and Treasury
 
-Circles allows the definition of group currencies, which involves several interconnected components:
+The Circles ecosystem includes a system for managing group currencies, which allows communities and actors to create their own Circles with customizable policies. This system involves several interconnected components:
 
 #### Groups
 
-- Defined in the Hub contract
-- Require a Mint Policy and Treasury for creation
-- Can be registered using `hub.registerGroup()`
+Group avatars (unlike human avatars) cannot mint Circles based on time. Rather group Circles are minted by collaterlising existing Circles into the group if the group trusts that collateral - and a group mint policy can further refine the conditions under which minting is possible.
+
+Groups register as a group avatar in the Hub contract. They have two registration options:
+
+- `registerGroup()`: Uses the `StandardTreasury` contract (recommended).
+- `registerCustomGroup()`: Allows the use of a custom treasury contract.
+
+It is recommended that all groups rely on the standard treasury contract. Users should exercise caution when interacting with custom groups.
+
+Groups require a `MintPolicy` upon registration, which defines the rules for minting, burning, and redeeming the group's currency.
+
+To explicitly mint group Circles, the owner of collateral for a group can call `hub:groupMint()`. <a href="https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/hub/Hub.sol#L412-L430" target="_blank" rel="noopener noreferrer">Code: /src/hub/Hub.sol:groupMint()</a>
 
 #### Standard Treasury
 
-1. **Purpose**: Manages collateral for group currencies
-2. **Key Features**:
-   - Acts as a factory for Vaults
-   - Handles minting and redemption of group Circles
-   - Interacts with Mint Policies for redemption logic
-3. **Functions**:
-   - `onERC1155Received`: Handles single token transfers (minting or redemption)
-   - `onERC1155BatchReceived`: Handles batch token transfers (minting)
-   - Creates Vaults for groups as needed
+The Standard Treasury manages collateral for group currencies:
+
+- Handles minting (indirectly) and redemption of group Circles
+- To mint group circles, the minter must act through the Hub contract:
+    - either by calling `Hub:groupMint()`, upon which the Hub will structure data for the treasury to forward the collateral to the correct vault of the group
+    - or over path-based transfers, Circles can be minted into group Circles on the fly
+    - if one sends collateral directly to the Standard Treasury without data or with incorrectly structured data, the treasury will reject the transfer to avoid that funds get lost as only the hub controls minting of group tokens
+    - if one sends tokens to the treasury with the correct data structure, bypassing the hub contract, the collateral will be locked in the treasury/vault, as the hub **will not mint your equivalent group Circles**
+- To redeem group Cirlces for the underlying collateral from the `Vault`, the owner must send the group Circles to the treasury with a correctly structured data package:
+    - the treasury decodes the data to check whether the intent is to redeem
+    - the treasury passes the user data to the group mint policy, for it to determine the conditions of redemption (treasury is agnostic to data format for group mint policy)
+    - the treasury can execute the option of burning a portion of the collateral upon redemption
+    - the treasury can return the collateral to the redeemer -- but checks that the policy's burn amount and return amounts add up to the group currency amount  
+- `onERC1155Received`: Handles single token transfers (minting or redemption)
+- `onERC1155BatchReceived`: Handles batch token transfers (minting)
+- Acts as a factory for `Vaults`, deployed for each group to hold their collateral
+- Creates Vaults for groups as needed
+
+[Code: /src/treasury/StandardTreasury.sol](https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/treasury/StandardTreasury.sol)
 
 #### Vaults
 
-1. **Purpose**: Securely store collateral for group currencies
-2. **Key Features**:
-   - Deployed by Standard Treasury using a factory pattern
-   - Each group has its own Vault
-3. **Functions**:
-   - `returnCollateral`: Sends collateral back to users during redemption
-   - `burnCollateral`: Burns collateral as specified by Mint Policy
+Vaults securely store collateral for group currencies:
+
+- Deployed by Standard Treasury using a factory pattern
+- Each group has its own Vault
+
+Key functions:
+- `returnCollateral`: Sends collateral back to users during redemption
+- `burnCollateral`: Burns collateral as specified by Mint Policy
+
+[Code: /src/treasury/StandardVault.sol](https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/treasury/StandardVault.sol)
 
 #### Base Mint Policy
 
-1. **Purpose**: Defines rules for minting, burning, and redeeming group currencies
-2. **Key Features**:
-   - Customizable for different group needs
-   - Default implementation allows all mints/burns and user-specified redemptions
-3. **Functions**:
-   - `beforeMintPolicy`: Validates minting requests
-   - `beforeBurnPolicy`: Validates burning requests
-   - `beforeRedeemPolicy`: Specifies redemption logic
+The Base Mint Policy defines rules for minting, burning, and redeeming group currencies:
+
+- Customizable for different group needs
+- Default implementation allows all mints/burns and user-specified redemptions
+
+Key functions:
+- `beforeMintPolicy`: Validates minting requests
+- `beforeBurnPolicy`: Validates burning requests
+- `beforeRedeemPolicy`: Specifies redemption logic
+
+[Code: /src/groups/BaseMintPolicy.sol](https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/groups/BaseMintPolicy.sol)
 
 #### System Interaction
 

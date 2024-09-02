@@ -20,7 +20,7 @@ The primary purpose of Circles is to create a more inclusive and sustainable eco
 
 ### Personal Currencies
 
-In the Circles ecosystem, each individual can mint their own personal currency. This unique feature of the protocol empowers every participant to become an issuer of their own personal Circles. The Hub contract manages both the registration of individuals (referred to as "humans" in the contract) and the issuance of their personal currencies.
+In the Circles ecosystem, each individual can mint their own personal currency. This feature of the protocol empowers every participant to become an issuer of their own personal Circles. The Hub contract manages both the registration of individuals (referred to as "humans" in the contract) and the issuance of their personal currencies.
 
 Key points about personal currencies:
 
@@ -71,11 +71,11 @@ This system ensures that:
 - A clear unit of account is established, with one Circle representing one hour of an individual's time.
 - Circles serves as both a robust store of value and an effective means of exchange.
 
-By integrating these key concepts - personal currencies, trust networks, and demurrage - Circles creates a unique economic system. This system aims to provide a fairly issued, socially-rooted monetary framework that fosters community connections and promotes active participation in the local economy.
+By integrating these key concepts - personal currencies, trust networks, and demurrage - Circles creates an economic system that aims to provide a fairly issued, socially-rooted monetary framework, foster community connections and promote active participation in the local economy.
 
 ## Total Supply and Equilibrium
 
-The Circles protocol implements a unique economic model where the minting of new Circles and the demurrage mechanism work together to create an equilibrium in the total supply. This balance is crucial for maintaining the long-term stability and fairness of the system.
+The Circles protocol implements an economic model where the minting of new Circles and the demurrage mechanism work together to create an equilibrium in the total supply. This balance is crucial for maintaining the long-term stability and fairness of the system.
 
 Key aspects of the total supply mechanism:
 
