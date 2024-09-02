@@ -9,7 +9,7 @@ Welcome to the Circles documentation. This guide will help you understand the Ci
     - Purpose and goals of Circles
     - Key concepts: personal currencies, trust networks, and demurrage
     - Total Supply and Equilibrium
-
+<!-- 
 2. [Architectural Overview](architecture.md)
     - High-level system architecture
     - Key components:
@@ -40,13 +40,13 @@ Welcome to the Circles documentation. This guide will help you understand the Ci
     - Migration from v1 to v2
 
 5. [Contract Interactions](contract-interactions.md)
-    - Inheritance structure and responsibilities
+    - Inheritance structure and responsibilities -->
 
 6. [Advanced Topics](advanced-topics/index.md)
     - [Inflation and demurrage calculations](advanced-topics/inflation-demurrage.md)
     - [Path-based transactions and flow matrices](advanced-topics/path-based-transactions.md)
     - [Group mint policies and treasuries](advanced-topics/group-mint-policies.md)
-
+<!-- 
 7. [User Guides](user-guides/index.md)
     - [How to register as a human, organization, or group](user-guides/registration.md)
     - [Managing trust relationships](user-guides/trust-management.md)
@@ -63,4 +63,4 @@ Welcome to the Circles documentation. This guide will help you understand the Ci
 
 10. [Appendices](appendices/index.md)
     - [Contract addresses](appendices/contract-addresses.md)
-    - [Relevant external resources and links](appendices/external-resources.md)
+    - [Relevant external resources and links](appendices/external-resources.md) -->
