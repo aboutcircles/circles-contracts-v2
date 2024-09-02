@@ -98,55 +98,62 @@ The Standard Treasury manages collateral for group currencies:
 - Acts as a factory for `Vaults`, deployed for each group to hold their collateral
 - Creates Vaults for groups as needed
 
-[Code: /src/treasury/StandardTreasury.sol](https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/treasury/StandardTreasury.sol)
+<a href="https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/treasury/StandardTreasury.sol" target="_blank" rel="noopener noreferrer">Code: /src/treasury/StandardTreasury.sol</a>
 
 #### Vaults
 
 Vaults securely store collateral for group currencies:
 
-- Deployed by Standard Treasury using a factory pattern
-- Each group has its own Vault
+- Deployed by `StandardTreasury` using a factory pattern
+- External functions only accessible by `StandardTreasury`
+- Each group has its own `Vault` to easily query the balance of the vault address for that group
 
-Key functions:
-- `returnCollateral`: Sends collateral back to users during redemption
-- `burnCollateral`: Burns collateral as specified by Mint Policy
+<a href="https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/treasury/StandardVault.sol" target="_blank" rel="noopener noreferrer">Code: /src/treasury/StandardVault.sol</a>
 
-[Code: /src/treasury/StandardVault.sol](https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/treasury/StandardVault.sol)
+#### Mint Policy
 
-#### Base Mint Policy
+Groups can assign a policy contract of their chosing upon registering. Once registered the policy address is immutable, but a policy contract be written:
 
-The Base Mint Policy defines rules for minting, burning, and redeeming group currencies:
+- for one specific group, or
+- to be reusable for many groups to rely on,
+- to be stateful or stateless,
+- can be parametrized with settable parameters with some governance
+- can be deployed as an upgradeable proxy contract
+
+The `BaseMintPolicy` is the simplest possible definition for a sensible group policy. It serves as a reference implementation, but developers are invited to explore and build their own policies
+
+In general a group (mint) policy must be a contract that implements the rules for minting, burning, and redeeming group currencies:
 
 - Customizable for different group needs
-- Default implementation allows all mints/burns and user-specified redemptions
-
-Key functions:
+- Default implementation (`BaseMintPolicy.sol`) allows all mints/burns and user-specified collateral for redemptions
 - `beforeMintPolicy`: Validates minting requests
 - `beforeBurnPolicy`: Validates burning requests
 - `beforeRedeemPolicy`: Specifies redemption logic
 
-[Code: /src/groups/BaseMintPolicy.sol](https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/groups/BaseMintPolicy.sol)
+<a href="https://github.com/aboutcircles/circles-contracts-v2/blob/v0.3.6-docs/src/groups/BaseMintPolicy.sol" target="_blank" rel="noopener noreferrer">Code: /src/groups/BaseMintPolicy.sol</a>
 
 #### System Interaction
 
 1. **Group Creation**:
-   - User calls `hub.registerGroup()`
-   - Hub assigns Standard Treasury
-   - Standard Treasury creates a Vault for the group
-
+    - User calls `hub.registerGroup()`
+    - Hub assigns Standard Treasury
+    - Standard Treasury creates a Vault for the group upon first group mint
 2. **Minting Group Circles**:
-   - Collateral transferred to Treasury
-   - Treasury forwards collateral to group's Vault
-   - Mint Policy consulted for approval
-   - Group Circles minted to user
-
+    - Collateral transferred to Treasury
+    - Treasury forwards collateral to group's Vault
+    - Mint Policy consulted for approval
+    - Group Circles minted to user
 3. **Redeeming Group Circles**:
-   - User sends group Circles to Treasury
-   - Treasury consults Mint Policy for redemption logic
-   - Vault returns specified collateral to user
-   - Excess collateral burned if specified by policy
+    - User sends group Circles to Treasury
+    - Treasury consults Mint Policy for redemption logic
+    - Vault returns specified collateral to user
+    - Part of collateral burned if specified by policy
 
-This system provides a flexible and secure framework for creating and managing group currencies within the Circles ecosystem. It allows for customizable minting and redemption policies while ensuring proper collateralization and secure storage of assets.
+This system provides a flexible framework for creating and managing group currencies within the Circles ecosystem. It allows for customizable minting and redemption policies while ensuring proper collateralization and secure storage of assets.
+
+#### Remarks
+- Circles permits the creation of groups with custom treasury contracts. However, the community should approach such groups with caution until these foreign treasury contracts have been thoroughly vetted.
+- Groups have the capability to trust and accept other groups as collateral. This feature enables the construction of sophisticated hierarchical group structures. However, it also introduces the possibility of cyclical collateralization. While this doesn't increase the total number of Circles in circulation, it does allow for arbitrary inflation of collateral through repeated cyclic collateralization. To mitigate this risk, groups may implement protective measures within their group mint policy.
 
 ## Token Representations
 
