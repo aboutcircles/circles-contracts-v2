@@ -27,11 +27,6 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
      */
     string public constant DEFAULT_CIRCLES_SYMBOL = "RING";
 
-    // /**
-    //  * @dev The IPFS protocol prefix for cid v0 resolution
-    //  */
-    // string private constant IPFS_PROTOCOL = "ipfs://Qm";
-
     // State variables
 
     /**

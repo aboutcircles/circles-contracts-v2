@@ -2,9 +2,9 @@
 pragma solidity >=0.8.24;
 
 import "../hub/IHub.sol";
-import "./Demurrage.sol";
+import "./BatchedDemurrage.sol";
 
-contract InflationaryCirclesOperator is Demurrage {
+contract InflationaryCirclesOperator is BatchedDemurrage {
     // Storage
 
     IHubV2 public hub;

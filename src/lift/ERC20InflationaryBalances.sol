@@ -2,10 +2,10 @@
 pragma solidity >=0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../circles/Demurrage.sol";
+import "../circles/BatchedDemurrage.sol";
 import "./ERC20Permit.sol";
 
-contract ERC20InflationaryBalances is ERC20Permit, Demurrage, IERC20 {
+contract ERC20InflationaryBalances is ERC20Permit, BatchedDemurrage, IERC20 {
     // Constants
 
     uint8 internal constant EXTENDED_ACCURACY_BITS = 64;

@@ -2,9 +2,7 @@
 pragma solidity >=0.8.24;
 
 interface IHubErrors {
-    error CirclesHubOnlyDuringBootstrap(uint8 code);
-
-    error CirclesHubRegisterAvatarV1MustBeStopped(address avatar, uint8 code);
+    error CirclesHubRegisterAvatarV1MustBeStoppedBeforeEndOfInvitationPeriod(address avatar, uint8 code);
 
     error CirclesHubAvatarAlreadyRegistered(address avatar, uint8 code);
 

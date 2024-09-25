@@ -27,7 +27,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     /**
      * @dev Welcome bonus for new avatars invited to Circles. Set to 50 Circles.
      */
-    uint256 private constant WELCOME_BONUS = 50 * EXA;
+    uint256 private constant WELCOME_BONUS = 48 * EXA;
 
     /**
      * @dev The cost of an invitation for a new avatar, paid in personal Circles burnt, set to 100 Circles.
@@ -39,19 +39,12 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      */
     address private constant SENTINEL = address(0x1);
 
+    /**
+     * @dev advanced flag to indicate whether avatar enables consented flow
+     */
+    bytes32 private constant ADVANCED_FLAG_ENABLE_CONSENTEDFLOW = bytes32(uint256(1));
+
     // State variables
-
-    /**
-     * @notice The global name of Circles.
-     * todo, change this to "Circles" for the production deployment
-     */
-    string public name = "Rings";
-
-    /**
-     * @notice The global symbol ticker for Circles.
-     * todo, change this to "CRC" for the production deployment
-     */
-    string public symbol = "RING";
 
     /**
      * @notice The Hub v1 contract address.
@@ -111,10 +104,16 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      */
     mapping(address => mapping(address => TrustMarker)) public trustMarkers;
 
+    /**
+     * @notice Advanced usage flags for avatar. Only the least significant bit is used
+     * by the Circles protocol itself for consented flow behaviour, the remaining bits
+     * are reserved for future community-proposed extensions.
+     */
+    mapping(address => bytes32) public advancedUsageFlags;
+
     // Events
 
     event RegisterHuman(address indexed avatar);
-    event InviteHuman(address indexed inviter, address indexed invited);
     event RegisterOrganization(address indexed organization, string name);
     event RegisterGroup(
         address indexed group, address indexed mint, address indexed treasury, string name, string symbol
@@ -129,16 +128,6 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     );
 
     // Modifiers
-
-    /**
-     * Modifier to check if the current time is during the bootstrap period.
-     */
-    modifier onlyDuringBootstrap(uint8 _code) {
-        if (block.timestamp > invitationOnlyTime) {
-            revert CirclesHubOnlyDuringBootstrap(_code);
-        }
-        _;
-    }
 
     /**
      * Modifier to check if the caller is the migration contract.
@@ -221,53 +210,64 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
 
     /**
      * @notice Register human allows to register an avatar for a human,
-     * if they have a stopped v1 Circles contract, during the bootstrap period.
+     * if they have a stopped v1 Circles contract, that has been stopped
+     * before the end of the invitation period.
+     * Otherwise the caller must have been invited by an already registered human avatar.
+     * Humans can invite someone by trusting their address ahead of this call.
+     * After the invitation period, the inviter must burn the invitation cost, and the
+     * newly registered human will receive the welcome bonus.
+     * @param _inviter address of the inviter, who must have trusted the caller ahead of this call.
+     * If the inviter is zero, the caller can self-register if they have a stopped v1 Circles contract
+     * (stopped before the end of the invitation period).
      * @param _metadataDigest (optional) sha256 metadata digest for the avatar metadata
      * should follow ERC1155 metadata standard.
      */
-    function registerHuman(bytes32 _metadataDigest) external onlyDuringBootstrap(0) {
-        // only available for v1 users with stopped v1 mint, for initial bootstrap period
-        address v1CirclesStatus = _registerHuman(msg.sender);
-        if (v1CirclesStatus != CIRCLES_STOPPED_V1) {
-            revert CirclesHubRegisterAvatarV1MustBeStopped(msg.sender, 0);
+    function registerHuman(address _inviter, bytes32 _metadataDigest) external {
+        if (_inviter == address(0)) {
+            // to self-register yourself if you are a stopped v1 user,
+            // leave the inviter address as zero.
+
+            // only available for v1 users with stopped v1 mint, for initial bootstrap period
+            (address v1CirclesStatus, uint256 v1LastTouched) = _registerHuman(msg.sender);
+            // check if v1 Circles exists and has been stopped
+            if (v1CirclesStatus != CIRCLES_STOPPED_V1) {
+                revert CirclesHubRegisterAvatarV1MustBeStoppedBeforeEndOfInvitationPeriod(msg.sender, 0);
+            }
+            // if it has been stopped, did it stop before the end of the invitation period?
+            if (v1LastTouched >= invitationOnlyTime) {
+                revert CirclesHubRegisterAvatarV1MustBeStoppedBeforeEndOfInvitationPeriod(msg.sender, 1);
+            }
+        } else {
+            // if someone has invited you by trusting your address ahead of this call,
+            // they must themselves be a registered human, and they must pay the invitation cost (after invitation period).
+
+            if (!isHuman(_inviter)) {
+                revert CirclesHubMustBeHuman(msg.sender, 0);
+            }
+
+            if (!isTrusted(_inviter, msg.sender)) {
+                revert CirclesHubInvalidTrustReceiver(msg.sender, 0);
+            }
+
+            // register the invited human; reverts if they already exist
+            // it checks the status of the avatar in v1, but regardless of the status
+            // we can proceed to register the avatar in v2 (they might not be able to mint yet
+            // if they have not stopped their v1 contract)
+            _registerHuman(msg.sender);
+
+            if (block.timestamp > invitationOnlyTime) {
+                // after the invitation period, the inviter must burn the invitation cost
+                _burnAndUpdateTotalSupply(_inviter, toTokenId(_inviter), INVITATION_COST);
+
+                // mint the welcome bonus to the newly registered human
+                _mintAndUpdateTotalSupply(msg.sender, toTokenId(msg.sender), WELCOME_BONUS, "");
+            }
         }
 
         // store the metadata digest for the avatar metadata
         if (_metadataDigest != bytes32(0)) {
             nameRegistry.setMetadataDigest(msg.sender, _metadataDigest);
         }
-
-        emit RegisterHuman(msg.sender);
-    }
-
-    /**
-     * @notice Invite human allows to register another human avatar.
-     * The inviter must burn twice the welcome bonus of their own Circles,
-     * and the invited human receives the welcome bonus in their personal Circles.
-     * The inviter is set to trust the invited avatar.
-     * @param _human avatar of the human to invite
-     */
-    function inviteHuman(address _human) external {
-        if (!isHuman(msg.sender)) {
-            revert CirclesHubMustBeHuman(msg.sender, 0);
-        }
-
-        // register the invited human; reverts if they already exist
-        _registerHuman(_human);
-
-        if (block.timestamp > invitationOnlyTime) {
-            // after the bootstrap period, the inviter must burn the invitation cost
-            _burnAndUpdateTotalSupply(msg.sender, toTokenId(msg.sender), INVITATION_COST);
-
-            // todo: re-discuss desired approach to welcome bonus vs migration
-            // invited receives the welcome bonus in their personal Circles
-            _mintAndUpdateTotalSupply(_human, toTokenId(_human), WELCOME_BONUS, "");
-        }
-
-        // set trust to indefinite future, but avatar can edit this later
-        _trust(msg.sender, _human, INDEFINITE_FUTURE);
-
-        emit InviteHuman(msg.sender, _human);
     }
 
     /**
@@ -339,7 +339,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     /**
      * @notice Trust allows to trust another address for a certain period of time.
      * Expiry times in the past are set to the current block timestamp.
-     * @param _trustReceiver address that is trusted by the caller
+     * @param _trustReceiver address that is trusted by the caller. The trust receiver
+     * does not (yet) need to be registered as an avatar.
      * @param _expiry expiry time in seconds since unix epoch until when trust is valid
      * @dev Trust is directional and can be set by the caller to any address.
      * The trusted address does not (yet) have to be registered in the Hub contract.
@@ -351,11 +352,11 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         if (_trustReceiver == address(0) || _trustReceiver == SENTINEL) {
             // You cannot trust the zero address or the sentinel address.
             // Reserved addresses for logic.
-            revert CirclesHubInvalidTrustReceiver(_trustReceiver, 0);
+            revert CirclesHubInvalidTrustReceiver(_trustReceiver, 1);
         }
         if (_trustReceiver == msg.sender) {
             // You cannot edit your own trust relation.
-            revert CirclesHubInvalidTrustReceiver(_trustReceiver, 1);
+            revert CirclesHubInvalidTrustReceiver(_trustReceiver, 2);
         }
         // expiring trust cannot be set in the past
         if (_expiry < block.timestamp) _expiry = uint96(block.timestamp);
@@ -425,7 +426,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         for (uint256 i = 0; i < _collateralAvatars.length; i++) {
             collateral[i] = toTokenId(_collateralAvatars[i]);
         }
-        _groupMint(msg.sender, msg.sender, _group, collateral, _amounts, _data);
+        _groupMint(msg.sender, msg.sender, _group, collateral, _amounts, _data, true);
     }
 
     /**
@@ -574,6 +575,19 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         _matchNettedFlows(streamsNettedFlow, matrixNettedFlow);
     }
 
+    /**
+     * @notice Set the advanced usage flag for the caller's avatar.
+     * @param _flag advanced usage flags combination to set
+     */
+    function setAdvancedUsageFlag(bytes32 _flag) external {
+        if (avatars[msg.sender] == address(0)) {
+            // Only registered avatars can set advanced usage flags.
+            revert CirclesAvatarMustBeRegistered(msg.sender, 3);
+        }
+
+        advancedUsageFlags[msg.sender] = _flag;
+    }
+
     // Public functions
 
     /**
@@ -612,18 +626,31 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     }
 
     /**
-     * @notice Returns true if the flow to the receiver is permitted.
-     * The receiver must trust the Circles being sent, and the Circles avatar associated with
-     * the Circles must trust the receiver.
+     * @notice Returns true if the flow to the receiver is permitted. By default avatars don't have
+     * consented flow enabled, so then this function is equivalent to isTrusted(). This function is called
+     * to check whether the flow edge is permitted (either along a path's flow edge, or upon groupMint).
+     * If the sender avatar has enabled consented flow for the Circles balances they own,
+     * then the receiver must trust the Circles being sent, and the sender must trust the receiver,
+     * and to preserve the protection recursively the receiver themselves must have consented flow enabled.
+     * @param _from Address of the sender
      * @param _to Address of the receiver
      * @param _circlesAvatar Address of the Circles avatar of the Circles being sent
      * @return permitted true if the flow is permitted, false otherwise
      */
-    function isPermittedFlow(address _to, address _circlesAvatar) public view returns (bool) {
+    function isPermittedFlow(address _from, address _to, address _circlesAvatar) public view returns (bool) {
         // if receiver does not trust the Circles being sent, then the flow is not permitted regardless
         if (uint256(trustMarkers[_to][_circlesAvatar].expiry) < block.timestamp) return false;
-        // however, consented flow also requires bi-directional trust from center to receiver
-        return uint256(trustMarkers[_circlesAvatar][_to].expiry) >= block.timestamp;
+        // if the advanced usage flag does not enables consented flow,
+        // then the uni-directional trust is sufficient, ie. no consented flow applies for sender
+        if (advancedUsageFlags[_from] & ADVANCED_FLAG_ENABLE_CONSENTEDFLOW == bytes32(0)) {
+            return true;
+        }
+        // however, recursive consented flow also requires sender to trust the receiver
+        // and for that receiver themselves to have consented flow enabled
+        return (
+            uint256(trustMarkers[_from][_to].expiry) >= block.timestamp
+                && advancedUsageFlags[_to] & ADVANCED_FLAG_ENABLE_CONSENTEDFLOW != bytes32(0)
+        );
     }
 
     // Internal functions
@@ -636,6 +663,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * @param _collateral array of (personal or group) avatar addresses to be used as collateral
      * @param _amounts array of amounts of collateral to be used for minting
      * @param _data (optional) additional data to be passed to the mint policy, treasury and minter
+     * @param _explicitCall true if the call is made explicitly over groupMint(), or false if
+     * it is called as part of a path transfer
      */
     function _groupMint(
         address _sender,
@@ -643,7 +672,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         address _group,
         uint256[] memory _collateral,
         uint256[] memory _amounts,
-        bytes memory _data
+        bytes memory _data,
+        bool _explicitCall
     ) internal {
         if (_collateral.length != _amounts.length) {
             // Collateral and amount arrays must have equal length.
@@ -663,10 +693,14 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         // so it suffices to check that all amounts are non-zero during summing.
         uint256 sumAmounts = 0;
         for (uint256 i = 0; i < _amounts.length; i++) {
-            // _groupMint is only called from the public groupMint function,
-            // or from operateFlowMatrix, and both ensure the collateral ids are derived
-            // from a registered address, so we can cast here without checking valid registration
-            if (!isPermittedFlow(_group, _validateAddressFromId(_collateral[i], 2))) {
+            address collateralAvatar = _validateAddressFromId(_collateral[i], 1);
+
+            // check the group trusts the collateral
+            // and if the sender has opted into consented flow, the sender must also trust the the group
+            bool isValidCollateral =
+                _explicitCall ? isTrusted(_group, collateralAvatar) : isPermittedFlow(_sender, _group, collateralAvatar);
+
+            if (!isValidCollateral) {
                 // Group does not trust collateral, or flow edge is not permitted
                 revert CirclesHubFlowEdgeIsNotPermitted(_group, _collateral[i], 0);
             }
@@ -756,12 +790,13 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
                 // index + 1: sender coordinate
                 // index + 2: receiver coordinate
                 address circlesId = _flowVertices[_coordinates[index]];
+                address from = _flowVertices[_coordinates[index + 1]];
                 address to = _flowVertices[_coordinates[index + 2]];
                 int256 flow = int256(uint256(_flow[i].amount));
 
                 // check the receiver trusts the Circles being sent
-                // and that the center trusts the receiver (unless center opt-ed out)
-                if (!isPermittedFlow(to, circlesId)) {
+                // and if the sender has enabled consented flow, also check that the sender trusts the receiver
+                if (!isPermittedFlow(from, to, circlesId)) {
                     // Flow edge is not permitted.
                     revert CirclesHubFlowEdgeIsNotPermitted(to, toTokenId(circlesId), 1);
                 }
@@ -846,7 +881,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
                         to, // group; for triggering group mint, to == the group to mint for
                         ids, // collateral
                         amounts, // amounts
-                        "" // path-based group mints never send data to the mint policy
+                        "", // path-based group mints never send data to the mint policy
+                        false
                     );
                 }
 
@@ -936,13 +972,13 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * Additionally set the trust to self indefinitely.
      * @param _human address of the human to be registered
      */
-    function _registerHuman(address _human) internal returns (address v1CirclesStatus) {
+    function _registerHuman(address _human) internal returns (address v1CirclesStatus, uint256 v1LastTouched) {
         // insert avatar into linked list; reverts if it already exists
         _insertAvatar(_human);
 
         // set the last mint time to the current timestamp for invited human
         // and register the v1 Circles contract status
-        v1CirclesStatus = _avatarV1CirclesStatus(_human);
+        (v1CirclesStatus, v1LastTouched) = _avatarV1CirclesStatus(_human);
         MintTime storage mintTime = mintTimes[_human];
         mintTime.mintV1Status = v1CirclesStatus;
         mintTime.lastMintTime = uint96(block.timestamp);
@@ -950,7 +986,9 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         // trust self indefinitely, cannot be altered later
         _trust(_human, _human, INDEFINITE_FUTURE);
 
-        return v1CirclesStatus;
+        emit RegisterHuman(_human);
+
+        return (v1CirclesStatus, v1LastTouched);
     }
 
     /**
@@ -1031,29 +1069,36 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         // check if v1 Circles is known to be stopped
         if (mintTimes[_human].mintV1Status != CIRCLES_STOPPED_V1) {
             // if v1 Circles is not known to be stopped, check the status
-            address v1MintStatus = _avatarV1CirclesStatus(_human);
+            (address v1MintStatus,) = _avatarV1CirclesStatus(_human);
             _updateMintV1Status(_human, v1MintStatus);
         }
     }
 
     /**
-     * Checks the status of an avatar's Circles in the Hub v1 contract,
+     * @dev Checks the status of an avatar's Circles in the Hub v1 contract,
      * and returns the address of the Circles if it exists and is not stopped.
      * Else, it returns the zero address if no Circles exist,
      * and it returns the address CIRCLES_STOPPED_V1 (0x1) if the Circles contract is stopped.
+     * If a Circles contract exists, it also returns the last touched time of the Circles v1 token.
      * @param _avatar avatar address for which to check registration in Hub v1
+     * @return address of the Circles contract if it exists and is not stopped, or zero address if no Circles exist
+     * or CIRCLES_STOPPED_V1 if the Circles contract is stopped.
+     * Additionally, return the last touched time of the Circles v1 token (ie. the last time it minted CRC),
+     * if the token exists, or zero if it does not.
      */
-    function _avatarV1CirclesStatus(address _avatar) internal view returns (address) {
+    function _avatarV1CirclesStatus(address _avatar) internal view returns (address, uint256) {
         address circlesV1 = hubV1.userToToken(_avatar);
         // no token exists in Hub v1, so return status is zero address
-        if (circlesV1 == address(0)) return address(0);
+        if (circlesV1 == address(0)) return (address(0), uint256(0));
+        // get the last touched time of the Circles v1 token
+        uint256 lastTouched = ITokenV1(circlesV1).lastTouched();
         // return the status of the token
         if (ITokenV1(circlesV1).stopped()) {
-            // return the stopped status of the Circles contract
-            return CIRCLES_STOPPED_V1;
+            // return the stopped status of the Circles contract, and the last touched time
+            return (CIRCLES_STOPPED_V1, lastTouched);
         } else {
             // return the address of the Circles contract if it exists and is not stopped
-            return circlesV1;
+            return (circlesV1, lastTouched);
         }
     }
 
