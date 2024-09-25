@@ -1,0 +1,40 @@
+name: Deploy MkDocs to GitHub Pages
+
+on:
+  push:
+    branches:
+      - v0.3.6-docs
+
+jobs:
+  deploy:
+    permissions:
+      contents: write      # This allows writing to the repository contents
+      pages: write         # This allows deploying to GitHub Pages
+      id-token: write      # This is required for requesting the JWT
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Conda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: 3.9
+
+      - name: Install dependencies
+        shell: bash -l {0}
+        run: |
+          cd docs/
+          conda install -c conda-forge --file requirements.txt
+
+      - name: Build site
+        shell: bash -l {0}
+        run: |
+          cd docs/
+          mkdocs build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/site

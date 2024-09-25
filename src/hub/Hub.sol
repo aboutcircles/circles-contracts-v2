@@ -538,8 +538,6 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         return erc20Wrapper;
     }
 
-    // todo: if we have space, possibly have a wrapBatch function
-
     function operateFlowMatrix(
         address[] calldata _flowVertices,
         FlowEdge[] calldata _flow,
@@ -638,15 +636,15 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * @return permitted true if the flow is permitted, false otherwise
      */
     function isPermittedFlow(address _from, address _to, address _circlesAvatar) public view returns (bool) {
-        // if receiver does not trust the Circles being sent, then the flow is not permitted regardless
+        // Check if receiver trusts the Circles being sent
         if (uint256(trustMarkers[_to][_circlesAvatar].expiry) < block.timestamp) return false;
-        // if the advanced usage flag does not enables consented flow,
-        // then the uni-directional trust is sufficient, ie. no consented flow applies for sender
+
+        // Check if sender has enabled consented flow
         if (advancedUsageFlags[_from] & ADVANCED_FLAG_ENABLE_CONSENTEDFLOW == bytes32(0)) {
-            return true;
+            return true; // If not enabled, standard trust is sufficient
         }
-        // however, recursive consented flow also requires sender to trust the receiver
-        // and for that receiver themselves to have consented flow enabled
+        // For consented flow, check sender trusts receiver,
+        // and receiver has consented flow enabled too
         return (
             uint256(trustMarkers[_from][_to].expiry) >= block.timestamp
                 && advancedUsageFlags[_to] & ADVANCED_FLAG_ENABLE_CONSENTEDFLOW != bytes32(0)

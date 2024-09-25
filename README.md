@@ -1,95 +1,88 @@
 # Circles Protocol
 
-## Introducing Circles Protocol v2
+Circles is a decentralized protocol for creating and distributing fair and social money through personal currencies. Built on the Gnosis Chain, it utilizes smart contracts to manage the creation, distribution, and transfer of personal currencies using the ERC1155 multi-token standard.
 
-We're excited to be working on Circles Protocol v2, where we focus on making things better for everyone who uses and builds on Circles. Learning from our journey since Circles began, we've tackled the challenges we faced in the early days.
+## Key Concepts
 
-In Circles v2, we make it easier and more inviting for users and developers to engage with Circles. Our goal is to foster an ecosystem of products and experiences building on Circles. We've also been busy updating our technology, using the latest in cryptography to enhance performance, scalability, and to bring a new level of privacy to the Circles experience.
+- **Personal Currencies**: Each individual can mint their own currency at a rate of one Circle per hour.
+- **Trust Networks**: Currencies become valuable and transferable through trust relationships between participants.
+- **Demurrage**: A 7% annual cost applied to held currencies, encouraging circulation and maintaining equity.
 
-## Why build Circles ?
+## Features
 
-Our standard money system is based on debt, primarily from banks. Repaying this debt requires more than the initial amount due to interest, ensuring a consistent return of funds to these financial institutions. This system indirectly encourages anticipating future economic growth, which can increase our demand on the planet's resources.
+- Retroactive minting for up to 14 days
+- Path-based transactions through trust connections
+- Flexible economic interactions between individuals, organizations, and groups
+- Equilibrium mechanism balancing issuance and demurrage
 
-In Circles UBI, we introduce "Time Circles" (TiC), a money system backed by the equal passage of time for all people. Every hour, each individual can seamlessly add one TiC to their account, unconditionally. To ensure TiC remains a meaningful measure of value, we implement a decay mechanism: tokens diminish in value over time. This equilibrium between token creation and decay ensures a stable balance for everyone, today and for future generations.
+## Documentation
 
-Understanding "Time Circles" also means recognizing what they are not. While this brief overview may not capture the full depth of the discussion, let's set a clear foundation from the outset.
+For more details on Circles and details of the implementation please refer to [https://aboutcircles.github.io/circles-contracts-v2/](https://aboutcircles.github.io/circles-contracts-v2/)
 
-Time Circles is not a panacea for all economic challenges, but it is essential to understand its intended purpose. TiC isn't a promise of a universal standard of living across diverse regions. Instead, it's a commitment that no person should be completely without financial means. Think of TC as a baseline currency available to all.
+## Getting Started
 
-Time Circles encourages circular spending. Its true worth will be determined by the quality and range of goods and services available for TiC. While other currencies may prioritize store-of-value, TiC complements this financial landscape, emphasizing circulation and utility.
+🐲 **Beta Status**: This repository is in beta and actively developed in the open. While initial reviews are on-going, we welcome community engagement for wider testing and integration. As AGPL-licensed software, it's provided as-is. We encourage thorough review and testing before any production use.
 
-Lastly, two crucial parameters underpin the TiC system. The first parameter straightforwardly defines the unit: one token for every human, every hour. The second parameter establishes the decay rate of TiC. With a vision for sustainability across generations, our approach is retrospective: taking an optimistic human lifespan of 80 years as a benchmark, a token minted today should, after those 80 years, carry negligible value.
 
-## Specifications
+### Prerequisites
 
-🐉 **warning**: here be dragons. This repository is under construction and neither functionally complete or externally reviewed. It is shared publicly to enable early discussion, but should not be considered ready for use.
+- [Foundry](https://book.getfoundry.sh/getting-started/installation)
 
-For questions, contact maintainer: Ben <benjamin.bollen@gnosis.io>
+### Installation
 
-## Setting up development environment
-
-This Solidity project uses Foundry as a toolkit. If you don't have Foundry installed yet, see instructions [below](#foundry-as-toolkit)
-
-### Using Foundry to build the contracts
-1. First, you'll need to clone the repository to your local machine:
+1. Clone the repository:
     ```bash
-    git clone https://github.com/CirclesUBI/circles-contracts-v2
+    git clone https://github.com/aboutcircles/circles-contracts-v2
     cd circles-contracts-v2
     ```
+2. Install dependencies:
+    ```bash
+    forge install
+    ```
+### Building
 
-### Compiling the contracts
-1. To compile the contracts, use the following command:
+1. Compile the contracts:
     ```bash
     forge build
     ```
-    Upon successful compilation, you'll find the generated artifacts (like ABI and bytecode) in the specified output directory, by default  `out/`.
 
-2. To format the code, you can run:
-    ```bash
-    forge fmt
-    ```
-    or only check the correct formatting without changing the code:
-    ```bash
-    forge fmt --check
-    ```
+### Testing
 
-### Testing the contracts
-1. To test the contracts, use the following command:
+1. Run the test suite:
     ```bash
     forge test
     ```
-    or to report on gas usage:
+2. For a gas report:
     ```bash
     forge test --gas-report
     ```
-2. To create a snapshot file to disk of each test's gas usage, use:
+### Deployment
+
+To deploy to the Chiado testnet:
+
+1. Copy `.env.example` to `.env` and set your private key and API keys.
+2. Run the deployment script:
     ```bash
-    forge snapshot
+    ./script/deployments/chiadoDeploy.sh
     ```
 
-### Deploying the contracts
-#### Chiado
-To deploy the contracts to the Chiado testnet, run `./chiadoDeploy.sh` and supply a private key and API keys in `.env` file in the root directory (copy `.env.example` and set private information):
-```shell
-./script/deployments/chiadoDeploy.sh
-```
+## Contributing
 
-## Foundry as toolkit
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-Foundry consists of:
+## License
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+This project is licensed under the [AGPL-3.0 License](LICENSE).
 
-You can find the installation guide for Foundry in their [book.getfoundry.sh - Getting started](https://book.getfoundry.sh/getting-started/installation)
+## Disclaimer
 
-Here we re-iterate the most important steps to get you started.
+This project is under active development. The code has not completed externally reviews and should not be used in production environments without proper review and testing.
 
-1. You can install precompiled binaries with their toolchain installer:
-    ```bash
-    curl -L https://foundry.paradigm.xyz | bash
-    ```
-    and follow the instructions in the terminal.
-    To instead build from source, see their getting started guide.
+## Contact
+
+For questions or support regarding this project, please contact:
+
+- About Circles <support@aboutcircles.com>
+- Ben <benjamin.bollen@gnosis.io>
+
+We appreciate your interest and feedback!

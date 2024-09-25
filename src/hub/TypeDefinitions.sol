@@ -17,7 +17,7 @@ contract TypeDefinitions {
 
     struct FlowEdge {
         uint16 streamSinkId;
-        uint192 amount; // todo: set this to uint192 (align with demurrage), and leave it to compiler to pad
+        uint192 amount;
     }
 
     struct Stream {

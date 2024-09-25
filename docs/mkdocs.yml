@@ -1,0 +1,36 @@
+site_name: Circles Protocol
+theme: readthedocs
+site_name: Circles Protocol
+theme: readthedocs
+nav:
+  - Home: index.md
+  - About: about.md
+  - Introduction: introduction.md
+  - Architectural Overview: architecture.md
+  # - Core Functionality:
+  #   - Overview: core-functionality/index.md
+  #   - Hub Contract: core-functionality/hub-contract.md
+  #   - Circles Contract: core-functionality/circles-contract.md
+  # - Key Features: key-features.md
+  # - Contract Interactions: contract-interactions.md
+  - Advanced Topics:
+    # - Overview: advanced-topics/index.md
+    - Inflation and Demurrage: advanced-topics/inflation-demurrage.md
+    - Path-based Transactions: advanced-topics/path-based-transactions.md
+    # - Group Mint Policies: advanced-topics/group-mint-policies.md
+  # - User Guides:
+  #   - Overview: user-guides/index.md
+  #   - Registration: user-guides/registration.md
+  #   - Trust Management: user-guides/trust-management.md
+  #   - Minting and Transferring: user-guides/minting-transferring.md
+  #   - Group Currencies: user-guides/group-currencies.md
+  # - Developer Resources:
+  #   - Overview: developer-resources/index.md
+  #   - Contract ABIs: developer-resources/contract-abis.md
+  #   - Integration Guidelines: developer-resources/integration-guidelines.md
+  #   - Best Practices: developer-resources/best-practices.md
+  # - Glossary: glossary.md
+  # - Appendices:
+  #   - Overview: appendices/index.md
+  #   - Contract Addresses: appendices/contract-addresses.md
+  #   - External Resources: appendices/external-resources.md
