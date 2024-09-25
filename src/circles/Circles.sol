@@ -138,10 +138,11 @@ contract Circles is ERC1155, ICirclesErrors {
             // No issuance to claim, simply return without reverting
             return;
         }
-        // mint personal Circles to the human
-        _mintAndUpdateTotalSupply(_human, toTokenId(_human), issuance, "");
-        // update the last mint time
+        // update the last mint time, before minting as mint time determines the check (guard for reeentrancy attack)
         mintTimes[_human].lastMintTime = uint96(block.timestamp);
+
+        // mint personal Circles to the human; ERC1155 mint will perform acceptance call
+        _mintAndUpdateTotalSupply(_human, toTokenId(_human), issuance, "");
 
         emit PersonalMint(_human, issuance, startPeriod, endPeriod);
     }
