@@ -143,7 +143,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * @dev Reentrancy guard for nonReentrant functions.
      * see https://soliditylang.org/blog/2024/01/26/transient-storage/
      */
-    modifier nonReentrant(uint8 _code) {
+    modifier nonReentrant() {
         assembly {
             if tload(0) { revert(0, 0) }
             tstore(0, 1)
@@ -543,7 +543,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         FlowEdge[] calldata _flow,
         Stream[] calldata _streams,
         bytes calldata _packedCoordinates
-    ) external nonReentrant(0) {
+    ) external nonReentrant {
         // first unpack the coordinates to array of uint16
         uint16[] memory coordinates = _unpackCoordinates(_packedCoordinates, _flow.length);
 
