@@ -185,14 +185,12 @@ contract Circles is ERC1155, ICirclesErrors {
         discountedTotalSupplies[_id] = totalSupplyBalance;
     }
 
-    // Private functions
-
     /**
      * @dev Max function to compare two values.
      * @param a Value a
      * @param b Value b
      */
-    function _max(uint256 a, uint256 b) private pure returns (uint256) {
+    function _max(uint256 a, uint256 b) internal pure returns (uint256) {
         return a >= b ? a : b;
     }
 }

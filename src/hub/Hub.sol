@@ -1117,7 +1117,9 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         // to avoid possible overlap of the mint between Hub v1 and Hub v2
         if (mintTime.mintV1Status != _mintV1Status) {
             mintTime.mintV1Status = _mintV1Status;
-            mintTime.lastMintTime = uint96(block.timestamp);
+            // for last mint time take the maximum to avoid resetting "INDEFINITE_FUTURE"
+            // which indicates stopped status of the human
+            mintTime.lastMintTime = uint96(_max(mintTime.lastMintTime, uint96(block.timestamp)));
         }
     }
 
