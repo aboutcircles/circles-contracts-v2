@@ -77,8 +77,10 @@ contract ERC20Lift is ProxyFactory, IERC20Lift, ICirclesErrors {
 
         if (msg.sender != address(hub)) {
             // if the Hub calls it already has checked valid avatar
-            if (hub.avatars(_avatar) == address(0)) {
-                // Avatar must be registered.
+            // so when called independent from the Hub, check if the avatar
+            // is a registered human or group
+            if (!(hub.isHuman(_avatar) || hub.isGroup(_avatar))) {
+                // Avatar must be registered (as human or group).
                 revert CirclesAvatarMustBeRegistered(_avatar, 0);
             }
         }
