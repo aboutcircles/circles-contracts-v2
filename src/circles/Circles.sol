@@ -29,12 +29,6 @@ contract Circles is ERC1155, ICirclesErrors {
     // Constants
 
     /**
-     * @notice Issue one Circle per hour for each human in demurraged units.
-     * So per second issue 10**18 / 3600 = 277777777777778 attoCircles.
-     */
-    uint256 private constant ISSUANCE_PER_SECOND = uint256(277777777777778);
-
-    /**
      * @notice Upon claiming, the maximum claim is upto two weeks
      * of history. Unclaimed older Circles are unclaimable.
      */

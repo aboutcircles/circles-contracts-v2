@@ -86,7 +86,7 @@ contract InflationaryCircles is MasterCopyNonUpgradable, ERC20InflationaryBalanc
     }
 
     function name() external view returns (string memory) {
-        // append suffix for "ERC20 static" to the ERC20 name
+        // append suffix for "-ERC20s" to the ERC20 name (s for "static")
         return string(abi.encodePacked(nameRegistry.name(avatar), "-ERC20s"));
     }
 
