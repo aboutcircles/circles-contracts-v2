@@ -143,17 +143,24 @@ contract Circles is ERC1155, ICirclesErrors {
             // No issuance to claim, simply return without reverting
             return;
         }
+
         // update the last mint time, before minting as mint time determines the check (guard for reeentrancy attack)
         mintTimes[_human].lastMintTime = uint96(block.timestamp);
 
         // mint personal Circles to the human; ERC1155 mint will perform acceptance call
-        _mintAndUpdateTotalSupply(_human, toTokenId(_human), issuance, "");
+        _mintAndUpdateTotalSupply(_human, toTokenId(_human), issuance, "", true);
 
         emit PersonalMint(_human, issuance, startPeriod, endPeriod);
     }
 
-    function _mintAndUpdateTotalSupply(address _account, uint256 _id, uint256 _value, bytes memory _data) internal {
-        _mint(_account, _id, _value, _data);
+    function _mintAndUpdateTotalSupply(
+        address _account,
+        uint256 _id,
+        uint256 _value,
+        bytes memory _data,
+        bool _doAcceptanceCheck
+    ) internal {
+        _mint(_account, _id, _value, _data, _doAcceptanceCheck);
 
         uint64 today = day(block.timestamp);
         DiscountedBalance memory totalSupplyBalance = discountedTotalSupplies[_id];
