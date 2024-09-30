@@ -107,9 +107,20 @@ contract Circles is ERC1155, ICirclesErrors {
         int128 k = Math64x64.fromUInt((startMint - (dA * 1 days + inflationDayZero)) / 1 hours);
 
         // Calculate the number of incompleted hours remaining in day B from current timestamp
-        int128 l = Math64x64.fromUInt(((dB + 1) * 1 days + inflationDayZero - block.timestamp) / 1 hours + 1);
+        int128 l;
+        uint256 secondsRemainingInB = ((dB + 1) * 1 days + inflationDayZero - block.timestamp);
+        if ((secondsRemainingInB % 1 hours) == 0) {
+            // to count the incompleted hours remaining in day B, when claiming issuance on exactly a full hour,
+            // we can simply take the integer division, as the preceding hour has just completed.
+            l = Math64x64.fromUInt(secondsRemainingInB / 1 hours);
+        } else {
+            // however, most often the issuance is not on the rounded hour exactly, so the current hour has not yet
+            // completed and we should not yet issue it (and substract an extra hour for the current hour)
+            l = Math64x64.fromUInt((secondsRemainingInB / 1 hours) + 1);
+        }
 
         // calculate the overcounted (demurraged) k (in day A) and l (in day B) hours
+        // note that the hours l are not demurraged as it is current day by construction
         int128 overcount = Math64x64.add(Math64x64.mul(R[n], k), l);
 
         // subtract the overcount from the total issuance, and convert to attoCircles
