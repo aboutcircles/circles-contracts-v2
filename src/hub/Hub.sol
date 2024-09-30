@@ -959,7 +959,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         for (uint16 i = 0; i < _streamsNettedFlow.length; i++) {
             if (_streamsNettedFlow[i] != _matrixNettedFlow[i]) {
                 // Intended flow does not match verified flow.
-                revert CirclesHubNettedFlowMismatch(i, _streamsNettedFlow[i], _matrixNettedFlow[i]);
+                revert CirclesHubNettedFlowMismatch(i, _matrixNettedFlow[i], _streamsNettedFlow[i]);
             }
         }
     }
