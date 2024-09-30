@@ -139,15 +139,21 @@ contract Circles is ERC1155, ICirclesErrors {
             return;
         }
         // mint personal Circles to the human
-        _mintAndUpdateTotalSupply(_human, toTokenId(_human), issuance, "");
+        _mintAndUpdateTotalSupply(_human, toTokenId(_human), issuance, "", true);
         // update the last mint time
         mintTimes[_human].lastMintTime = uint96(block.timestamp);
 
         emit PersonalMint(_human, issuance, startPeriod, endPeriod);
     }
 
-    function _mintAndUpdateTotalSupply(address _account, uint256 _id, uint256 _value, bytes memory _data) internal {
-        _mint(_account, _id, _value, _data);
+    function _mintAndUpdateTotalSupply(
+        address _account,
+        uint256 _id,
+        uint256 _value,
+        bytes memory _data,
+        bool _doAcceptanceCheck
+    ) internal {
+        _mint(_account, _id, _value, _data, _doAcceptanceCheck);
 
         uint64 today = day(block.timestamp);
         DiscountedBalance memory totalSupplyBalance = discountedTotalSupplies[_id];

@@ -260,7 +260,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
                 _burnAndUpdateTotalSupply(_inviter, toTokenId(_inviter), INVITATION_COST);
 
                 // mint the welcome bonus to the newly registered human
-                _mintAndUpdateTotalSupply(msg.sender, toTokenId(msg.sender), WELCOME_BONUS, "");
+                _mintAndUpdateTotalSupply(msg.sender, toTokenId(msg.sender), WELCOME_BONUS, "", true);
             }
         }
 
@@ -499,7 +499,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
 
         for (uint256 i = 0; i < _avatars.length; i++) {
             // mint the migrated balances to _owner
-            _mintAndUpdateTotalSupply(_owner, toTokenId(_avatars[i]), _amounts[i], "");
+            _mintAndUpdateTotalSupply(_owner, toTokenId(_avatars[i]), _amounts[i], "", true);
         }
     }
 
@@ -726,7 +726,9 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         safeBatchTransferFrom(_sender, treasuries[_group], _collateral, _amounts, dataWithGroup);
 
         // mint group Circles to the receiver and send the original _data onwards
-        _mintAndUpdateTotalSupply(_receiver, toTokenId(_group), sumAmounts, _data);
+        // only if it is an explicit call perform the ERC1155 acceptance call; if not (ie via path),
+        // suppress the normal acceptance call and only perform the final stream based acceptance calls
+        _mintAndUpdateTotalSupply(_receiver, toTokenId(_group), sumAmounts, _data, _explicitCall);
     }
 
     /**
