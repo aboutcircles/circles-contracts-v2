@@ -127,6 +127,15 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] amounts
     );
 
+    event GroupMint(
+        address indexed sender,
+        address indexed receiver,
+        address indexed group,
+        uint256[] collateral,
+        uint256[] amounts,
+        bytes data
+    );
+
     // Modifiers
 
     /**
@@ -727,6 +736,9 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
 
         // mint group Circles to the receiver and send the original _data onwards
         _mintAndUpdateTotalSupply(_receiver, toTokenId(_group), sumAmounts, _data);
+
+        // emit the group mint event
+        emit GroupMint(_sender, _receiver, _group, _collateral, _amounts, _data);
     }
 
     /**
