@@ -27,6 +27,8 @@ contract InflationaryCirclesOperator is BatchedDemurrage {
 
     constructor(IHubV2 _hub) {
         hub = _hub;
+        // read inflation day zero from hub
+        inflationDayZero = hub.inflationDayZero();
     }
 
     // Public functions
