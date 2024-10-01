@@ -127,6 +127,15 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] amounts
     );
 
+    event GroupMint(
+        address indexed sender,
+        address indexed receiver,
+        address indexed group,
+        uint256[] collateral,
+        uint256[] amounts,
+        bytes data
+    );
+
     // Modifiers
 
     /**
@@ -725,10 +734,13 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         // note: treasury.on1155Received must implement and unpack the GroupMintMetadata to know the group
         safeBatchTransferFrom(_sender, treasuries[_group], _collateral, _amounts, dataWithGroup);
 
-        // mint group Circles to the receiver and send the original _data onwards
-        // only if it is an explicit call perform the ERC1155 acceptance call; if not (ie via path),
+        // mint group Circles to the receiver and send the original _data onwards.
+        // Only if it is an explicit call perform the ERC1155 acceptance call; if not (ie via path),
         // suppress the normal acceptance call and only perform the final stream based acceptance calls
         _mintAndUpdateTotalSupply(_receiver, toTokenId(_group), sumAmounts, _data, _explicitCall);
+
+        // emit the group mint event
+        emit GroupMint(_sender, _receiver, _group, _collateral, _amounts, _data);
     }
 
     /**

@@ -50,8 +50,8 @@ contract StandardTreasury is
     // Events
 
     event CreateVault(address indexed group, address indexed vault);
-    event GroupMintSingle(address indexed group, uint256 indexed id, uint256 value, bytes userData);
-    event GroupMintBatch(address indexed group, uint256[] ids, uint256[] values, bytes userData);
+    event CollateralLockedSingle(address indexed group, uint256 indexed id, uint256 value, bytes userData);
+    event CollateralLockedBatch(address indexed group, uint256[] ids, uint256[] values, bytes userData);
     event GroupRedeem(address indexed group, uint256 indexed id, uint256 value, bytes data);
     event GroupRedeemCollateralReturn(address indexed group, address indexed to, uint256[] ids, uint256[] values);
     event GroupRedeemCollateralBurn(address indexed group, uint256[] ids, uint256[] values);
@@ -110,7 +110,7 @@ contract StandardTreasury is
     {
         (bytes32 metadataType, address group, bytes memory userData) = _decodeMetadataForGroup(_data);
         if (metadataType == METADATATYPE_GROUPMINT) {
-            return _mintGroupCircles(_id, _value, group, userData);
+            return _lockCollateralGroupCircles(_id, _value, group, userData);
         } else if (metadataType == METADATATYPE_GROUPREDEEM) {
             return _redeemGroupCircles(_operator, _from, _id, _value, _data);
         } else {
@@ -132,7 +132,7 @@ contract StandardTreasury is
     ) public override onlyHub returns (bytes4) {
         (bytes32 metadataType, address group, bytes memory userData) = _decodeMetadataForGroup(_data);
         if (metadataType == METADATATYPE_GROUPMINT) {
-            return _mintBatchGroupCircles(_ids, _values, group, userData);
+            return _lockCollateralBatchGroupCircles(_ids, _values, group, userData);
         } else {
             // Treasury: Invalid metadata type for batch received
             revert CirclesStandardTreasuryInvalidMetadataType(metadataType, 1);
@@ -144,7 +144,7 @@ contract StandardTreasury is
     // onReceived : either mint if data decodes or redeem
     // onBatchReceived : only for minting if data matches
 
-    function _mintBatchGroupCircles(
+    function _lockCollateralBatchGroupCircles(
         uint256[] memory _ids,
         uint256[] memory _values,
         address _group,
@@ -155,13 +155,13 @@ contract StandardTreasury is
         // forward the Circles to the vault
         hub.safeBatchTransferFrom(address(this), vault, _ids, _values, _userData);
 
-        // emit the group mint event
-        emit GroupMintBatch(_group, _ids, _values, _userData);
+        // emit the collateral locked event
+        emit CollateralLockedBatch(_group, _ids, _values, _userData);
 
         return this.onERC1155BatchReceived.selector;
     }
 
-    function _mintGroupCircles(uint256 _id, uint256 _value, address _group, bytes memory _userData)
+    function _lockCollateralGroupCircles(uint256 _id, uint256 _value, address _group, bytes memory _userData)
         internal
         returns (bytes4)
     {
@@ -170,8 +170,8 @@ contract StandardTreasury is
         // forward the Circles to the vault
         hub.safeTransferFrom(address(this), vault, _id, _value, _userData);
 
-        // emit the group mint event
-        emit GroupMintSingle(_group, _id, _value, _userData);
+        // emit the collateral locked event
+        emit CollateralLockedSingle(_group, _id, _value, _userData);
 
         return this.onERC1155Received.selector;
     }
