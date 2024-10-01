@@ -292,6 +292,11 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
     }
 
     function _storeShortName(address _avatar, uint72 _shortName, uint256 _nonce) internal {
+        if (_shortName == uint72(0)) {
+            // short name cannot be zero (but congrats if you got it!)
+            // this would break the reverse lookup
+            revert CirclesNamesShortNameZero(_avatar, _nonce);
+        }
         // assign the name to the address
         shortNames[_avatar] = _shortName;
         // assign the address to the name

@@ -95,6 +95,8 @@ interface INameRegistryErrors {
     error CirclesNamesAvatarAlreadyHasCustomNameOrSymbol(address avatar, string nameOrSymbol, uint8 code);
 
     error CirclesNamesOrganizationHasNoSymbol(address organization, uint8 code);
+
+    error CirclesNamesShortNameZero(address avatar, uint256 nonce);
 }
 
 interface IMigrationErrors {
