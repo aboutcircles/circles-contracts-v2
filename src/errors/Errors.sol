@@ -18,7 +18,7 @@ interface IHubErrors {
 
     error CirclesHubGroupMintPolicyRejectedBurn(address burner, address group, uint256 amount, bytes data, uint8 code);
 
-    error CirclesHubOperatorNotApprovedForSource(address operator, address source, uint16 streamId, uint8 code);
+    error CirclesHubOperatorNotApprovedForSource(address operator, address source, uint16 streamIndex, uint8 code);
 
     error CirclesHubFlowEdgeIsNotPermitted(address receiver, uint256 circlesId, uint8 code);
 
