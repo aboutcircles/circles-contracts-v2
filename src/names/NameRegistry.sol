@@ -63,13 +63,6 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
 
     // Modifiers
 
-    modifier mustBeRegistered(address _avatar, uint8 _code) {
-        if (hub.avatars(_avatar) == address(0)) {
-            revert CirclesAvatarMustBeRegistered(_avatar, _code);
-        }
-        _;
-    }
-
     modifier onlyHub(uint8 _code) {
         if (msg.sender != address(hub)) {
             revert CirclesInvalidFunctionCaller(msg.sender, address(hub), _code);
@@ -92,7 +85,7 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
     /**
      * @notice Register a short name for the avatar
      */
-    function registerShortName() external mustBeRegistered(msg.sender, 0) {
+    function registerShortName() external {
         _registerShortName();
     }
 
@@ -100,7 +93,7 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
      * Registers a short name for the avatar using a specific nonce if the short name is available
      * @param _nonce nonce to be used in the calculation
      */
-    function registerShortNameWithNonce(uint256 _nonce) external mustBeRegistered(msg.sender, 1) {
+    function registerShortNameWithNonce(uint256 _nonce) external {
         _registerShortNameWithNonce(_nonce);
     }
 
@@ -108,7 +101,7 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
         _setMetadataDigest(_avatar, _metadataDigest);
     }
 
-    function updateMetadataDigest(bytes32 _metadataDigest) external mustBeRegistered(msg.sender, 2) {
+    function updateMetadataDigest(bytes32 _metadataDigest) external {
         _setMetadataDigest(msg.sender, _metadataDigest);
     }
 
@@ -134,7 +127,7 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
         customSymbols[_avatar] = _symbol;
     }
 
-    function name(address _avatar) external view mustBeRegistered(_avatar, 3) returns (string memory) {
+    function name(address _avatar) external view returns (string memory) {
         if (!hub.isHuman(_avatar)) {
             // groups and organizations can have set a custom name
             string memory customName = customNames[_avatar];
@@ -148,7 +141,7 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
         return _getShortOrLongName(_avatar);
     }
 
-    function symbol(address _avatar) external view mustBeRegistered(_avatar, 4) returns (string memory) {
+    function symbol(address _avatar) external view returns (string memory) {
         if (hub.isOrganization(_avatar)) {
             revert CirclesNamesOrganizationHasNoSymbol(_avatar, 0);
         }
