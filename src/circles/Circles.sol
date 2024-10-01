@@ -106,18 +106,14 @@ contract Circles is ERC1155, ICirclesErrors {
         // calculate the number of completed hours in day A until `startMint`
         int128 k = Math64x64.fromUInt((startMint - (dA * 1 days + inflationDayZero)) / 1 hours);
 
-        // Calculate the number of incompleted hours remaining in day B from current timestamp
-        int128 l;
+        // Calculate the number of seconds remaining in the current day (dB)
         uint256 secondsRemainingInB = ((dB + 1) * 1 days + inflationDayZero - block.timestamp);
-        if ((secondsRemainingInB % 1 hours) == 0) {
-            // to count the incompleted hours remaining in day B, when claiming issuance on exactly a full hour,
-            // we can simply take the integer division, as the preceding hour has just completed.
-            l = Math64x64.fromUInt(secondsRemainingInB / 1 hours);
-        } else {
-            // however, most often the issuance is not on the rounded hour exactly, so the current hour has not yet
-            // completed and we should not yet issue it (and substract an extra hour for the current hour)
-            l = Math64x64.fromUInt((secondsRemainingInB / 1 hours) + 1);
-        }
+        // Calculate the number of complete hours remaining
+        uint256 hoursRemainingInB = secondsRemainingInB / 1 hours;
+        // Calculate l:
+        // If there are any seconds beyond complete hours, add 1 to account for the incomplete hour
+        // Convert the result to int128 using Math64x64.fromUInt
+        int128 l = Math64x64.fromUInt(hoursRemainingInB + (secondsRemainingInB % 1 hours > 0 ? 1 : 0));
 
         // calculate the overcounted (demurraged) k (in day A) and l (in day B) hours
         // note that the hours l are not demurraged as it is current day by construction
