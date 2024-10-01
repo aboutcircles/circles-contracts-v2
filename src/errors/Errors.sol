@@ -96,3 +96,7 @@ interface INameRegistryErrors {
 
     error CirclesNamesOrganizationHasNoSymbol(address organization, uint8 code);
 }
+
+interface IMigrationErrors {
+    error CirclesMigrationAmountMustBeGreaterThanZero();
+}

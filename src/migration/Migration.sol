@@ -6,7 +6,7 @@ import "../hub/IHub.sol";
 import "./IHub.sol";
 import "./IToken.sol";
 
-contract Migration is ICirclesErrors {
+contract Migration is ICirclesErrors, IMigrationErrors {
     // Constant
 
     uint256 private constant ACCURACY = uint256(10 ** 8);
@@ -74,6 +74,10 @@ contract Migration is ICirclesErrors {
             if (address(circlesV1) == address(0)) {
                 // Invalid avatar, not registered in hub V1.
                 revert CirclesAddressCannotBeZero(2);
+            }
+            if (_amounts[i] == 0) {
+                // Amount must be greater than zero.
+                revert CirclesMigrationAmountMustBeGreaterThanZero();
             }
             convertedAmounts[i] = convertFromV1ToDemurrage(_amounts[i]);
             // transfer the v1 Circles to this contract to be locked
