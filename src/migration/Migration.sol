@@ -33,12 +33,12 @@ contract Migration is ICirclesErrors, IMigrationErrors, ICirclesCompactErrors {
         if (address(_hubV1) == address(0)) {
             // Hub v1 address can not be zero.
             // revert CirclesAddressCannotBeZero(0);
-            revert CirclesErrorNoArgs(0, 14);
+            revert CirclesErrorNoArgs(0x0E);
         }
         if (address(_hubV2) == address(0)) {
             // Hub v2 address can not be zero.
             // revert CirclesAddressCannotBeZero(1);
-            revert CirclesErrorNoArgs(0, 15);
+            revert CirclesErrorNoArgs(0x0F);
         }
 
         hubV1 = _hubV1;
@@ -76,7 +76,7 @@ contract Migration is ICirclesErrors, IMigrationErrors, ICirclesCompactErrors {
             if (address(circlesV1) == address(0)) {
                 // Invalid avatar, not registered in hub V1.
                 // revert CirclesAddressCannotBeZero(2);
-                revert CirclesErrorNoArgs(0, 16);
+                revert CirclesErrorNoArgs(0x10);
             }
             if (_amounts[i] == 0) {
                 // Amount must be greater than zero.

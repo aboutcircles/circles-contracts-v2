@@ -81,7 +81,7 @@ contract StandardVault is
         if (_receiver == address(0)) {
             // Vault: receiver cannot be 0 address
             // revert CirclesAddressCannotBeZero(0);
-            revert CirclesErrorNoArgs(0, 21);
+            revert CirclesErrorNoArgs(0x15);
         }
 
         // return the collateral to the receiver

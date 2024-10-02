@@ -81,12 +81,12 @@ contract StandardTreasury is
         if (address(_hub) == address(0)) {
             // Hub address cannot be 0
             // revert CirclesAddressCannotBeZero(0);
-            revert CirclesErrorNoArgs(0, 19);
+            revert CirclesErrorNoArgs(0x13);
         }
         if (_mastercopyStandardVault == address(0)) {
             // Mastercopy standard vault address cannot be 0
             // revert CirclesAddressCannotBeZero(1);
-            revert CirclesErrorNoArgs(0, 20);
+            revert CirclesErrorNoArgs(0x14);
         }
         hub = _hub;
         mastercopyStandardVault = _mastercopyStandardVault;

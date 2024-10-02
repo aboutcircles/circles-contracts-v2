@@ -47,16 +47,16 @@ contract DemurrageCircles is MasterCopyNonUpgradable, ERC20DiscountedBalances, E
         }
         if (address(_hub) == address(0)) {
             // revert CirclesAddressCannotBeZero(0);
-            revert CirclesErrorNoArgs(0, 4);
+            revert CirclesErrorNoArgs(0x04);
         }
         if (address(_nameRegistry) == address(0)) {
             // Must not be the zero address.
             // revert CirclesAddressCannotBeZero(1);
-            revert CirclesErrorNoArgs(0, 5);
+            revert CirclesErrorNoArgs(0x05);
         }
         if (_avatar == address(0)) {
             // revert CirclesAddressCannotBeZero(2);
-            revert CirclesErrorNoArgs(0, 6);
+            revert CirclesErrorNoArgs(0x06);
         }
         hub = IHubV2(_hub);
         avatar = _avatar;

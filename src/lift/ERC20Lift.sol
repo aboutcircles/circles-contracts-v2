@@ -41,22 +41,22 @@ contract ERC20Lift is ProxyFactory, IERC20Lift, ICirclesErrors, ICirclesCompactE
         if (address(_hub) == address(0)) {
             // Must not be the zero address.
             // revert CirclesAddressCannotBeZero(0);
-            revert CirclesErrorNoArgs(0, 7);
+            revert CirclesErrorNoArgs(0x07);
         }
         if (address(_nameRegistry) == address(0)) {
             // Must not be the zero address.
             // revert CirclesAddressCannotBeZero(1);
-            revert CirclesErrorNoArgs(0, 8);
+            revert CirclesErrorNoArgs(0x08);
         }
         if (_masterCopyERC20Demurrage == address(0)) {
             // Must not be the zero address.
             // revert CirclesAddressCannotBeZero(3);
-            revert CirclesErrorNoArgs(0, 9);
+            revert CirclesErrorNoArgs(0x09);
         }
         if (_masterCopyERC20Inflation == address(0)) {
             // Must not be the zero address.
             // revert CirclesAddressCannotBeZero(4);
-            revert CirclesErrorNoArgs(0, 10);
+            revert CirclesErrorNoArgs(0x0A);
         }
 
         hub = _hub;

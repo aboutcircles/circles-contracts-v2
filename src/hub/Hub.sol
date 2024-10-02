@@ -183,11 +183,11 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     ) Circles(_inflationDayZero, _gatewayUrl) {
         if (address(_hubV1) == address(0)) {
             // revert CirclesAddressCannotBeZero(0);
-            revert CirclesErrorNoArgs(0, 0);
+            revert CirclesErrorNoArgs(0x00);
         }
         if (_standardTreasury == address(0)) {
             // revert CirclesAddressCannotBeZero(1);
-            revert CirclesErrorNoArgs(0, 1);
+            revert CirclesErrorNoArgs(0x01);
         }
 
         // initialize linked list for avatars
@@ -686,7 +686,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         if (_collateral.length == 0) {
             // At least one collateral must be provided.
             // revert CirclesArrayMustNotBeEmpty(0);
-            revert CirclesErrorNoArgs(1, 0);
+            revert CirclesErrorNoArgs(0x20);
         }
         if (!isGroup(_group)) {
             // Group is not registered as an avatar.
@@ -712,7 +712,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
 
             if (_amounts[i] == 0) {
                 // Non-zero collateral must be provided.
-                revert CirclesAmountMustNotBeZero(0);
+                // revert CirclesAmountMustNotBeZero(0);
+                revert CirclesErrorNoArgs(0x40);
             }
             sumAmounts += _amounts[i];
         }
@@ -1020,13 +1021,13 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         if (_mint == address(0)) {
             // Mint address can not be zero.
             // revert CirclesAddressCannotBeZero(2);
-            revert CirclesErrorNoArgs(0, 2);
+            revert CirclesErrorNoArgs(0x02);
         }
         // todo: same check treasury is an ERC1155Receiver for receiving collateral
         if (_treasury == address(0)) {
             // Treasury address can not be zero.
             // revert CirclesAddressCannotBeZero(3);
-            revert CirclesErrorNoArgs(0, 3);
+            revert CirclesErrorNoArgs(0x03);
         }
         if (!nameRegistry.isValidName(_name)) {
             // Invalid group name.

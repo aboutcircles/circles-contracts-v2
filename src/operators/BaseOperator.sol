@@ -15,7 +15,7 @@ contract BaseOperator is ICirclesErrors, ICirclesCompactErrors {
         if (address(_hub) == address(0)) {
             // Must not be the zero address.
             // revert CirclesAddressCannotBeZero(0);
-            revert CirclesErrorNoArgs(0, 18);
+            revert CirclesErrorNoArgs(0x12);
         }
 
         hub = _hub;

@@ -76,7 +76,7 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
         if (address(_hub) == address(0)) {
             // Hub cannot be the zero address.
             // revert CirclesAddressCannotBeZero(0);
-            revert CirclesErrorNoArgs(0, 17);
+            revert CirclesErrorNoArgs(0x11);
         }
         hub = _hub;
     }
