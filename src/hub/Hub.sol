@@ -685,7 +685,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         }
         if (_collateral.length == 0) {
             // At least one collateral must be provided.
-            revert CirclesArrayMustNotBeEmpty(0);
+            // revert CirclesArrayMustNotBeEmpty(0);
+            revert CirclesErrorNoArgs(1, 0);
         }
         if (!isGroup(_group)) {
             // Group is not registered as an avatar.

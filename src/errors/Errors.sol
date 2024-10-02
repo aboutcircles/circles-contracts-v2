@@ -6,6 +6,7 @@ interface ICirclesCompactErrors {
      * @dev CirclesErrorNoArgs is a generic error that does not require any arguments.
      * errorId:
      * 0: CirclesAddressCannotBeZero
+     * 1: CirclesArrayMustNotBeEmpty
      */
     error CirclesErrorNoArgs(uint8 errorId, uint8 occuranceCode);
 }
@@ -70,7 +71,8 @@ interface ICirclesErrors {
 
     error CirclesArraysLengthMismatch(uint256 lengthArray1, uint256 lengthArray2, uint8 code);
 
-    error CirclesArrayMustNotBeEmpty(uint8 code);
+    // CirclesErrorNoArgs 1
+    // error CirclesArrayMustNotBeEmpty(uint8 code);
 
     error CirclesAmountMustNotBeZero(uint8 code);
 
