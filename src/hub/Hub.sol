@@ -248,7 +248,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             // they must themselves be a registered human, and they must pay the invitation cost (after invitation period).
 
             if (!isHuman(_inviter)) {
-                revert CirclesHubMustBeHuman(msg.sender, 0);
+                // revert CirclesHubMustBeHuman(msg.sender, 0);
+                revert CirclesErrorOneAddressArg(msg.sender, 0x00);
             }
 
             if (!isTrusted(_inviter, msg.sender)) {
@@ -375,7 +376,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     function personalMint() external {
         if (!isHuman(msg.sender)) {
             // Only avatars registered as human can call personal mint.
-            revert CirclesHubMustBeHuman(msg.sender, 1);
+            // revert CirclesHubMustBeHuman(msg.sender, 1);
+            revert CirclesErrorOneAddressArg(msg.sender, 0x01);
         }
         // check if v1 Circles is known to be stopped and update status
         _checkHumanV1CirclesStatus(msg.sender);
@@ -442,7 +444,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     function stop() external {
         if (!isHuman(msg.sender)) {
             // Only human can call stop.
-            revert CirclesHubMustBeHuman(msg.sender, 2);
+            // revert CirclesHubMustBeHuman(msg.sender, 2);
+            revert CirclesErrorOneAddressArg(msg.sender, 0x02);
         }
         MintTime storage mintTime = mintTimes[msg.sender];
         // check if already stopped
@@ -463,7 +466,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     function stopped(address _human) external view returns (bool) {
         if (!isHuman(_human)) {
             // Only personal Circles can have a status of boolean stopped.
-            revert CirclesHubMustBeHuman(_human, 3);
+            // revert CirclesHubMustBeHuman(_human, 3);
+            revert CirclesErrorOneAddressArg(_human, 0x03);
         }
         MintTime storage mintTime = mintTimes[msg.sender];
         return (mintTime.lastMintTime == INDEFINITE_FUTURE);
@@ -498,7 +502,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             // personal Circles are required to burn the invitation cost
             if (!isHuman(_owner)) {
                 // Only humans can migrate v1 tokens after the bootstrap period.
-                revert CirclesHubMustBeHuman(_owner, 4);
+                // revert CirclesHubMustBeHuman(_owner, 4);
+                revert CirclesErrorOneAddressArg(_owner, 0x04);
             }
             _burnAndUpdateTotalSupply(_owner, toTokenId(_owner), cost);
         }
@@ -777,7 +782,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             for (uint64 i = 0; i < _flowVertices.length - 1; i++) {
                 if (uint160(_flowVertices[i]) >= uint160(_flowVertices[i + 1])) {
                     // Flow vertices must be in ascending order.
-                    revert CirclesHubFlowVerticesMustBeSorted();
+                    // revert CirclesHubFlowVerticesMustBeSorted();
+                    revert CirclesErrorNoArgs(0x60);
                 }
                 if (avatars[_flowVertices[i]] == address(0)) {
                     // Avatar must be registered.
@@ -1065,7 +1071,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             } else {
                 if (!isHuman(_avatars[i])) {
                     // Only humans can be registered.
-                    revert CirclesHubMustBeHuman(_avatars[i], 5);
+                    // revert CirclesHubMustBeHuman(_avatars[i], 5);
+                    revert CirclesErrorOneAddressArg(_avatars[i], 0x05);
                 }
             }
         }
@@ -1126,7 +1133,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         // as this marks whether an avatar is registered as human or not
         if (mintTime.lastMintTime == 0) {
             // Avatar must already be registered as human before we call update
-            revert CirclesLogicAssertion(0);
+            // revert CirclesLogicAssertion(0);
+            revert CirclesErrorNoArgs(0x80);
         }
         // if the status has changed, update the last mint time
         // to avoid possible overlap of the mint between Hub v1 and Hub v2
@@ -1199,9 +1207,9 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * It will update the expiry time for the trusted address.
      */
     function _upsertTrustMarker(address _truster, address _trusted, uint96 _expiry) private {
-        if (_truster == address(0)) revert CirclesLogicAssertion(1);
-        if (_trusted == address(0)) revert CirclesLogicAssertion(2);
-        if (_trusted == SENTINEL) revert CirclesLogicAssertion(3);
+        if (_truster == address(0)) revert CirclesErrorNoArgs(0x81); // CirclesLogicAssertion(1);
+        if (_trusted == address(0)) revert CirclesErrorNoArgs(0x82); // CirclesLogicAssertion(2);
+        if (_trusted == SENTINEL) revert CirclesErrorNoArgs(0x83); // CirclesLogicAssertion(3);
 
         TrustMarker storage sentinelMarker = trustMarkers[_truster][SENTINEL];
         if (sentinelMarker.previous == address(0)) {

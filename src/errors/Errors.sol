@@ -37,8 +37,17 @@ interface ICirclesCompactErrors {
      * 0: 0x00 -> 0x1F CirclesAddressCannotBeZero
      * 1: 0x20 -> 0x3F CirclesArrayMustNotBeEmpty
      * 2: 0x40 -> 0x5F CirclesAmountMustNotBeZero
+     * 3: 0x60 -> 0x7F CirclesHubFlowVerticesMustBeSorted
+     * 4: 0x80 -> 0x9F CirclesLogicAssertion
      */
     error CirclesErrorNoArgs(uint8);
+
+    /**
+     * @dev CirclesErrorOneAddressArg is a generic error that requires one address argument.
+     * error type:
+     * 0: 0x00 -> 0x1F CirclesHubMustBeHuman(avatar)
+     */
+    error CirclesErrorOneAddressArg(address, uint8);
 }
 
 interface IHubErrors {
@@ -46,7 +55,8 @@ interface IHubErrors {
 
     error CirclesHubAvatarAlreadyRegistered(address avatar, uint8 code);
 
-    error CirclesHubMustBeHuman(address avatar, uint8 code);
+    // CirclesErrorOneAddressArg 0
+    // error CirclesHubMustBeHuman(address avatar, uint8 code);
 
     error CirclesHubGroupIsNotRegistered(address group, uint8 code);
 
@@ -62,7 +72,8 @@ interface IHubErrors {
 
     error CirclesHubFlowEdgeIsNotPermitted(address receiver, uint256 circlesId, uint8 code);
 
-    error CirclesHubFlowVerticesMustBeSorted();
+    // CirclesErrorNoArgs 3
+    // error CirclesHubFlowVerticesMustBeSorted();
 
     error CirclesHubFlowEdgeStreamMismatch(uint16 flowEdgeId, uint16 streamId, uint8 code);
 
@@ -109,7 +120,8 @@ interface ICirclesErrors {
 
     error CirclesProxyAlreadyInitialized();
 
-    error CirclesLogicAssertion(uint8 code);
+    // CirclesErrorNoArgs 4
+    // error CirclesLogicAssertion(uint8 code);
 
     error CirclesIdMustBeDerivedFromAddress(uint256 providedId, uint8 code);
 

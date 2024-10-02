@@ -193,7 +193,8 @@ contract Circles is ERC1155, ICirclesErrors {
             // and the total supply might differ on the least significant bits.
             // There is no good way to handle this, so user should burn a few attoCRC less,
             // or wait a day for the total supply to be discounted to zero automatically.
-            revert CirclesLogicAssertion(4);
+            // revert CirclesLogicAssertion(4);
+            revert CirclesErrorNoArgs(0x84);
         }
         unchecked {
             totalSupplyBalance.balance = uint192(discountedTotalSupply - _value);

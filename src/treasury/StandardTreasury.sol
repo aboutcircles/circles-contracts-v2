@@ -194,7 +194,8 @@ contract StandardTreasury is
         IMintPolicy policy = IMintPolicy(hub.mintPolicies(group));
         if (address(policy) == address(0)) {
             // Treasury: Invalid group without mint policy
-            revert CirclesLogicAssertion(0);
+            // revert CirclesLogicAssertion(0);
+            revert CirclesErrorNoArgs(0x85);
         }
 
         // query the mint policy for the redemption values
