@@ -6,7 +6,7 @@ import "../hub/IHub.sol";
 import "./Base58Converter.sol";
 import "./INameRegistry.sol";
 
-contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, ICirclesErrors {
+contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, ICirclesErrors, ICirclesCompactErrors {
     // Constants
 
     /**
@@ -75,7 +75,8 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
     constructor(IHubV2 _hub) {
         if (address(_hub) == address(0)) {
             // Hub cannot be the zero address.
-            revert CirclesAddressCannotBeZero(0);
+            // revert CirclesAddressCannotBeZero(0);
+            revert CirclesErrorNoArgs(0, 17);
         }
         hub = _hub;
     }

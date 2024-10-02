@@ -6,7 +6,7 @@ import "../hub/IHub.sol";
 import "./IHub.sol";
 import "./IToken.sol";
 
-contract Migration is ICirclesErrors, IMigrationErrors {
+contract Migration is ICirclesErrors, IMigrationErrors, ICirclesCompactErrors {
     // Constant
 
     uint256 private constant ACCURACY = uint256(10 ** 8);
@@ -32,11 +32,13 @@ contract Migration is ICirclesErrors, IMigrationErrors {
     constructor(IHubV1 _hubV1, IHubV2 _hubV2, uint256 _inflationDayZero) {
         if (address(_hubV1) == address(0)) {
             // Hub v1 address can not be zero.
-            revert CirclesAddressCannotBeZero(0);
+            // revert CirclesAddressCannotBeZero(0);
+            revert CirclesErrorNoArgs(0, 14);
         }
         if (address(_hubV2) == address(0)) {
             // Hub v2 address can not be zero.
-            revert CirclesAddressCannotBeZero(1);
+            // revert CirclesAddressCannotBeZero(1);
+            revert CirclesErrorNoArgs(0, 15);
         }
 
         hubV1 = _hubV1;
@@ -73,7 +75,8 @@ contract Migration is ICirclesErrors, IMigrationErrors {
             ITokenV1 circlesV1 = ITokenV1(hubV1.userToToken(_avatars[i]));
             if (address(circlesV1) == address(0)) {
                 // Invalid avatar, not registered in hub V1.
-                revert CirclesAddressCannotBeZero(2);
+                // revert CirclesAddressCannotBeZero(2);
+                revert CirclesErrorNoArgs(0, 16);
             }
             if (_amounts[i] == 0) {
                 // Amount must be greater than zero.

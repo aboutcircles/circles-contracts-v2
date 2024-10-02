@@ -7,7 +7,13 @@ import "../hub/IHub.sol";
 import "../proxy/MasterCopyNonUpgradable.sol";
 import "./IStandardVault.sol";
 
-contract StandardVault is MasterCopyNonUpgradable, ERC1155Holder, IStandardVault, ICirclesErrors {
+contract StandardVault is
+    MasterCopyNonUpgradable,
+    ERC1155Holder,
+    IStandardVault,
+    ICirclesErrors,
+    ICirclesCompactErrors
+{
     // State variables
 
     /**
@@ -74,7 +80,8 @@ contract StandardVault is MasterCopyNonUpgradable, ERC1155Holder, IStandardVault
     ) external onlyTreasury {
         if (_receiver == address(0)) {
             // Vault: receiver cannot be 0 address
-            revert CirclesAddressCannotBeZero(0);
+            // revert CirclesAddressCannotBeZero(0);
+            revert CirclesErrorNoArgs(0, 21);
         }
 
         // return the collateral to the receiver

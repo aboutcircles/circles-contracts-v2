@@ -4,7 +4,7 @@ pragma solidity >=0.8.24;
 import {ABDKMath64x64 as Math64x64} from "lib/abdk-libraries-solidity/ABDKMath64x64.sol";
 import "../errors/Errors.sol";
 
-contract Demurrage is ICirclesDemurrageErrors {
+contract Demurrage is ICirclesCompactErrors, ICirclesDemurrageErrors {
     // Type declarations
 
     /**

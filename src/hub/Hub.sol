@@ -182,10 +182,12 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         string memory _gatewayUrl
     ) Circles(_inflationDayZero, _gatewayUrl) {
         if (address(_hubV1) == address(0)) {
-            revert CirclesAddressCannotBeZero(0);
+            // revert CirclesAddressCannotBeZero(0);
+            revert CirclesErrorNoArgs(0, 0);
         }
         if (_standardTreasury == address(0)) {
-            revert CirclesAddressCannotBeZero(1);
+            // revert CirclesAddressCannotBeZero(1);
+            revert CirclesErrorNoArgs(0, 1);
         }
 
         // initialize linked list for avatars
@@ -1016,12 +1018,14 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         // todo: we could check ERC165 support interface for mint policy
         if (_mint == address(0)) {
             // Mint address can not be zero.
-            revert CirclesAddressCannotBeZero(2);
+            // revert CirclesAddressCannotBeZero(2);
+            revert CirclesErrorNoArgs(0, 2);
         }
         // todo: same check treasury is an ERC1155Receiver for receiving collateral
         if (_treasury == address(0)) {
             // Treasury address can not be zero.
-            revert CirclesAddressCannotBeZero(3);
+            // revert CirclesAddressCannotBeZero(3);
+            revert CirclesErrorNoArgs(0, 3);
         }
         if (!nameRegistry.isValidName(_name)) {
             // Invalid group name.

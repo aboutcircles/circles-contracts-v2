@@ -17,7 +17,8 @@ contract StandardTreasury is
     TypeDefinitions,
     IERC1155Receiver,
     ICirclesErrors,
-    IStandardTreasuryErrors
+    IStandardTreasuryErrors,
+    ICirclesCompactErrors
 {
     // Constants
 
@@ -79,11 +80,13 @@ contract StandardTreasury is
     constructor(IHubV2 _hub, address _mastercopyStandardVault) {
         if (address(_hub) == address(0)) {
             // Hub address cannot be 0
-            revert CirclesAddressCannotBeZero(0);
+            // revert CirclesAddressCannotBeZero(0);
+            revert CirclesErrorNoArgs(0, 19);
         }
         if (_mastercopyStandardVault == address(0)) {
             // Mastercopy standard vault address cannot be 0
-            revert CirclesAddressCannotBeZero(1);
+            // revert CirclesAddressCannotBeZero(1);
+            revert CirclesErrorNoArgs(0, 20);
         }
         hub = _hub;
         mastercopyStandardVault = _mastercopyStandardVault;

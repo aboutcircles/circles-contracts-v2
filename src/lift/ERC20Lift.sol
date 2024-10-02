@@ -8,7 +8,7 @@ import "../hub/IHub.sol";
 import "../names/INameRegistry.sol";
 import "../proxy/ProxyFactory.sol";
 
-contract ERC20Lift is ProxyFactory, IERC20Lift, ICirclesErrors {
+contract ERC20Lift is ProxyFactory, IERC20Lift, ICirclesErrors, ICirclesCompactErrors {
     // Constants
 
     bytes4 public constant ERC20_WRAPPER_SETUP_CALLPREFIX = bytes4(keccak256("setup(address,address,address)"));
@@ -40,19 +40,23 @@ contract ERC20Lift is ProxyFactory, IERC20Lift, ICirclesErrors {
     ) {
         if (address(_hub) == address(0)) {
             // Must not be the zero address.
-            revert CirclesAddressCannotBeZero(0);
+            // revert CirclesAddressCannotBeZero(0);
+            revert CirclesErrorNoArgs(0, 7);
         }
         if (address(_nameRegistry) == address(0)) {
             // Must not be the zero address.
-            revert CirclesAddressCannotBeZero(1);
+            // revert CirclesAddressCannotBeZero(1);
+            revert CirclesErrorNoArgs(0, 8);
         }
         if (_masterCopyERC20Demurrage == address(0)) {
             // Must not be the zero address.
-            revert CirclesAddressCannotBeZero(3);
+            // revert CirclesAddressCannotBeZero(3);
+            revert CirclesErrorNoArgs(0, 9);
         }
         if (_masterCopyERC20Inflation == address(0)) {
             // Must not be the zero address.
-            revert CirclesAddressCannotBeZero(4);
+            // revert CirclesAddressCannotBeZero(4);
+            revert CirclesErrorNoArgs(0, 10);
         }
 
         hub = _hub;
