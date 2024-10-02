@@ -105,12 +105,6 @@ contract Circles is ERC1155, ICirclesErrors {
             return (0, 0, 0);
         }
 
-        // if (uint256(mintTime.lastMintTime) + 1 hours > block.timestamp) {
-        //     // Mint time is set to indefinite future for stopped mints in v2
-        //     // and only complete hours get minted, so shortcut the calculation
-        //     return (0, 0, 0);
-        // }
-
         // calculate the start of the claimable period
         uint256 startMint = _max(block.timestamp - MAX_CLAIM_DURATION, mintTime.lastMintTime);
 
