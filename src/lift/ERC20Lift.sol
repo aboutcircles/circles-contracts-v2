@@ -63,13 +63,9 @@ contract ERC20Lift is ProxyFactory, IERC20Lift, ICirclesErrors {
         masterCopyERC20Wrapper[uint256(CirclesType.Inflation)] = _masterCopyERC20Inflation;
     }
 
-    // External functions
-
     // Public functions
 
     function ensureERC20(address _avatar, CirclesType _circlesType) public returns (address) {
-        // todo: first build a simple proxy factory, afterwards redo for create2 deployment
-        // bytes32 salt = keccak256(abi.encodePacked(_id));
         if (_circlesType != CirclesType.Demurrage && _circlesType != CirclesType.Inflation) {
             // Must be a valid CirclesType.
             revert CirclesInvalidParameter(uint256(_circlesType), 0);
@@ -80,7 +76,7 @@ contract ERC20Lift is ProxyFactory, IERC20Lift, ICirclesErrors {
             // so when called independent from the Hub, check if the avatar
             // is a registered human or group
             if (!(hub.isHuman(_avatar) || hub.isGroup(_avatar))) {
-                // Avatar must be registered (as human or group).
+                // Avatar must be registered (as human or group)
                 revert CirclesAvatarMustBeRegistered(_avatar, 0);
             }
         }
