@@ -33,12 +33,12 @@ pragma solidity >=0.8.24;
 interface ICirclesCompactErrors {
     /**
      * @dev CirclesErrorNoArgs is a generic error that does not require any arguments.
-     * errorId:
+     * error type:
      * 0: 0x00 -> 0x1F CirclesAddressCannotBeZero
      * 1: 0x20 -> 0x3F CirclesArrayMustNotBeEmpty
      * 2: 0x40 -> 0x5F CirclesAmountMustNotBeZero
      */
-    error CirclesErrorNoArgs(bytes1);
+    error CirclesErrorNoArgs(uint8);
 }
 
 interface IHubErrors {
