@@ -112,7 +112,7 @@ contract StandardTreasury is
         if (metadataType == METADATATYPE_GROUPMINT) {
             return _lockCollateralGroupCircles(_id, _value, group, userData);
         } else if (metadataType == METADATATYPE_GROUPREDEEM) {
-            return _redeemGroupCircles(_operator, _from, _id, _value, _data);
+            return _redeemGroupCircles(_operator, _from, _id, _value, userData);
         } else {
             // Treasury: Invalid metadata type for received
             revert CirclesStandardTreasuryInvalidMetadataType(metadataType, 0);
@@ -176,7 +176,7 @@ contract StandardTreasury is
         return this.onERC1155Received.selector;
     }
 
-    function _redeemGroupCircles(address _operator, address _from, uint256 _id, uint256 _value, bytes calldata _data)
+    function _redeemGroupCircles(address _operator, address _from, uint256 _id, uint256 _value, bytes memory _userData)
         internal
         returns (bytes4)
     {
@@ -200,7 +200,7 @@ contract StandardTreasury is
         uint256[] memory burnIds;
         uint256[] memory burnValues;
         (redemptionIds, redemptionValues, burnIds, burnValues) =
-            policy.beforeRedeemPolicy(_operator, _from, group, _value, _data);
+            policy.beforeRedeemPolicy(_operator, _from, group, _value, _userData);
 
         // ensure the redemption values sum up to the correct amount
         uint256 sum = 0;
@@ -218,16 +218,16 @@ contract StandardTreasury is
         }
 
         // burn the group Circles
-        hub.burn(_id, _value, _data);
+        hub.burn(_id, _value, _userData);
 
         // return collateral Circles to the redeemer of group Circles
-        vault.returnCollateral(_from, redemptionIds, redemptionValues, _data);
+        vault.returnCollateral(_from, redemptionIds, redemptionValues, _userData);
 
         // burn the collateral Circles from the vault
-        vault.burnCollateral(burnIds, burnValues, _data);
+        vault.burnCollateral(burnIds, burnValues, _userData);
 
         // emit the group redeem event
-        emit GroupRedeem(group, _id, _value, _data);
+        emit GroupRedeem(group, _id, _value, _userData);
         emit GroupRedeemCollateralReturn(group, _from, redemptionIds, redemptionValues);
         emit GroupRedeemCollateralBurn(group, burnIds, burnValues);
 
