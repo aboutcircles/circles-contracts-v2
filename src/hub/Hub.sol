@@ -739,7 +739,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         // Rely on the mint policy to determine whether the collateral is valid for minting
         if (!IMintPolicy(mintPolicies[_group]).beforeMintPolicy(_sender, _group, _collateral, _amounts, _data)) {
             // Mint policy rejected mint.
-            revert CirclesHubGroupMintPolicyRejectedMint(_sender, _group, _collateral, _amounts, _data, 0);
+            // revert CirclesHubGroupMintPolicyRejectedMint(_sender, _group, _collateral, _amounts, _data, 0);
+            revert CirclesErrorAddressUintArgs(_sender, toTokenId(_group), 0x60);
         }
 
         // abi encode the group address into the data to send onwards to the treasury

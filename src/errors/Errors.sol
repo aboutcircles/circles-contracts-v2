@@ -61,6 +61,7 @@ interface ICirclesCompactErrors {
      * 0: 0x00 -> 0x1F CirclesHubOperatorNotApprovedForSource(source, streamIndex)
      * 1: 0x20 -> 0x3F CirclesHubFlowEdgeIsNotPermitted(receiver, circlesId)
      * 2: 0x40 -> 0x5F CirclesHubGroupMintPolicyRejectedBurn(burner, toTokenId(group))
+     * 3: 0x60 -> 0x7F CirclesHubGroupMintPolicyRejectedMint(minter, toTokenId)
      */
     error CirclesErrorAddressUintArgs(address, uint256, uint8);
 }
@@ -81,9 +82,10 @@ interface IHubErrors {
     // CirclesErrorOneAddressArg 5
     // error CirclesHubInvalidTrustReceiver(address trustReceiver, uint8 code);
 
-    error CirclesHubGroupMintPolicyRejectedMint(
-        address minter, address group, uint256[] collateral, uint256[] amounts, bytes data, uint8 code
-    );
+    // CirclesErrorAddressUintArgs 3
+    // error CirclesHubGroupMintPolicyRejectedMint(
+    //     address minter, address group, uint256[] collateral, uint256[] amounts, bytes data, uint8 code
+    // );
 
     // CirclesErrorAddressUintArgs 2
     // error CirclesHubGroupMintPolicyRejectedBurn(address burner, address group, uint256 amount, bytes data, uint8 code);
