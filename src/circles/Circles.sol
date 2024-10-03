@@ -82,7 +82,8 @@ contract Circles is ERC1155, ICirclesErrors {
         MintTime memory mintTime = mintTimes[_human];
         if (mintTime.mintV1Status != address(0) && mintTime.mintV1Status != CIRCLES_STOPPED_V1) {
             // Circles v1 contract cannot be active.
-            revert CirclesERC1155MintBlocked(_human, mintTime.mintV1Status);
+            // revert CirclesERC1155MintBlocked(_human, mintTime.mintV1Status);
+            revert CirclesErrorOneAddressArg(_human, 0xC0);
         }
 
         // Early check for stopped mints

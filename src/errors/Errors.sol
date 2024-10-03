@@ -51,6 +51,7 @@ interface ICirclesCompactErrors {
      * 3: 0x60 -> 0x7F CirclesHubRegisterAvatarV1MustBeStoppedBeforeEndOfInvitationPeriod(avatar)
      * 4: 0x80 -> 0x9F CirclesHubAvatarAlreadyRegistered(avatar)
      * 5: 0xA0 -> 0xBF CirclesHubInvalidTrustReceiver(trustReceiver)
+     * 6: 0xC0 -> 0xDF CirclesERC1155MintBlocked(human, ~mintV1Status~)
      */
     error CirclesErrorOneAddressArg(address, uint8);
 }
@@ -92,7 +93,8 @@ interface IHubErrors {
 }
 
 interface ICirclesDemurrageErrors {
-    error CirclesERC1155MintBlocked(address human, address mintV1Status);
+    // CirclesErrorOneAddressArg 6
+    // error CirclesERC1155MintBlocked(address human, address mintV1Status);
 
     error CirclesDemurrageAmountExceedsMaxUint190(address account, uint256 circlesId, uint256 amount, uint8 code);
 
