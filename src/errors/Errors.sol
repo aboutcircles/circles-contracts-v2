@@ -54,6 +54,15 @@ interface ICirclesCompactErrors {
      * 6: 0xC0 -> 0xDF CirclesERC1155MintBlocked(human, ~mintV1Status~)
      */
     error CirclesErrorOneAddressArg(address, uint8);
+
+    /**
+     * @dev CirclesErrorAddressUintArgs is a generic error that provides an address and a uint256 as arguments.
+     * error type:
+     * 0: 0x00 -> 0x1F CirclesHubOperatorNotApprovedForSource(source, streamIndex)
+     * 1: 0x20 -> 0x3F CirclesHubFlowEdgeIsNotPermitted(receiver, circlesId)
+     * 2: 0x40 -> 0x5F CirclesHubGroupMintPolicyRejectedBurn(burner, toTokenId(group))
+     */
+    error CirclesErrorAddressUintArgs(address, uint256, uint8);
 }
 
 interface IHubErrors {
@@ -76,11 +85,14 @@ interface IHubErrors {
         address minter, address group, uint256[] collateral, uint256[] amounts, bytes data, uint8 code
     );
 
-    error CirclesHubGroupMintPolicyRejectedBurn(address burner, address group, uint256 amount, bytes data, uint8 code);
+    // CirclesErrorAddressUintArgs 2
+    // error CirclesHubGroupMintPolicyRejectedBurn(address burner, address group, uint256 amount, bytes data, uint8 code);
 
-    error CirclesHubOperatorNotApprovedForSource(address operator, address source, uint16 streamIndex, uint8 code);
+    // CirclesErrorAddressUintArgs 0
+    // error CirclesHubOperatorNotApprovedForSource(address operator, address source, uint16 streamIndex, uint8 code);
 
-    error CirclesHubFlowEdgeIsNotPermitted(address receiver, uint256 circlesId, uint8 code);
+    // CirclesErrorAddressUintArgs 1
+    // error CirclesHubFlowEdgeIsNotPermitted(address receiver, uint256 circlesId, uint8 code);
 
     // CirclesErrorNoArgs 3
     // error CirclesHubFlowVerticesMustBeSorted();

@@ -539,7 +539,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             // then the mint policy must approve the burn
             if (!policy.beforeBurnPolicy(msg.sender, group, _amount, _data)) {
                 // Burn policy rejected burn.
-                revert CirclesHubGroupMintPolicyRejectedBurn(msg.sender, group, _amount, _data, 0);
+                // revert CirclesHubGroupMintPolicyRejectedBurn(msg.sender, group, _amount, _data, 0);
+                revert CirclesErrorAddressUintArgs(msg.sender, _id, 0x40);
             }
         }
         _burnAndUpdateTotalSupply(msg.sender, _id, _amount);
@@ -570,9 +571,10 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         for (uint16 i = 0; i < _streams.length; i++) {
             if (!isApprovedForAll(_flowVertices[_streams[i].sourceCoordinate], msg.sender)) {
                 // Operator not approved for source.
-                revert CirclesHubOperatorNotApprovedForSource(
-                    msg.sender, _flowVertices[_streams[i].sourceCoordinate], i, 0
-                );
+                // revert CirclesHubOperatorNotApprovedForSource(
+                //     msg.sender, _flowVertices[_streams[i].sourceCoordinate], i, 0
+                // );
+                revert CirclesErrorAddressUintArgs(_flowVertices[_streams[i].sourceCoordinate], i, 0x00);
             }
         }
 
@@ -722,7 +724,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
 
             if (!isValidCollateral) {
                 // Group does not trust collateral, or flow edge is not permitted
-                revert CirclesHubFlowEdgeIsNotPermitted(_group, _collateral[i], 0);
+                // revert CirclesHubFlowEdgeIsNotPermitted(_group, _collateral[i], 0);
+                revert CirclesErrorAddressUintArgs(_group, _collateral[i], 0x20);
             }
 
             if (_amounts[i] == 0) {
@@ -827,7 +830,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
                 // and if the sender has enabled consented flow, also check that the sender trusts the receiver
                 if (!isPermittedFlow(from, to, circlesId)) {
                     // Flow edge is not permitted.
-                    revert CirclesHubFlowEdgeIsNotPermitted(to, toTokenId(circlesId), 1);
+                    // revert CirclesHubFlowEdgeIsNotPermitted(to, toTokenId(circlesId), 1);
+                    revert CirclesErrorAddressUintArgs(to, toTokenId(circlesId), 0x21);
                 }
 
                 // nett the flow, dividing out the different Circle identifiers
