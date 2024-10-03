@@ -81,7 +81,8 @@ contract ERC20Lift is ProxyFactory, IERC20Lift, ICirclesErrors, ICirclesCompactE
             // is a registered human or group
             if (!(hub.isHuman(_avatar) || hub.isGroup(_avatar))) {
                 // Avatar must be registered (as human or group)
-                revert CirclesAvatarMustBeRegistered(_avatar, 0);
+                // revert CirclesAvatarMustBeRegistered(_avatar, 0);
+                revert CirclesErrorOneAddressArg(_avatar, 0x26);
             }
         }
 

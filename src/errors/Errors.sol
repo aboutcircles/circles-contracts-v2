@@ -46,21 +46,30 @@ interface ICirclesCompactErrors {
      * @dev CirclesErrorOneAddressArg is a generic error that requires one address argument.
      * error type:
      * 0: 0x00 -> 0x1F CirclesHubMustBeHuman(avatar)
+     * 1: 0x20 -> 0x3F CirclesAvatarMustBeRegistered(avatar)
+     * 2: 0x40 -> 0x5F CirclesHubGroupIsNotRegistered(group)
+     * 3: 0x60 -> 0x7F CirclesHubRegisterAvatarV1MustBeStoppedBeforeEndOfInvitationPeriod(avatar)
+     * 4: 0x80 -> 0x9F CirclesHubAvatarAlreadyRegistered(avatar)
+     * 5: 0xA0 -> 0xBF CirclesHubInvalidTrustReceiver(trustReceiver)
      */
     error CirclesErrorOneAddressArg(address, uint8);
 }
 
 interface IHubErrors {
-    error CirclesHubRegisterAvatarV1MustBeStoppedBeforeEndOfInvitationPeriod(address avatar, uint8 code);
+    // CirclesErrorOneAddressArg 3
+    // error CirclesHubRegisterAvatarV1MustBeStoppedBeforeEndOfInvitationPeriod(address avatar, uint8 code);
 
-    error CirclesHubAvatarAlreadyRegistered(address avatar, uint8 code);
+    // CirclesErrorOneAddressArg 4
+    // error CirclesHubAvatarAlreadyRegistered(address avatar, uint8 code);
 
     // CirclesErrorOneAddressArg 0
     // error CirclesHubMustBeHuman(address avatar, uint8 code);
 
-    error CirclesHubGroupIsNotRegistered(address group, uint8 code);
+    // CirclesErrorOneAddressArg 2
+    // error CirclesHubGroupIsNotRegistered(address group, uint8 code);
 
-    error CirclesHubInvalidTrustReceiver(address trustReceiver, uint8 code);
+    // CirclesErrorOneAddressArg 5
+    // error CirclesHubInvalidTrustReceiver(address trustReceiver, uint8 code);
 
     error CirclesHubGroupMintPolicyRejectedMint(
         address minter, address group, uint256[] collateral, uint256[] amounts, bytes data, uint8 code
@@ -95,7 +104,8 @@ interface ICirclesDemurrageErrors {
 }
 
 interface ICirclesErrors {
-    error CirclesAvatarMustBeRegistered(address avatar, uint8 code);
+    // CirclesErrorOneAddressArg 1
+    // error CirclesAvatarMustBeRegistered(address avatar, uint8 code);
 
     // CirclesErrorNoArgs 0
     // error CirclesAddressCannotBeZero(uint8 code);
