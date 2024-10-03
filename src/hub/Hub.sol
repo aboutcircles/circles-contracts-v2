@@ -1034,27 +1034,15 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         string calldata _name,
         string calldata _symbol
     ) internal {
-        // todo: we could check ERC165 support interface for mint policy
-        if (_mint == address(0)) {
+        if (_mint == address(0) || _treasury == address(0)) {
             // Mint address can not be zero.
-            // revert CirclesAddressCannotBeZero(2);
+            // Treasury address can not be zero.
             revert CirclesErrorNoArgs(0x02);
         }
-        // todo: same check treasury is an ERC1155Receiver for receiving collateral
-        if (_treasury == address(0)) {
-            // Treasury address can not be zero.
-            // revert CirclesAddressCannotBeZero(3);
-            revert CirclesErrorNoArgs(0x03);
-        }
-        if (!nameRegistry.isValidName(_name)) {
-            // Invalid group name.
+        if (!nameRegistry.isValidName(_name) || !nameRegistry.isValidSymbol(_symbol)) {
+            // Invalid group name or symbol
             // name must be ASCII alphanumeric and some special characters
-            revert CirclesInvalidString(_name, 0);
-        }
-        if (!nameRegistry.isValidSymbol(_symbol)) {
-            // Invalid group symbol.
-            // symbol must be ASCII alphanumeric and some special characters
-            revert CirclesInvalidString(_symbol, 1);
+            revert CirclesErrorNoArgs(0x03);
         }
 
         // insert avatar into linked list; reverts if it already exists
