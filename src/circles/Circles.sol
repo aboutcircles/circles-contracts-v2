@@ -86,17 +86,12 @@ contract Circles is ERC1155, ICirclesErrors {
             revert CirclesErrorOneAddressArg(_human, 0xC0);
         }
 
-        // Early check for stopped mints
-        if (mintTime.lastMintTime == INDEFINITE_FUTURE) {
-            return (0, 0, 0);
-        }
-
         // Check if at least one new completed hour is mintable
         uint256 lastCompletedHour = mintTime.lastMintTime / 1 hours;
         uint256 currentCompletedHour = block.timestamp / 1 hours;
 
-        if (lastCompletedHour >= currentCompletedHour) {
-            // No new completed hour to mint
+        if (lastCompletedHour >= currentCompletedHour || mintTime.lastMintTime == INDEFINITE_FUTURE) {
+            // No new completed hour to mint, or stopped
             return (0, 0, 0);
         }
 
