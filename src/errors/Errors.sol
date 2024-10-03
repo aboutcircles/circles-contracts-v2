@@ -62,6 +62,8 @@ interface ICirclesCompactErrors {
      * 1: 0x20 -> 0x3F CirclesHubFlowEdgeIsNotPermitted(receiver, circlesId)
      * 2: 0x40 -> 0x5F CirclesHubGroupMintPolicyRejectedBurn(burner, toTokenId(group))
      * 3: 0x60 -> 0x7F CirclesHubGroupMintPolicyRejectedMint(minter, toTokenId)
+     * 4: 0x80 -> 0x9F CirclesDemurrageAmountExceedsMaxUint192(account, circlesId)
+     * 5: 0xA0 -> 0xBF CirclesDemurrageDayBeforeLastUpdatedDay(account, lastDayUpdated)
      */
     error CirclesErrorAddressUintArgs(address, uint256, uint8);
 }
@@ -101,7 +103,7 @@ interface IHubErrors {
 
     error CirclesHubFlowEdgeStreamMismatch(uint16 flowEdgeId, uint16 streamId, uint8 code);
 
-    error CirclesHubStreamMismatch(uint16 streamId, uint8 code);
+    error CirclesHubStreamMismatch(uint16 streamId);
 
     error CirclesHubNettedFlowMismatch(uint16 vertexPosition, int256 matrixNettedFlow, int256 streamNettedFlow);
 }
@@ -110,11 +112,13 @@ interface ICirclesDemurrageErrors {
     // CirclesErrorOneAddressArg 6
     // error CirclesERC1155MintBlocked(address human, address mintV1Status);
 
-    error CirclesDemurrageAmountExceedsMaxUint190(address account, uint256 circlesId, uint256 amount, uint8 code);
+    // CirclesErrorAddressUintArgs 4
+    // error CirclesDemurrageAmountExceedsMaxUint192(address account, uint256 circlesId, uint256 amount, uint8 code);
 
-    error CirclesDemurrageDayBeforeLastUpdatedDay(
-        address account, uint256 circlesId, uint64 day, uint64 lastUpdatedDay, uint8 code
-    );
+    // CirclesErrorAddressUintArgs 5
+    // error CirclesDemurrageDayBeforeLastUpdatedDay(
+    //     address account, uint256 circlesId, uint64 day, uint64 lastUpdatedDay, uint8 code
+    // );
 
     error CirclesERC1155CannotReceiveBatch(uint8 code);
 }

@@ -889,11 +889,9 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
                     streamBatchCounter[streamSinkArrayId]++;
                     if (streamReceivers[streamSinkArrayId] == address(0)) {
                         streamReceivers[streamSinkArrayId] = to;
-                    } else {
-                        if (streamReceivers[streamSinkArrayId] != to) {
-                            // Invalid stream receiver
-                            revert CirclesHubFlowEdgeStreamMismatch(i, _flow[i].streamSinkId, 1);
-                        }
+                    } else if (streamReceivers[streamSinkArrayId] != to) {
+                        // Invalid stream receiver
+                        revert CirclesHubFlowEdgeStreamMismatch(i, _flow[i].streamSinkId, 1);
                     }
                 }
 
@@ -925,13 +923,9 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
 
             // check that all streams are properly defined
             for (uint16 i = 0; i < _streams.length; i++) {
-                if (streamReceivers[i] == address(0)) {
+                if (streamReceivers[i] == address(0) || streamBatchCounter[i] != _streams[i].flowEdgeIds.length) {
                     // Invalid stream receiver
-                    revert CirclesHubStreamMismatch(i, 0);
-                }
-                if (streamBatchCounter[i] != _streams[i].flowEdgeIds.length) {
-                    // Invalid stream batch
-                    revert CirclesHubStreamMismatch(i, 1);
+                    revert CirclesHubStreamMismatch(i);
                 }
             }
         }
