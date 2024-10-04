@@ -1215,9 +1215,9 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * It will update the expiry time for the trusted address.
      */
     function _upsertTrustMarker(address _truster, address _trusted, uint96 _expiry) private {
-        if (_truster == address(0)) revert CirclesErrorNoArgs(0x81); // CirclesLogicAssertion(1);
-        if (_trusted == address(0)) revert CirclesErrorNoArgs(0x82); // CirclesLogicAssertion(2);
-        if (_trusted == SENTINEL) revert CirclesErrorNoArgs(0x83); // CirclesLogicAssertion(3);
+        if (_truster == address(0) || _trusted == address(0) || _trusted == SENTINEL) {
+            revert CirclesErrorNoArgs(0x81); // CirclesLogicAssertion(1);
+        }
 
         TrustMarker storage sentinelMarker = trustMarkers[_truster][SENTINEL];
         if (sentinelMarker.previous == address(0)) {
