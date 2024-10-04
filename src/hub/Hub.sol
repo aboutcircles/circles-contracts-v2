@@ -237,27 +237,19 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             // only available for v1 users with stopped v1 mint, for initial bootstrap period
             (address v1CirclesStatus, uint256 v1LastTouched) = _registerHuman(msg.sender);
             // check if v1 Circles exists and has been stopped
-            if (v1CirclesStatus != CIRCLES_STOPPED_V1) {
+            // and if it has been stopped, did it stop before the end of the invitation period?
+            if (v1CirclesStatus != CIRCLES_STOPPED_V1 || v1LastTouched >= invitationOnlyTime) {
                 // revert CirclesHubRegisterAvatarV1MustBeStoppedBeforeEndOfInvitationPeriod(msg.sender, 0);
                 revert CirclesErrorOneAddressArg(msg.sender, 0x60);
-            }
-            // if it has been stopped, did it stop before the end of the invitation period?
-            if (v1LastTouched >= invitationOnlyTime) {
-                // revert CirclesHubRegisterAvatarV1MustBeStoppedBeforeEndOfInvitationPeriod(msg.sender, 1);
-                revert CirclesErrorOneAddressArg(msg.sender, 0x61);
             }
         } else {
             // if someone has invited you by trusting your address ahead of this call,
             // they must themselves be a registered human, and they must pay the invitation cost (after invitation period).
 
-            if (!isHuman(_inviter)) {
+            if (!isHuman(_inviter) || !isTrusted(_inviter, msg.sender)) {
                 // revert CirclesHubMustBeHuman(msg.sender, 0);
-                revert CirclesErrorOneAddressArg(msg.sender, 0x00);
-            }
-
-            if (!isTrusted(_inviter, msg.sender)) {
                 // revert CirclesHubInvalidTrustReceiver(msg.sender, 0);
-                revert CirclesErrorOneAddressArg(msg.sender, 0xA0);
+                revert CirclesErrorOneAddressArg(_inviter, 0xA0);
             }
 
             // register the invited human; reverts if they already exist
@@ -357,10 +349,6 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * The trusted address does not (yet) have to be registered in the Hub contract.
      */
     function trust(address _trustReceiver, uint96 _expiry) external {
-        // if (avatars[msg.sender] == address(0)) {
-        //     // revert CirclesAvatarMustBeRegistered(msg.sender, 0);
-        //     revert CirclesErrorOneAddressArg(msg.sender, 0x20);
-        // }
         if (
             avatars[msg.sender] == address(0) || _trustReceiver == address(0) || _trustReceiver == SENTINEL
                 || _trustReceiver == msg.sender
@@ -492,14 +480,12 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * @param _amounts array of amounts in inflationary v1 units to migrate
      */
     function migrate(address _owner, address[] calldata _avatars, uint256[] calldata _amounts) external onlyMigration {
-        if (avatars[_owner] == address(0)) {
+        if (avatars[_owner] == address(0) || _avatars.length != _amounts.length) {
             // Only registered avatars can migrate v1 tokens.
+            // Array length is already checked in the migration contract, so redundant check here,
+            // can be collapsed under the more meaningful error.
             // revert CirclesAvatarMustBeRegistered(_owner, 1);
             revert CirclesErrorOneAddressArg(_owner, 0x21);
-        }
-        if (_avatars.length != _amounts.length) {
-            // revert CirclesArraysLengthMismatch(_avatars.length, _amounts.length, 0);
-            revert CirclesErrorNoArgs(0xA0);
         }
 
         // register all unregistered avatars as humans, and check that registered avatars are humans
