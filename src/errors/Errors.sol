@@ -35,7 +35,7 @@ interface ICirclesCompactErrors {
      * @dev CirclesErrorNoArgs is a generic error that does not require any arguments.
      * error type:
      * 0: 0x00 -> 0x1F CirclesAddressCannotBeZero
-     * 1: 0x20 -> 0x3F CirclesArrayMustNotBeEmpty
+     * 1: 0x20 -> 0x3F CirclesArrayMustNotBeEmpty (no occurances anymore; freed up)
      * 2: 0x40 -> 0x5F CirclesAmountMustNotBeZero
      * 3: 0x60 -> 0x7F CirclesHubFlowVerticesMustBeSorted
      * 4: 0x80 -> 0x9F CirclesLogicAssertion

@@ -697,15 +697,11 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         bytes memory _data,
         bool _explicitCall
     ) internal {
-        if (_collateral.length != _amounts.length) {
+        if (_collateral.length != _amounts.length || _collateral.length == 0) {
             // Collateral and amount arrays must have equal length.
+            // At least one collateral must be provided.
             // revert CirclesArraysLengthMismatch(_collateral.length, _amounts.length, 1);
             revert CirclesErrorNoArgs(0xA1);
-        }
-        if (_collateral.length == 0) {
-            // At least one collateral must be provided.
-            // revert CirclesArrayMustNotBeEmpty(0);
-            revert CirclesErrorNoArgs(0x20);
         }
         if (!isGroup(_group)) {
             // Group is not registered as an avatar.
@@ -725,17 +721,13 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             bool isValidCollateral =
                 _explicitCall ? isTrusted(_group, collateralAvatar) : isPermittedFlow(_sender, _group, collateralAvatar);
 
-            if (!isValidCollateral) {
+            if (!isValidCollateral || _amounts[i] == 0) {
                 // Group does not trust collateral, or flow edge is not permitted
+                // Non-zero collateral must be provided.
                 // revert CirclesHubFlowEdgeIsNotPermitted(_group, _collateral[i], 0);
                 revert CirclesErrorAddressUintArgs(_group, _collateral[i], 0x20);
             }
 
-            if (_amounts[i] == 0) {
-                // Non-zero collateral must be provided.
-                // revert CirclesAmountMustNotBeZero(0);
-                revert CirclesErrorNoArgs(0x40);
-            }
             sumAmounts += _amounts[i];
         }
 
@@ -778,20 +770,13 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         FlowEdge[] calldata _flow,
         uint16[] memory _coordinates
     ) internal view returns (int256[] memory) {
-        if (3 * _flow.length != _coordinates.length) {
-            // Mismatch in flow and coordinates length.
+        if (
+            3 * _flow.length != _coordinates.length // Mismatch in flow and coordinates length.
+                || _flowVertices.length > type(uint16).max // Too many vertices.
+                || _flowVertices.length == 0 || _flow.length == 0 // Empty flow matrix
+        ) {
             // revert CirclesArraysLengthMismatch(_flow.length, _coordinates.length, 2);
             revert CirclesErrorNoArgs(0xA2);
-        }
-        if (_flowVertices.length > type(uint16).max) {
-            // Too many vertices.
-            // revert CirclesArraysLengthMismatch(_flowVertices.length, type(uint16).max, 3);
-            revert CirclesErrorNoArgs(0xA3);
-        }
-        if (_flowVertices.length == 0 || _flow.length == 0) {
-            // Empty flow matrix
-            // revert CirclesArraysLengthMismatch(_flowVertices.length, _flow.length, 4);
-            revert CirclesErrorNoArgs(0xA4);
         }
 
         // initialize the netted flow array
