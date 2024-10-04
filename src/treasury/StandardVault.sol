@@ -101,7 +101,8 @@ contract StandardVault is
     {
         if (_ids.length != _values.length) {
             // Vault: ids and values length mismatch
-            revert CirclesArraysLengthMismatch(_ids.length, _values.length, 0);
+            // revert CirclesArraysLengthMismatch(_ids.length, _values.length, 0);
+            revert CirclesErrorNoArgs(0xA8);
         }
 
         // burn the collateral from the vault

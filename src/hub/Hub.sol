@@ -498,7 +498,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             revert CirclesErrorOneAddressArg(_owner, 0x21);
         }
         if (_avatars.length != _amounts.length) {
-            revert CirclesArraysLengthMismatch(_avatars.length, _amounts.length, 0);
+            // revert CirclesArraysLengthMismatch(_avatars.length, _amounts.length, 0);
+            revert CirclesErrorNoArgs(0xA0);
         }
 
         // register all unregistered avatars as humans, and check that registered avatars are humans
@@ -698,7 +699,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     ) internal {
         if (_collateral.length != _amounts.length) {
             // Collateral and amount arrays must have equal length.
-            revert CirclesArraysLengthMismatch(_collateral.length, _amounts.length, 1);
+            // revert CirclesArraysLengthMismatch(_collateral.length, _amounts.length, 1);
+            revert CirclesErrorNoArgs(0xA1);
         }
         if (_collateral.length == 0) {
             // At least one collateral must be provided.
@@ -778,15 +780,18 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     ) internal view returns (int256[] memory) {
         if (3 * _flow.length != _coordinates.length) {
             // Mismatch in flow and coordinates length.
-            revert CirclesArraysLengthMismatch(_flow.length, _coordinates.length, 2);
+            // revert CirclesArraysLengthMismatch(_flow.length, _coordinates.length, 2);
+            revert CirclesErrorNoArgs(0xA2);
         }
         if (_flowVertices.length > type(uint16).max) {
             // Too many vertices.
-            revert CirclesArraysLengthMismatch(_flowVertices.length, type(uint16).max, 3);
+            // revert CirclesArraysLengthMismatch(_flowVertices.length, type(uint16).max, 3);
+            revert CirclesErrorNoArgs(0xA3);
         }
         if (_flowVertices.length == 0 || _flow.length == 0) {
             // Empty flow matrix
-            revert CirclesArraysLengthMismatch(_flowVertices.length, _flow.length, 4);
+            // revert CirclesArraysLengthMismatch(_flowVertices.length, _flow.length, 4);
+            revert CirclesErrorNoArgs(0xA4);
         }
 
         // initialize the netted flow array
@@ -985,7 +990,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     function _matchNettedFlows(int256[] memory _streamsNettedFlow, int256[] memory _matrixNettedFlow) internal pure {
         if (_streamsNettedFlow.length != _matrixNettedFlow.length) {
             // Mismatch in netted flow length.
-            revert CirclesArraysLengthMismatch(_streamsNettedFlow.length, _matrixNettedFlow.length, 5);
+            // revert CirclesArraysLengthMismatch(_streamsNettedFlow.length, _matrixNettedFlow.length, 5);
+            revert CirclesErrorNoArgs(0xA5);
         }
         for (uint16 i = 0; i < _streamsNettedFlow.length; i++) {
             if (_streamsNettedFlow[i] != _matrixNettedFlow[i]) {
@@ -1185,7 +1191,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     {
         if (_packedData.length != _numberOfTriplets * 6) {
             // Invalid packed data length
-            revert CirclesArraysLengthMismatch(_packedData.length, _numberOfTriplets, 6);
+            // revert CirclesArraysLengthMismatch(_packedData.length, _numberOfTriplets, 6);
+            revert CirclesErrorNoArgs(0xA6);
         }
 
         unpackedCoordinates_ = new uint16[](_numberOfTriplets * 3);

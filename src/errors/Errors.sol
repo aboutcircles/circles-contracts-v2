@@ -39,6 +39,7 @@ interface ICirclesCompactErrors {
      * 2: 0x40 -> 0x5F CirclesAmountMustNotBeZero
      * 3: 0x60 -> 0x7F CirclesHubFlowVerticesMustBeSorted
      * 4: 0x80 -> 0x9F CirclesLogicAssertion
+     * 5: 0xA0 -> 0xBF CirclesArraysLengthMismatch
      */
     error CirclesErrorNoArgs(uint8);
 
@@ -136,13 +137,12 @@ interface ICirclesErrors {
 
     error CirclesInvalidCirclesId(uint256 id, uint8 code);
 
-    error CirclesInvalidString(string str, uint8 code);
-
     error CirclesInvalidParameter(uint256 parameter, uint8 code);
 
     error CirclesAmountOverflow(uint256 amount, uint8 code);
 
-    error CirclesArraysLengthMismatch(uint256 lengthArray1, uint256 lengthArray2, uint8 code);
+    // CirclesErrorNoArgs 5
+    // error CirclesArraysLengthMismatch(uint256 lengthArray1, uint256 lengthArray2, uint8 code);
 
     // CirclesErrorNoArgs 1
     // error CirclesArrayMustNotBeEmpty(uint8 code);

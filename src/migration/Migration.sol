@@ -66,7 +66,8 @@ contract Migration is ICirclesErrors, IMigrationErrors, ICirclesCompactErrors {
     function migrate(address[] calldata _avatars, uint256[] calldata _amounts) external returns (uint256[] memory) {
         if (_avatars.length != _amounts.length) {
             // Arrays length mismatch.
-            revert CirclesArraysLengthMismatch(_avatars.length, _amounts.length, 0);
+            // revert CirclesArraysLengthMismatch(_avatars.length, _amounts.length, 0);
+            revert CirclesErrorNoArgs(0xA7);
         }
 
         uint256[] memory convertedAmounts = new uint256[](_avatars.length);
