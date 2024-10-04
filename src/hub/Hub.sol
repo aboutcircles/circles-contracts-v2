@@ -138,7 +138,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      */
     modifier onlyMigration() {
         if (msg.sender != migration) {
-            revert CirclesInvalidFunctionCaller(msg.sender, migration, 0);
+            // revert CirclesInvalidFunctionCaller(msg.sender, migration, 0);
+            revert CirclesErrorOneAddressArg(msg.sender, 0xE0);
         }
         _;
     }

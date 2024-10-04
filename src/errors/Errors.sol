@@ -52,6 +52,7 @@ interface ICirclesCompactErrors {
      * 4: 0x80 -> 0x9F CirclesHubAvatarAlreadyRegistered(avatar)
      * 5: 0xA0 -> 0xBF CirclesHubInvalidTrustReceiver(trustReceiver)
      * 6: 0xC0 -> 0xDF CirclesERC1155MintBlocked(human, ~mintV1Status~)
+     * 7: 0xE0 -> 0xFF CirclesInvalidFunctionCaller(caller)
      */
     error CirclesErrorOneAddressArg(address, uint8);
 
@@ -130,7 +131,8 @@ interface ICirclesErrors {
     // CirclesErrorNoArgs 0
     // error CirclesAddressCannotBeZero(uint8 code);
 
-    error CirclesInvalidFunctionCaller(address caller, address expectedCaller, uint8 code);
+    // CirclesErrorOneAddressArg
+    // error CirclesInvalidFunctionCaller(address caller, address expectedCaller, uint8 code);
 
     error CirclesInvalidCirclesId(uint256 id, uint8 code);
 

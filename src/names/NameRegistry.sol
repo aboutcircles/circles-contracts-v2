@@ -65,7 +65,8 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
 
     modifier onlyHub(uint8 _code) {
         if (msg.sender != address(hub)) {
-            revert CirclesInvalidFunctionCaller(msg.sender, address(hub), _code);
+            // revert CirclesInvalidFunctionCaller(msg.sender, address(hub), _code);
+            revert CirclesErrorOneAddressArg(msg.sender, _code);
         }
         _;
     }
@@ -98,7 +99,7 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
         _registerShortNameWithNonce(_nonce);
     }
 
-    function setMetadataDigest(address _avatar, bytes32 _metadataDigest) external onlyHub(0) {
+    function setMetadataDigest(address _avatar, bytes32 _metadataDigest) external onlyHub(0xE5) {
         _setMetadataDigest(_avatar, _metadataDigest);
     }
 
@@ -106,7 +107,7 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
         _setMetadataDigest(msg.sender, _metadataDigest);
     }
 
-    function registerCustomName(address _avatar, string calldata _name) external onlyHub(1) {
+    function registerCustomName(address _avatar, string calldata _name) external onlyHub(0xE6) {
         if (bytes(_name).length == 0) {
             // if name is left empty, it will default to default name "Circles-<base58(short)Name>"
             return;
@@ -117,7 +118,7 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
         customNames[_avatar] = _name;
     }
 
-    function registerCustomSymbol(address _avatar, string calldata _symbol) external onlyHub(2) {
+    function registerCustomSymbol(address _avatar, string calldata _symbol) external onlyHub(0xE7) {
         if (bytes(_symbol).length == 0) {
             // if symbol is left empty, it will default to default symbol "CRC"
             return;

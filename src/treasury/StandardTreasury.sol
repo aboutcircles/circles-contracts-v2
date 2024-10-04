@@ -62,10 +62,11 @@ contract StandardTreasury is
     /**
      * @notice Ensure the caller is the hub
      */
-    modifier onlyHub() {
+    modifier onlyHub(uint8 _code) {
         if (msg.sender != address(hub)) {
             // Treasury: caller is not the hub
-            revert CirclesInvalidFunctionCaller(msg.sender, address(hub), 0);
+            // revert CirclesInvalidFunctionCaller(msg.sender, address(hub), 0);
+            revert CirclesErrorOneAddressArg(msg.sender, _code);
         }
         _;
     }
@@ -108,7 +109,7 @@ contract StandardTreasury is
     function onERC1155Received(address _operator, address _from, uint256 _id, uint256 _value, bytes calldata _data)
         public
         override
-        onlyHub
+        onlyHub(0xE8)
         returns (bytes4)
     {
         (bytes32 metadataType, address group, bytes memory userData) = _decodeMetadataForGroup(_data);
@@ -132,7 +133,7 @@ contract StandardTreasury is
         uint256[] memory _ids,
         uint256[] memory _values,
         bytes calldata _data
-    ) public override onlyHub returns (bytes4) {
+    ) public override onlyHub(0xE9) returns (bytes4) {
         (bytes32 metadataType, address group, bytes memory userData) = _decodeMetadataForGroup(_data);
         if (metadataType == METADATATYPE_GROUPMINT) {
             return _lockCollateralBatchGroupCircles(_ids, _values, group, userData);

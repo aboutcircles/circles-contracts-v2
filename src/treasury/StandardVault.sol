@@ -34,7 +34,8 @@ contract StandardVault is
     modifier onlyTreasury() {
         if (msg.sender != standardTreasury) {
             // Vault: caller is not the treasury
-            revert CirclesInvalidFunctionCaller(msg.sender, standardTreasury, 0);
+            // revert CirclesInvalidFunctionCaller(msg.sender, standardTreasury, 0);
+            revert CirclesErrorOneAddressArg(msg.sender, 0xEB);
         }
         _;
     }

@@ -29,7 +29,8 @@ contract SignedPathOperator is BaseOperator, TypeDefinitions {
         address source = _flowVertices[_sourceCoordinate];
         // Ensure the source is the caller
         if (msg.sender != source) {
-            revert CirclesInvalidFunctionCaller(msg.sender, source, 0);
+            // revert CirclesInvalidFunctionCaller(msg.sender, source, 0);
+            revert CirclesErrorOneAddressArg(msg.sender, 0xEA);
         }
 
         // check that for every stream the source of the stream matches the alleged single source
