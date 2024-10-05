@@ -113,7 +113,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
 
     // Events
 
-    event RegisterHuman(address indexed avatar);
+    event RegisterHuman(address indexed avatar, address indexed inviter);
     event RegisterOrganization(address indexed organization, string name);
     event RegisterGroup(
         address indexed group, address indexed mint, address indexed treasury, string name, string symbol
@@ -235,7 +235,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             // leave the inviter address as zero.
 
             // only available for v1 users with stopped v1 mint, for initial bootstrap period
-            (address v1CirclesStatus, uint256 v1LastTouched) = _registerHuman(msg.sender);
+            (address v1CirclesStatus, uint256 v1LastTouched) = _registerHuman(msg.sender, _inviter);
             // check if v1 Circles exists and has been stopped
             // and if it has been stopped, did it stop before the end of the invitation period?
             if (v1CirclesStatus != CIRCLES_STOPPED_V1 || v1LastTouched >= invitationOnlyTime) {
@@ -256,7 +256,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             // it checks the status of the avatar in v1, but regardless of the status
             // we can proceed to register the avatar in v2 (they might not be able to mint yet
             // if they have not stopped their v1 contract)
-            _registerHuman(msg.sender);
+            _registerHuman(msg.sender, _inviter);
 
             if (block.timestamp > invitationOnlyTime) {
                 // after the invitation period, the inviter must burn the invitation cost
@@ -490,7 +490,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
 
         // register all unregistered avatars as humans, and check that registered avatars are humans
         // after the bootstrap period, the _owner needs to pay the equivalent invitation cost for all newly registered humans
-        uint256 cost = INVITATION_COST * _ensureAvatarsRegistered(_avatars);
+        uint256 cost = INVITATION_COST * _ensureAvatarsRegistered(_owner, _avatars);
 
         // Invitation cost only applies after the bootstrap period
         if (block.timestamp > invitationOnlyTime && cost > 0) {
@@ -978,7 +978,10 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * Additionally set the trust to self indefinitely.
      * @param _human address of the human to be registered
      */
-    function _registerHuman(address _human) internal returns (address v1CirclesStatus, uint256 v1LastTouched) {
+    function _registerHuman(address _human, address _inviter)
+        internal
+        returns (address v1CirclesStatus, uint256 v1LastTouched)
+    {
         // insert avatar into linked list; reverts if it already exists
         _insertAvatar(_human);
 
@@ -992,7 +995,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         // trust self indefinitely, cannot be altered later
         _trust(_human, _human, INDEFINITE_FUTURE);
 
-        emit RegisterHuman(_human);
+        emit RegisterHuman(_human, _inviter);
 
         return (v1CirclesStatus, v1LastTouched);
     }
@@ -1039,12 +1042,12 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         emit Trust(_truster, _trustee, _expiry);
     }
 
-    function _ensureAvatarsRegistered(address[] calldata _avatars) internal returns (uint256) {
+    function _ensureAvatarsRegistered(address _inviter, address[] calldata _avatars) internal returns (uint256) {
         uint256 registrationCount = 0;
         for (uint256 i = 0; i < _avatars.length; i++) {
             if (avatars[_avatars[i]] == address(0)) {
                 registrationCount++;
-                _registerHuman(_avatars[i]);
+                _registerHuman(_avatars[i], _inviter);
             } else {
                 if (!isHuman(_avatars[i])) {
                     // Only humans can be registered.
