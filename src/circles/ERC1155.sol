@@ -174,6 +174,7 @@ abstract contract ERC1155 is DiscountedBalances, Context, ERC165, IERC1155, IERC
                 }
                 if (discountCost > 0) {
                     emit TransferSingle(operator, from, address(0), id, discountCost);
+                    emit DiscountCost(from, id, discountCost);
                 }
                 unchecked {
                     // Overflow not possible: value <= fromBalance

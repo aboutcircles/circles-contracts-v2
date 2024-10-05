@@ -131,6 +131,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         address indexed sender, address indexed receiver, address indexed group, uint256[] collateral, uint256[] amounts
     );
 
+    event SetAdvancedUsageFlag(address indexed avatar, bytes32 flag);
+
     // Modifiers
 
     /**
@@ -594,6 +596,9 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         }
 
         advancedUsageFlags[msg.sender] = _flag;
+
+        // emit event for setting the advanced usage flag
+        emit SetAdvancedUsageFlag(msg.sender, _flag);
     }
 
     // Public functions

@@ -18,6 +18,10 @@ contract DiscountedBalances is Demurrage {
      */
     mapping(uint256 => DiscountedBalance) internal discountedTotalSupplies;
 
+    // Events
+
+    event DiscountCost(address indexed account, uint256 indexed id, uint256 discountCost);
+
     // Constructor
 
     /**
@@ -127,6 +131,7 @@ contract DiscountedBalances is Demurrage {
             uint256 discountCost = discountedBalance.balance - discountedBalanceOnDay;
             if (discountCost > 0) {
                 emit IERC1155.TransferSingle(msg.sender, _account, address(0), _id, discountCost);
+                emit DiscountCost(_account, _id, discountCost);
             }
         }
         uint256 updatedBalance = discountedBalanceOnDay + _value;

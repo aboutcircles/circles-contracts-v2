@@ -18,6 +18,10 @@ contract ERC20DiscountedBalances is ERC20Permit, BatchedDemurrage, IERC20 {
      */
     mapping(address => DiscountedBalance) public discountedBalances;
 
+    // Events
+
+    event DiscountCost(address indexed account, uint256 discountCost);
+
     // Constructor
 
     // External functions
@@ -133,6 +137,7 @@ contract ERC20DiscountedBalances is ERC20Permit, BatchedDemurrage, IERC20 {
             uint256 discountCost = discountedBalance.balance - discountedBalanceOnDay;
             if (discountCost > 0) {
                 emit Transfer(_account, address(0), discountCost);
+                emit DiscountCost(_account, discountCost);
             }
         }
         uint256 updatedBalance = discountedBalanceOnDay + _value;
@@ -154,6 +159,7 @@ contract ERC20DiscountedBalances is ERC20Permit, BatchedDemurrage, IERC20 {
         }
         if (discountCost > 0) {
             emit Transfer(_from, address(0), discountCost);
+            emit DiscountCost(_from, discountCost);
         }
         unchecked {
             _updateBalance(_from, fromBalance - _amount, day);
@@ -176,6 +182,7 @@ contract ERC20DiscountedBalances is ERC20Permit, BatchedDemurrage, IERC20 {
         }
         if (discountCost > 0) {
             emit Transfer(_owner, address(0), discountCost);
+            emit DiscountCost(_owner, discountCost);
         }
         unchecked {
             _updateBalance(_owner, ownerBalance - _amount, day);
