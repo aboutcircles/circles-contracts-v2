@@ -123,6 +123,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
 
     event Stopped(address indexed avatar);
 
+    event FlowEdgesScopeSingleStarted(uint256 indexed flowEdgeId, uint16 streamId);
+    event FlowEdgesScopeLastEnded();
     event StreamCompleted(
         address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] amounts
     );
@@ -877,6 +879,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
                     }
                 }
 
+                emit FlowEdgesScopeSingleStarted(i, _flow[i].streamSinkId);
+
                 // effect the flow edge
                 if (!isGroup(to)) {
                     // do a erc1155 single transfer without acceptance check,
@@ -902,6 +906,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
 
                 index = index + 3;
             }
+
+            emit FlowEdgesScopeLastEnded();
 
             // check that all streams are properly defined
             for (uint16 i = 0; i < _streams.length; i++) {
