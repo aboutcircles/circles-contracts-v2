@@ -80,6 +80,10 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
             revert CirclesErrorNoArgs(0x11);
         }
         hub = _hub;
+
+        // register the hub itself in the name registry
+        customNames[address(_hub)] = "Circles";
+        customSymbols[address(_hub)] = "CRC";
     }
 
     // External functions
