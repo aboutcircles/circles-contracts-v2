@@ -6,7 +6,7 @@ import "../hub/IHub.sol";
 import "./IHub.sol";
 import "./IToken.sol";
 
-contract Migration is ICirclesErrors {
+contract Migration is ICirclesErrors, IMigrationErrors, ICirclesCompactErrors {
     // Constant
 
     uint256 private constant ACCURACY = uint256(10 ** 8);
@@ -32,11 +32,13 @@ contract Migration is ICirclesErrors {
     constructor(IHubV1 _hubV1, IHubV2 _hubV2, uint256 _inflationDayZero) {
         if (address(_hubV1) == address(0)) {
             // Hub v1 address can not be zero.
-            revert CirclesAddressCannotBeZero(0);
+            // revert CirclesAddressCannotBeZero(0);
+            revert CirclesErrorNoArgs(0x0E);
         }
         if (address(_hubV2) == address(0)) {
             // Hub v2 address can not be zero.
-            revert CirclesAddressCannotBeZero(1);
+            // revert CirclesAddressCannotBeZero(1);
+            revert CirclesErrorNoArgs(0x0F);
         }
 
         hubV1 = _hubV1;
@@ -64,7 +66,8 @@ contract Migration is ICirclesErrors {
     function migrate(address[] calldata _avatars, uint256[] calldata _amounts) external returns (uint256[] memory) {
         if (_avatars.length != _amounts.length) {
             // Arrays length mismatch.
-            revert CirclesArraysLengthMismatch(_avatars.length, _amounts.length, 0);
+            // revert CirclesArraysLengthMismatch(_avatars.length, _amounts.length, 0);
+            revert CirclesErrorNoArgs(0xA7);
         }
 
         uint256[] memory convertedAmounts = new uint256[](_avatars.length);
@@ -73,7 +76,12 @@ contract Migration is ICirclesErrors {
             ITokenV1 circlesV1 = ITokenV1(hubV1.userToToken(_avatars[i]));
             if (address(circlesV1) == address(0)) {
                 // Invalid avatar, not registered in hub V1.
-                revert CirclesAddressCannotBeZero(2);
+                // revert CirclesAddressCannotBeZero(2);
+                revert CirclesErrorNoArgs(0x10);
+            }
+            if (_amounts[i] == 0) {
+                // Amount must be greater than zero.
+                revert CirclesMigrationAmountMustBeGreaterThanZero();
             }
             convertedAmounts[i] = convertFromV1ToDemurrage(_amounts[i]);
             // transfer the v1 Circles to this contract to be locked

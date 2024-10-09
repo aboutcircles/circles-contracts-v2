@@ -17,7 +17,8 @@ contract StandardTreasury is
     TypeDefinitions,
     IERC1155Receiver,
     ICirclesErrors,
-    IStandardTreasuryErrors
+    IStandardTreasuryErrors,
+    ICirclesCompactErrors
 {
     // Constants
 
@@ -50,8 +51,8 @@ contract StandardTreasury is
     // Events
 
     event CreateVault(address indexed group, address indexed vault);
-    event GroupMintSingle(address indexed group, uint256 indexed id, uint256 value, bytes userData);
-    event GroupMintBatch(address indexed group, uint256[] ids, uint256[] values, bytes userData);
+    event CollateralLockedSingle(address indexed group, uint256 indexed id, uint256 value, bytes userData);
+    event CollateralLockedBatch(address indexed group, uint256[] ids, uint256[] values, bytes userData);
     event GroupRedeem(address indexed group, uint256 indexed id, uint256 value, bytes data);
     event GroupRedeemCollateralReturn(address indexed group, address indexed to, uint256[] ids, uint256[] values);
     event GroupRedeemCollateralBurn(address indexed group, uint256[] ids, uint256[] values);
@@ -61,10 +62,11 @@ contract StandardTreasury is
     /**
      * @notice Ensure the caller is the hub
      */
-    modifier onlyHub() {
+    modifier onlyHub(uint8 _code) {
         if (msg.sender != address(hub)) {
             // Treasury: caller is not the hub
-            revert CirclesInvalidFunctionCaller(msg.sender, address(hub), 0);
+            // revert CirclesInvalidFunctionCaller(msg.sender, address(hub), 0);
+            revert CirclesErrorOneAddressArg(msg.sender, _code);
         }
         _;
     }
@@ -79,11 +81,13 @@ contract StandardTreasury is
     constructor(IHubV2 _hub, address _mastercopyStandardVault) {
         if (address(_hub) == address(0)) {
             // Hub address cannot be 0
-            revert CirclesAddressCannotBeZero(0);
+            // revert CirclesAddressCannotBeZero(0);
+            revert CirclesErrorNoArgs(0x13);
         }
         if (_mastercopyStandardVault == address(0)) {
             // Mastercopy standard vault address cannot be 0
-            revert CirclesAddressCannotBeZero(1);
+            // revert CirclesAddressCannotBeZero(1);
+            revert CirclesErrorNoArgs(0x14);
         }
         hub = _hub;
         mastercopyStandardVault = _mastercopyStandardVault;
@@ -105,14 +109,14 @@ contract StandardTreasury is
     function onERC1155Received(address _operator, address _from, uint256 _id, uint256 _value, bytes calldata _data)
         public
         override
-        onlyHub
+        onlyHub(0xE8)
         returns (bytes4)
     {
         (bytes32 metadataType, address group, bytes memory userData) = _decodeMetadataForGroup(_data);
         if (metadataType == METADATATYPE_GROUPMINT) {
-            return _mintGroupCircles(_id, _value, group, userData);
+            return _lockCollateralGroupCircles(_id, _value, group, userData);
         } else if (metadataType == METADATATYPE_GROUPREDEEM) {
-            return _redeemGroupCircles(_operator, _from, _id, _value, _data);
+            return _redeemGroupCircles(_operator, _from, _id, _value, userData);
         } else {
             // Treasury: Invalid metadata type for received
             revert CirclesStandardTreasuryInvalidMetadataType(metadataType, 0);
@@ -129,10 +133,10 @@ contract StandardTreasury is
         uint256[] memory _ids,
         uint256[] memory _values,
         bytes calldata _data
-    ) public override onlyHub returns (bytes4) {
+    ) public override onlyHub(0xE9) returns (bytes4) {
         (bytes32 metadataType, address group, bytes memory userData) = _decodeMetadataForGroup(_data);
         if (metadataType == METADATATYPE_GROUPMINT) {
-            return _mintBatchGroupCircles(_ids, _values, group, userData);
+            return _lockCollateralBatchGroupCircles(_ids, _values, group, userData);
         } else {
             // Treasury: Invalid metadata type for batch received
             revert CirclesStandardTreasuryInvalidMetadataType(metadataType, 1);
@@ -144,7 +148,7 @@ contract StandardTreasury is
     // onReceived : either mint if data decodes or redeem
     // onBatchReceived : only for minting if data matches
 
-    function _mintBatchGroupCircles(
+    function _lockCollateralBatchGroupCircles(
         uint256[] memory _ids,
         uint256[] memory _values,
         address _group,
@@ -155,13 +159,13 @@ contract StandardTreasury is
         // forward the Circles to the vault
         hub.safeBatchTransferFrom(address(this), vault, _ids, _values, _userData);
 
-        // emit the group mint event
-        emit GroupMintBatch(_group, _ids, _values, _userData);
+        // emit the collateral locked event
+        emit CollateralLockedBatch(_group, _ids, _values, _userData);
 
         return this.onERC1155BatchReceived.selector;
     }
 
-    function _mintGroupCircles(uint256 _id, uint256 _value, address _group, bytes memory _userData)
+    function _lockCollateralGroupCircles(uint256 _id, uint256 _value, address _group, bytes memory _userData)
         internal
         returns (bytes4)
     {
@@ -170,13 +174,13 @@ contract StandardTreasury is
         // forward the Circles to the vault
         hub.safeTransferFrom(address(this), vault, _id, _value, _userData);
 
-        // emit the group mint event
-        emit GroupMintSingle(_group, _id, _value, _userData);
+        // emit the collateral locked event
+        emit CollateralLockedSingle(_group, _id, _value, _userData);
 
         return this.onERC1155Received.selector;
     }
 
-    function _redeemGroupCircles(address _operator, address _from, uint256 _id, uint256 _value, bytes calldata _data)
+    function _redeemGroupCircles(address _operator, address _from, uint256 _id, uint256 _value, bytes memory _userData)
         internal
         returns (bytes4)
     {
@@ -191,7 +195,8 @@ contract StandardTreasury is
         IMintPolicy policy = IMintPolicy(hub.mintPolicies(group));
         if (address(policy) == address(0)) {
             // Treasury: Invalid group without mint policy
-            revert CirclesLogicAssertion(0);
+            // revert CirclesLogicAssertion(0);
+            revert CirclesErrorNoArgs(0x85);
         }
 
         // query the mint policy for the redemption values
@@ -200,7 +205,7 @@ contract StandardTreasury is
         uint256[] memory burnIds;
         uint256[] memory burnValues;
         (redemptionIds, redemptionValues, burnIds, burnValues) =
-            policy.beforeRedeemPolicy(_operator, _from, group, _value, _data);
+            policy.beforeRedeemPolicy(_operator, _from, group, _value, _userData);
 
         // ensure the redemption values sum up to the correct amount
         uint256 sum = 0;
@@ -218,16 +223,16 @@ contract StandardTreasury is
         }
 
         // burn the group Circles
-        hub.burn(_id, _value, _data);
+        hub.burn(_id, _value, _userData);
 
         // return collateral Circles to the redeemer of group Circles
-        vault.returnCollateral(_from, redemptionIds, redemptionValues, _data);
+        vault.returnCollateral(_from, redemptionIds, redemptionValues, _userData);
 
         // burn the collateral Circles from the vault
-        vault.burnCollateral(burnIds, burnValues, _data);
+        vault.burnCollateral(burnIds, burnValues, _userData);
 
         // emit the group redeem event
-        emit GroupRedeem(group, _id, _value, _data);
+        emit GroupRedeem(group, _id, _value, _userData);
         emit GroupRedeemCollateralReturn(group, _from, redemptionIds, redemptionValues);
         emit GroupRedeemCollateralBurn(group, burnIds, burnValues);
 

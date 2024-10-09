@@ -25,12 +25,12 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     // Constants
 
     /**
-     * @dev Welcome bonus for new avatars invited to Circles. Set to 50 Circles.
+     * @dev Welcome bonus for new avatars invited to Circles. Set to 48 Circles.
      */
     uint256 private constant WELCOME_BONUS = 48 * EXA;
 
     /**
-     * @dev The cost of an invitation for a new avatar, paid in personal Circles burnt, set to 100 Circles.
+     * @dev The cost of an invitation for a new avatar, paid in personal Circles burnt, set to 96 Circles.
      */
     uint256 private constant INVITATION_COST = 2 * WELCOME_BONUS;
 
@@ -113,7 +113,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
 
     // Events
 
-    event RegisterHuman(address indexed avatar);
+    event RegisterHuman(address indexed avatar, address indexed inviter);
     event RegisterOrganization(address indexed organization, string name);
     event RegisterGroup(
         address indexed group, address indexed mint, address indexed treasury, string name, string symbol
@@ -123,9 +123,17 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
 
     event Stopped(address indexed avatar);
 
+    event FlowEdgesScopeSingleStarted(uint256 indexed flowEdgeId, uint16 streamId);
+    event FlowEdgesScopeLastEnded();
     event StreamCompleted(
         address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] amounts
     );
+
+    event GroupMint(
+        address indexed sender, address indexed receiver, address indexed group, uint256[] collateral, uint256[] amounts
+    );
+
+    event SetAdvancedUsageFlag(address indexed avatar, bytes32 flag);
 
     // Modifiers
 
@@ -134,7 +142,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      */
     modifier onlyMigration() {
         if (msg.sender != migration) {
-            revert CirclesInvalidFunctionCaller(msg.sender, migration, 0);
+            // revert CirclesInvalidFunctionCaller(msg.sender, migration, 0);
+            revert CirclesErrorOneAddressArg(msg.sender, 0xE0);
         }
         _;
     }
@@ -143,7 +152,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * @dev Reentrancy guard for nonReentrant functions.
      * see https://soliditylang.org/blog/2024/01/26/transient-storage/
      */
-    modifier nonReentrant(uint8 _code) {
+    modifier nonReentrant() {
         assembly {
             if tload(0) { revert(0, 0) }
             tstore(0, 1)
@@ -178,10 +187,12 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         string memory _gatewayUrl
     ) Circles(_inflationDayZero, _gatewayUrl) {
         if (address(_hubV1) == address(0)) {
-            revert CirclesAddressCannotBeZero(0);
+            // revert CirclesAddressCannotBeZero(0);
+            revert CirclesErrorNoArgs(0x00);
         }
         if (_standardTreasury == address(0)) {
-            revert CirclesAddressCannotBeZero(1);
+            // revert CirclesAddressCannotBeZero(1);
+            revert CirclesErrorNoArgs(0x01);
         }
 
         // initialize linked list for avatars
@@ -228,39 +239,35 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             // leave the inviter address as zero.
 
             // only available for v1 users with stopped v1 mint, for initial bootstrap period
-            (address v1CirclesStatus, uint256 v1LastTouched) = _registerHuman(msg.sender);
+            (address v1CirclesStatus, uint256 v1LastTouched) = _registerHuman(msg.sender, _inviter);
             // check if v1 Circles exists and has been stopped
-            if (v1CirclesStatus != CIRCLES_STOPPED_V1) {
-                revert CirclesHubRegisterAvatarV1MustBeStoppedBeforeEndOfInvitationPeriod(msg.sender, 0);
-            }
-            // if it has been stopped, did it stop before the end of the invitation period?
-            if (v1LastTouched >= invitationOnlyTime) {
-                revert CirclesHubRegisterAvatarV1MustBeStoppedBeforeEndOfInvitationPeriod(msg.sender, 1);
+            // and if it has been stopped, did it stop before the end of the invitation period?
+            if (v1CirclesStatus != CIRCLES_STOPPED_V1 || v1LastTouched >= invitationOnlyTime) {
+                // revert CirclesHubRegisterAvatarV1MustBeStoppedBeforeEndOfInvitationPeriod(msg.sender, 0);
+                revert CirclesErrorOneAddressArg(msg.sender, 0x60);
             }
         } else {
             // if someone has invited you by trusting your address ahead of this call,
             // they must themselves be a registered human, and they must pay the invitation cost (after invitation period).
 
-            if (!isHuman(_inviter)) {
-                revert CirclesHubMustBeHuman(msg.sender, 0);
-            }
-
-            if (!isTrusted(_inviter, msg.sender)) {
-                revert CirclesHubInvalidTrustReceiver(msg.sender, 0);
+            if (!isHuman(_inviter) || !isTrusted(_inviter, msg.sender)) {
+                // revert CirclesHubMustBeHuman(msg.sender, 0);
+                // revert CirclesHubInvalidTrustReceiver(msg.sender, 0);
+                revert CirclesErrorOneAddressArg(_inviter, 0xA0);
             }
 
             // register the invited human; reverts if they already exist
             // it checks the status of the avatar in v1, but regardless of the status
             // we can proceed to register the avatar in v2 (they might not be able to mint yet
             // if they have not stopped their v1 contract)
-            _registerHuman(msg.sender);
+            _registerHuman(msg.sender, _inviter);
 
             if (block.timestamp > invitationOnlyTime) {
                 // after the invitation period, the inviter must burn the invitation cost
                 _burnAndUpdateTotalSupply(_inviter, toTokenId(_inviter), INVITATION_COST);
 
                 // mint the welcome bonus to the newly registered human
-                _mintAndUpdateTotalSupply(msg.sender, toTokenId(msg.sender), WELCOME_BONUS, "");
+                _mintAndUpdateTotalSupply(msg.sender, toTokenId(msg.sender), WELCOME_BONUS, "", true);
             }
         }
 
@@ -346,18 +353,17 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * The trusted address does not (yet) have to be registered in the Hub contract.
      */
     function trust(address _trustReceiver, uint96 _expiry) external {
-        if (avatars[msg.sender] == address(0)) {
-            revert CirclesAvatarMustBeRegistered(msg.sender, 0);
-        }
-        if (_trustReceiver == address(0) || _trustReceiver == SENTINEL) {
+        if (
+            avatars[msg.sender] == address(0) || _trustReceiver == address(0) || _trustReceiver == SENTINEL
+                || _trustReceiver == msg.sender
+        ) {
             // You cannot trust the zero address or the sentinel address.
             // Reserved addresses for logic.
-            revert CirclesHubInvalidTrustReceiver(_trustReceiver, 1);
+            // You also cannot edit your own trust relation.
+            // revert CirclesHubInvalidTrustReceiver(_trustReceiver, 1);
+            revert CirclesErrorOneAddressArg(_trustReceiver, 0xA1);
         }
-        if (_trustReceiver == msg.sender) {
-            // You cannot edit your own trust relation.
-            revert CirclesHubInvalidTrustReceiver(_trustReceiver, 2);
-        }
+
         // expiring trust cannot be set in the past
         if (_expiry < block.timestamp) _expiry = uint96(block.timestamp);
         _trust(msg.sender, _trustReceiver, _expiry);
@@ -369,7 +375,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     function personalMint() external {
         if (!isHuman(msg.sender)) {
             // Only avatars registered as human can call personal mint.
-            revert CirclesHubMustBeHuman(msg.sender, 1);
+            // revert CirclesHubMustBeHuman(msg.sender, 1);
+            revert CirclesErrorOneAddressArg(msg.sender, 0x01);
         }
         // check if v1 Circles is known to be stopped and update status
         _checkHumanV1CirclesStatus(msg.sender);
@@ -436,7 +443,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     function stop() external {
         if (!isHuman(msg.sender)) {
             // Only human can call stop.
-            revert CirclesHubMustBeHuman(msg.sender, 2);
+            // revert CirclesHubMustBeHuman(msg.sender, 2);
+            revert CirclesErrorOneAddressArg(msg.sender, 0x02);
         }
         MintTime storage mintTime = mintTimes[msg.sender];
         // check if already stopped
@@ -457,7 +465,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     function stopped(address _human) external view returns (bool) {
         if (!isHuman(_human)) {
             // Only personal Circles can have a status of boolean stopped.
-            revert CirclesHubMustBeHuman(_human, 3);
+            // revert CirclesHubMustBeHuman(_human, 3);
+            revert CirclesErrorOneAddressArg(_human, 0x03);
         }
         MintTime storage mintTime = mintTimes[msg.sender];
         return (mintTime.lastMintTime == INDEFINITE_FUTURE);
@@ -475,31 +484,32 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * @param _amounts array of amounts in inflationary v1 units to migrate
      */
     function migrate(address _owner, address[] calldata _avatars, uint256[] calldata _amounts) external onlyMigration {
-        if (avatars[_owner] == address(0)) {
+        if (avatars[_owner] == address(0) || _avatars.length != _amounts.length) {
             // Only registered avatars can migrate v1 tokens.
-            revert CirclesAvatarMustBeRegistered(_owner, 1);
-        }
-        if (_avatars.length != _amounts.length) {
-            revert CirclesArraysLengthMismatch(_avatars.length, _amounts.length, 0);
+            // Array length is already checked in the migration contract, so redundant check here,
+            // can be collapsed under the more meaningful error.
+            // revert CirclesAvatarMustBeRegistered(_owner, 1);
+            revert CirclesErrorOneAddressArg(_owner, 0x21);
         }
 
         // register all unregistered avatars as humans, and check that registered avatars are humans
         // after the bootstrap period, the _owner needs to pay the equivalent invitation cost for all newly registered humans
-        uint256 cost = INVITATION_COST * _ensureAvatarsRegistered(_avatars);
+        uint256 cost = INVITATION_COST * _ensureAvatarsRegistered(_owner, _avatars);
 
         // Invitation cost only applies after the bootstrap period
         if (block.timestamp > invitationOnlyTime && cost > 0) {
             // personal Circles are required to burn the invitation cost
             if (!isHuman(_owner)) {
                 // Only humans can migrate v1 tokens after the bootstrap period.
-                revert CirclesHubMustBeHuman(_owner, 4);
+                // revert CirclesHubMustBeHuman(_owner, 4);
+                revert CirclesErrorOneAddressArg(_owner, 0x04);
             }
             _burnAndUpdateTotalSupply(_owner, toTokenId(_owner), cost);
         }
 
         for (uint256 i = 0; i < _avatars.length; i++) {
             // mint the migrated balances to _owner
-            _mintAndUpdateTotalSupply(_owner, toTokenId(_avatars[i]), _amounts[i], "");
+            _mintAndUpdateTotalSupply(_owner, toTokenId(_avatars[i]), _amounts[i], "", true);
         }
     }
 
@@ -521,7 +531,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             // then the mint policy must approve the burn
             if (!policy.beforeBurnPolicy(msg.sender, group, _amount, _data)) {
                 // Burn policy rejected burn.
-                revert CirclesHubGroupMintPolicyRejectedBurn(msg.sender, group, _amount, _data, 0);
+                // revert CirclesHubGroupMintPolicyRejectedBurn(msg.sender, group, _amount, _data, 0);
+                revert CirclesErrorAddressUintArgs(msg.sender, _id, 0x40);
             }
         }
         _burnAndUpdateTotalSupply(msg.sender, _id, _amount);
@@ -530,7 +541,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     function wrap(address _avatar, uint256 _amount, CirclesType _type) external returns (address) {
         if (!isHuman(_avatar) && !isGroup(_avatar)) {
             // Avatar must be human or group.
-            revert CirclesAvatarMustBeRegistered(_avatar, 2);
+            // revert CirclesAvatarMustBeRegistered(_avatar, 2);
+            revert CirclesErrorOneAddressArg(_avatar, 0x22);
         }
         address erc20Wrapper = liftERC20.ensureERC20(_avatar, _type);
         safeTransferFrom(msg.sender, erc20Wrapper, toTokenId(_avatar), _amount, "");
@@ -543,7 +555,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         FlowEdge[] calldata _flow,
         Stream[] calldata _streams,
         bytes calldata _packedCoordinates
-    ) external nonReentrant(0) {
+    ) external nonReentrant {
         // first unpack the coordinates to array of uint16
         uint16[] memory coordinates = _unpackCoordinates(_packedCoordinates, _flow.length);
 
@@ -551,9 +563,10 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         for (uint16 i = 0; i < _streams.length; i++) {
             if (!isApprovedForAll(_flowVertices[_streams[i].sourceCoordinate], msg.sender)) {
                 // Operator not approved for source.
-                revert CirclesHubOperatorNotApprovedForSource(
-                    msg.sender, _flowVertices[_streams[i].sourceCoordinate], i, 0
-                );
+                // revert CirclesHubOperatorNotApprovedForSource(
+                //     msg.sender, _flowVertices[_streams[i].sourceCoordinate], i, 0
+                // );
+                revert CirclesErrorAddressUintArgs(_flowVertices[_streams[i].sourceCoordinate], i, 0x00);
             }
         }
 
@@ -580,10 +593,14 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     function setAdvancedUsageFlag(bytes32 _flag) external {
         if (avatars[msg.sender] == address(0)) {
             // Only registered avatars can set advanced usage flags.
-            revert CirclesAvatarMustBeRegistered(msg.sender, 3);
+            // revert CirclesAvatarMustBeRegistered(msg.sender, 3);
+            revert CirclesErrorOneAddressArg(msg.sender, 0x23);
         }
 
         advancedUsageFlags[msg.sender] = _flag;
+
+        // emit event for setting the advanced usage flag
+        emit SetAdvancedUsageFlag(msg.sender, _flag);
     }
 
     // Public functions
@@ -673,17 +690,16 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         bytes memory _data,
         bool _explicitCall
     ) internal {
-        if (_collateral.length != _amounts.length) {
+        if (_collateral.length != _amounts.length || _collateral.length == 0) {
             // Collateral and amount arrays must have equal length.
-            revert CirclesArraysLengthMismatch(_collateral.length, _amounts.length, 1);
-        }
-        if (_collateral.length == 0) {
             // At least one collateral must be provided.
-            revert CirclesArrayMustNotBeEmpty(0);
+            // revert CirclesArraysLengthMismatch(_collateral.length, _amounts.length, 1);
+            revert CirclesErrorNoArgs(0xA1);
         }
         if (!isGroup(_group)) {
             // Group is not registered as an avatar.
-            revert CirclesHubGroupIsNotRegistered(_group, 0);
+            // revert CirclesHubGroupIsNotRegistered(_group, 0);
+            revert CirclesErrorOneAddressArg(_group, 0x40);
         }
 
         // note: we don't need to check whether collateral circle ids are registered,
@@ -698,22 +714,21 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             bool isValidCollateral =
                 _explicitCall ? isTrusted(_group, collateralAvatar) : isPermittedFlow(_sender, _group, collateralAvatar);
 
-            if (!isValidCollateral) {
+            if (!isValidCollateral || _amounts[i] == 0) {
                 // Group does not trust collateral, or flow edge is not permitted
-                revert CirclesHubFlowEdgeIsNotPermitted(_group, _collateral[i], 0);
+                // Non-zero collateral must be provided.
+                // revert CirclesHubFlowEdgeIsNotPermitted(_group, _collateral[i], 0);
+                revert CirclesErrorAddressUintArgs(_group, _collateral[i], 0x20);
             }
 
-            if (_amounts[i] == 0) {
-                // Non-zero collateral must be provided.
-                revert CirclesAmountMustNotBeZero(0);
-            }
             sumAmounts += _amounts[i];
         }
 
         // Rely on the mint policy to determine whether the collateral is valid for minting
         if (!IMintPolicy(mintPolicies[_group]).beforeMintPolicy(_sender, _group, _collateral, _amounts, _data)) {
             // Mint policy rejected mint.
-            revert CirclesHubGroupMintPolicyRejectedMint(_sender, _group, _collateral, _amounts, _data, 0);
+            // revert CirclesHubGroupMintPolicyRejectedMint(_sender, _group, _collateral, _amounts, _data, 0);
+            revert CirclesErrorAddressUintArgs(_sender, toTokenId(_group), 0x60);
         }
 
         // abi encode the group address into the data to send onwards to the treasury
@@ -725,8 +740,13 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         // note: treasury.on1155Received must implement and unpack the GroupMintMetadata to know the group
         safeBatchTransferFrom(_sender, treasuries[_group], _collateral, _amounts, dataWithGroup);
 
-        // mint group Circles to the receiver and send the original _data onwards
-        _mintAndUpdateTotalSupply(_receiver, toTokenId(_group), sumAmounts, _data);
+        // mint group Circles to the receiver and send the original _data onwards.
+        // Only if it is an explicit call perform the ERC1155 acceptance call; if not (ie via path),
+        // suppress the normal acceptance call and only perform the final stream based acceptance calls
+        _mintAndUpdateTotalSupply(_receiver, toTokenId(_group), sumAmounts, _data, _explicitCall);
+
+        // emit the group mint event
+        emit GroupMint(_sender, _receiver, _group, _collateral, _amounts);
     }
 
     /**
@@ -743,17 +763,13 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         FlowEdge[] calldata _flow,
         uint16[] memory _coordinates
     ) internal view returns (int256[] memory) {
-        if (3 * _flow.length != _coordinates.length) {
-            // Mismatch in flow and coordinates length.
-            revert CirclesArraysLengthMismatch(_flow.length, _coordinates.length, 2);
-        }
-        if (_flowVertices.length > type(uint16).max) {
-            // Too many vertices.
-            revert CirclesArraysLengthMismatch(_flowVertices.length, type(uint16).max, 3);
-        }
-        if (_flowVertices.length == 0 || _flow.length == 0) {
-            // Empty flow matrix
-            revert CirclesArraysLengthMismatch(_flowVertices.length, _flow.length, 4);
+        if (
+            3 * _flow.length != _coordinates.length // Mismatch in flow and coordinates length.
+                || _flowVertices.length > type(uint16).max // Too many vertices.
+                || _flowVertices.length == 0 || _flow.length == 0 // Empty flow matrix
+        ) {
+            // revert CirclesArraysLengthMismatch(_flow.length, _coordinates.length, 2);
+            revert CirclesErrorNoArgs(0xA2);
         }
 
         // initialize the netted flow array
@@ -764,18 +780,21 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             for (uint64 i = 0; i < _flowVertices.length - 1; i++) {
                 if (uint160(_flowVertices[i]) >= uint160(_flowVertices[i + 1])) {
                     // Flow vertices must be in ascending order.
-                    revert CirclesHubFlowVerticesMustBeSorted();
+                    // revert CirclesHubFlowVerticesMustBeSorted();
+                    revert CirclesErrorNoArgs(0x60);
                 }
                 if (avatars[_flowVertices[i]] == address(0)) {
                     // Avatar must be registered.
-                    revert CirclesAvatarMustBeRegistered(_flowVertices[i], 4);
+                    // revert CirclesAvatarMustBeRegistered(_flowVertices[i], 4);
+                    revert CirclesErrorOneAddressArg(_flowVertices[i], 0x24);
                 }
             }
 
             address lastAvatar = _flowVertices[_flowVertices.length - 1];
             if (avatars[lastAvatar] == address(0)) {
                 // Avatar must be registered.
-                revert CirclesAvatarMustBeRegistered(lastAvatar, 5);
+                // revert CirclesAvatarMustBeRegistered(lastAvatar, 5);
+                revert CirclesErrorOneAddressArg(lastAvatar, 0x25);
             }
         }
 
@@ -796,7 +815,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
                 // and if the sender has enabled consented flow, also check that the sender trusts the receiver
                 if (!isPermittedFlow(from, to, circlesId)) {
                     // Flow edge is not permitted.
-                    revert CirclesHubFlowEdgeIsNotPermitted(to, toTokenId(circlesId), 1);
+                    // revert CirclesHubFlowEdgeIsNotPermitted(to, toTokenId(circlesId), 1);
+                    revert CirclesErrorAddressUintArgs(to, toTokenId(circlesId), 0x21);
                 }
 
                 // nett the flow, dividing out the different Circle identifiers
@@ -853,13 +873,13 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
                     streamBatchCounter[streamSinkArrayId]++;
                     if (streamReceivers[streamSinkArrayId] == address(0)) {
                         streamReceivers[streamSinkArrayId] = to;
-                    } else {
-                        if (streamReceivers[streamSinkArrayId] != to) {
-                            // Invalid stream receiver
-                            revert CirclesHubFlowEdgeStreamMismatch(i, _flow[i].streamSinkId, 1);
-                        }
+                    } else if (streamReceivers[streamSinkArrayId] != to) {
+                        // Invalid stream receiver
+                        revert CirclesHubFlowEdgeStreamMismatch(i, _flow[i].streamSinkId, 1);
                     }
                 }
+
+                emit FlowEdgesScopeSingleStarted(i, _flow[i].streamSinkId);
 
                 // effect the flow edge
                 if (!isGroup(to)) {
@@ -887,15 +907,13 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
                 index = index + 3;
             }
 
+            emit FlowEdgesScopeLastEnded();
+
             // check that all streams are properly defined
             for (uint16 i = 0; i < _streams.length; i++) {
-                if (streamReceivers[i] == address(0)) {
+                if (streamReceivers[i] == address(0) || streamBatchCounter[i] != _streams[i].flowEdgeIds.length) {
                     // Invalid stream receiver
-                    revert CirclesHubStreamMismatch(i, 0);
-                }
-                if (streamBatchCounter[i] != _streams[i].flowEdgeIds.length) {
-                    // Invalid stream batch
-                    revert CirclesHubStreamMismatch(i, 1);
+                    revert CirclesHubStreamMismatch(i);
                 }
             }
         }
@@ -954,12 +972,13 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     function _matchNettedFlows(int256[] memory _streamsNettedFlow, int256[] memory _matrixNettedFlow) internal pure {
         if (_streamsNettedFlow.length != _matrixNettedFlow.length) {
             // Mismatch in netted flow length.
-            revert CirclesArraysLengthMismatch(_streamsNettedFlow.length, _matrixNettedFlow.length, 5);
+            // revert CirclesArraysLengthMismatch(_streamsNettedFlow.length, _matrixNettedFlow.length, 5);
+            revert CirclesErrorNoArgs(0xA5);
         }
         for (uint16 i = 0; i < _streamsNettedFlow.length; i++) {
             if (_streamsNettedFlow[i] != _matrixNettedFlow[i]) {
                 // Intended flow does not match verified flow.
-                revert CirclesHubNettedFlowMismatch(i, _streamsNettedFlow[i], _matrixNettedFlow[i]);
+                revert CirclesHubNettedFlowMismatch(i, _matrixNettedFlow[i], _streamsNettedFlow[i]);
             }
         }
     }
@@ -970,7 +989,10 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * Additionally set the trust to self indefinitely.
      * @param _human address of the human to be registered
      */
-    function _registerHuman(address _human) internal returns (address v1CirclesStatus, uint256 v1LastTouched) {
+    function _registerHuman(address _human, address _inviter)
+        internal
+        returns (address v1CirclesStatus, uint256 v1LastTouched)
+    {
         // insert avatar into linked list; reverts if it already exists
         _insertAvatar(_human);
 
@@ -984,7 +1006,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         // trust self indefinitely, cannot be altered later
         _trust(_human, _human, INDEFINITE_FUTURE);
 
-        emit RegisterHuman(_human);
+        emit RegisterHuman(_human, _inviter);
 
         return (v1CirclesStatus, v1LastTouched);
     }
@@ -1004,25 +1026,15 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         string calldata _name,
         string calldata _symbol
     ) internal {
-        // todo: we could check ERC165 support interface for mint policy
-        if (_mint == address(0)) {
+        if (_mint == address(0) || _treasury == address(0)) {
             // Mint address can not be zero.
-            revert CirclesAddressCannotBeZero(2);
-        }
-        // todo: same check treasury is an ERC1155Receiver for receiving collateral
-        if (_treasury == address(0)) {
             // Treasury address can not be zero.
-            revert CirclesAddressCannotBeZero(3);
+            revert CirclesErrorNoArgs(0x02);
         }
-        if (!nameRegistry.isValidName(_name)) {
-            // Invalid group name.
+        if (!nameRegistry.isValidName(_name) || !nameRegistry.isValidSymbol(_symbol)) {
+            // Invalid group name or symbol
             // name must be ASCII alphanumeric and some special characters
-            revert CirclesInvalidString(_name, 0);
-        }
-        if (!nameRegistry.isValidSymbol(_symbol)) {
-            // Invalid group symbol.
-            // symbol must be ASCII alphanumeric and some special characters
-            revert CirclesInvalidString(_symbol, 1);
+            revert CirclesErrorNoArgs(0x03);
         }
 
         // insert avatar into linked list; reverts if it already exists
@@ -1041,16 +1053,17 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         emit Trust(_truster, _trustee, _expiry);
     }
 
-    function _ensureAvatarsRegistered(address[] calldata _avatars) internal returns (uint256) {
+    function _ensureAvatarsRegistered(address _inviter, address[] calldata _avatars) internal returns (uint256) {
         uint256 registrationCount = 0;
         for (uint256 i = 0; i < _avatars.length; i++) {
             if (avatars[_avatars[i]] == address(0)) {
                 registrationCount++;
-                _registerHuman(_avatars[i]);
+                _registerHuman(_avatars[i], _inviter);
             } else {
                 if (!isHuman(_avatars[i])) {
                     // Only humans can be registered.
-                    revert CirclesHubMustBeHuman(_avatars[i], 5);
+                    // revert CirclesHubMustBeHuman(_avatars[i], 5);
+                    revert CirclesErrorOneAddressArg(_avatars[i], 0x05);
                 }
             }
         }
@@ -1111,13 +1124,16 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         // as this marks whether an avatar is registered as human or not
         if (mintTime.lastMintTime == 0) {
             // Avatar must already be registered as human before we call update
-            revert CirclesLogicAssertion(0);
+            // revert CirclesLogicAssertion(0);
+            revert CirclesErrorNoArgs(0x80);
         }
         // if the status has changed, update the last mint time
         // to avoid possible overlap of the mint between Hub v1 and Hub v2
         if (mintTime.mintV1Status != _mintV1Status) {
             mintTime.mintV1Status = _mintV1Status;
-            mintTime.lastMintTime = uint96(block.timestamp);
+            // for last mint time take the maximum to avoid resetting "INDEFINITE_FUTURE"
+            // which indicates stopped status of the human
+            mintTime.lastMintTime = uint96(_max(mintTime.lastMintTime, uint96(block.timestamp)));
         }
     }
 
@@ -1129,7 +1145,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     function _insertAvatar(address _avatar) internal {
         if (avatars[_avatar] != address(0)) {
             // Avatar already inserted
-            revert CirclesHubAvatarAlreadyRegistered(_avatar, 0);
+            // revert CirclesHubAvatarAlreadyRegistered(_avatar, 0);
+            revert CirclesErrorOneAddressArg(_avatar, 0x80);
         }
         avatars[_avatar] = avatars[SENTINEL];
         avatars[SENTINEL] = _avatar;
@@ -1159,7 +1176,8 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     {
         if (_packedData.length != _numberOfTriplets * 6) {
             // Invalid packed data length
-            revert CirclesArraysLengthMismatch(_packedData.length, _numberOfTriplets, 6);
+            // revert CirclesArraysLengthMismatch(_packedData.length, _numberOfTriplets, 6);
+            revert CirclesErrorNoArgs(0xA6);
         }
 
         unpackedCoordinates_ = new uint16[](_numberOfTriplets * 3);
@@ -1182,9 +1200,9 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * It will update the expiry time for the trusted address.
      */
     function _upsertTrustMarker(address _truster, address _trusted, uint96 _expiry) private {
-        if (_truster == address(0)) revert CirclesLogicAssertion(1);
-        if (_trusted == address(0)) revert CirclesLogicAssertion(2);
-        if (_trusted == SENTINEL) revert CirclesLogicAssertion(3);
+        if (_truster == address(0) || _trusted == address(0) || _trusted == SENTINEL) {
+            revert CirclesErrorNoArgs(0x81); // CirclesLogicAssertion(1);
+        }
 
         TrustMarker storage sentinelMarker = trustMarkers[_truster][SENTINEL];
         if (sentinelMarker.previous == address(0)) {

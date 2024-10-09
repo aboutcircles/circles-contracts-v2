@@ -29,12 +29,6 @@ contract Circles is ERC1155, ICirclesErrors {
     // Constants
 
     /**
-     * @notice Issue one Circle per hour for each human in demurraged units.
-     * So per second issue 10**18 / 3600 = 277777777777778 attoCircles.
-     */
-    uint256 private constant ISSUANCE_PER_SECOND = uint256(277777777777778);
-
-    /**
      * @notice Upon claiming, the maximum claim is upto two weeks
      * of history. Unclaimed older Circles are unclaimable.
      */
@@ -88,12 +82,16 @@ contract Circles is ERC1155, ICirclesErrors {
         MintTime memory mintTime = mintTimes[_human];
         if (mintTime.mintV1Status != address(0) && mintTime.mintV1Status != CIRCLES_STOPPED_V1) {
             // Circles v1 contract cannot be active.
-            revert CirclesERC1155MintBlocked(_human, mintTime.mintV1Status);
+            // revert CirclesERC1155MintBlocked(_human, mintTime.mintV1Status);
+            revert CirclesErrorOneAddressArg(_human, 0xC0);
         }
 
-        if (uint256(mintTime.lastMintTime) + 1 hours > block.timestamp) {
-            // Mint time is set to indefinite future for stopped mints in v2
-            // and only complete hours get minted, so shortcut the calculation
+        // Check if at least one new completed hour is mintable
+        uint256 lastCompletedHour = mintTime.lastMintTime / 1 hours;
+        uint256 currentCompletedHour = block.timestamp / 1 hours;
+
+        if (lastCompletedHour >= currentCompletedHour || mintTime.lastMintTime == INDEFINITE_FUTURE) {
+            // No new completed hour to mint, or stopped
             return (0, 0, 0);
         }
 
@@ -112,10 +110,17 @@ contract Circles is ERC1155, ICirclesErrors {
         // calculate the number of completed hours in day A until `startMint`
         int128 k = Math64x64.fromUInt((startMint - (dA * 1 days + inflationDayZero)) / 1 hours);
 
-        // Calculate the number of incompleted hours remaining in day B from current timestamp
-        int128 l = Math64x64.fromUInt(((dB + 1) * 1 days + inflationDayZero - block.timestamp) / 1 hours + 1);
+        // Calculate the number of seconds remaining in the current day (dB)
+        uint256 secondsRemainingInB = ((dB + 1) * 1 days + inflationDayZero - block.timestamp);
+        // Calculate the number of complete hours remaining
+        uint256 hoursRemainingInB = secondsRemainingInB / 1 hours;
+        // Calculate l:
+        // If there are any seconds beyond complete hours, add 1 to account for the incomplete hour
+        // Convert the result to int128 using Math64x64.fromUInt
+        int128 l = Math64x64.fromUInt(hoursRemainingInB + (secondsRemainingInB % 1 hours > 0 ? 1 : 0));
 
         // calculate the overcounted (demurraged) k (in day A) and l (in day B) hours
+        // note that the hours l are not demurraged as it is current day by construction
         int128 overcount = Math64x64.add(Math64x64.mul(R[n], k), l);
 
         // subtract the overcount from the total issuance, and convert to attoCircles
@@ -138,16 +143,24 @@ contract Circles is ERC1155, ICirclesErrors {
             // No issuance to claim, simply return without reverting
             return;
         }
-        // mint personal Circles to the human
-        _mintAndUpdateTotalSupply(_human, toTokenId(_human), issuance, "");
-        // update the last mint time
+
+        // update the last mint time, before minting as mint time determines the check (guard for reeentrancy attack)
         mintTimes[_human].lastMintTime = uint96(block.timestamp);
+
+        // mint personal Circles to the human; ERC1155 mint will perform acceptance call
+        _mintAndUpdateTotalSupply(_human, toTokenId(_human), issuance, "", true);
 
         emit PersonalMint(_human, issuance, startPeriod, endPeriod);
     }
 
-    function _mintAndUpdateTotalSupply(address _account, uint256 _id, uint256 _value, bytes memory _data) internal {
-        _mint(_account, _id, _value, _data);
+    function _mintAndUpdateTotalSupply(
+        address _account,
+        uint256 _id,
+        uint256 _value,
+        bytes memory _data,
+        bool _doAcceptanceCheck
+    ) internal {
+        _mint(_account, _id, _value, _data, _doAcceptanceCheck);
 
         uint64 today = day(block.timestamp);
         DiscountedBalance memory totalSupplyBalance = discountedTotalSupplies[_id];
@@ -155,7 +168,8 @@ contract Circles is ERC1155, ICirclesErrors {
             _calculateDiscountedBalance(totalSupplyBalance.balance, today - totalSupplyBalance.lastUpdatedDay) + _value;
         if (newTotalSupply > MAX_VALUE) {
             // DiscountedBalances: balance exceeds maximum value
-            revert CirclesDemurrageAmountExceedsMaxUint190(_account, _id, newTotalSupply, 2);
+            // revert CirclesDemurrageAmountExceedsMaxUint192(_account, _id, newTotalSupply, 2);
+            revert CirclesErrorAddressUintArgs(_account, _id, 0x80);
         }
         totalSupplyBalance.balance = uint192(newTotalSupply);
         totalSupplyBalance.lastUpdatedDay = today;
@@ -176,7 +190,8 @@ contract Circles is ERC1155, ICirclesErrors {
             // and the total supply might differ on the least significant bits.
             // There is no good way to handle this, so user should burn a few attoCRC less,
             // or wait a day for the total supply to be discounted to zero automatically.
-            revert CirclesLogicAssertion(4);
+            // revert CirclesLogicAssertion(4);
+            revert CirclesErrorNoArgs(0x84);
         }
         unchecked {
             totalSupplyBalance.balance = uint192(discountedTotalSupply - _value);
@@ -185,14 +200,12 @@ contract Circles is ERC1155, ICirclesErrors {
         discountedTotalSupplies[_id] = totalSupplyBalance;
     }
 
-    // Private functions
-
     /**
      * @dev Max function to compare two values.
      * @param a Value a
      * @param b Value b
      */
-    function _max(uint256 a, uint256 b) private pure returns (uint256) {
+    function _max(uint256 a, uint256 b) internal pure returns (uint256) {
         return a >= b ? a : b;
     }
 }

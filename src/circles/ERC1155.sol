@@ -174,6 +174,7 @@ abstract contract ERC1155 is DiscountedBalances, Context, ERC165, IERC1155, IERC
                 }
                 if (discountCost > 0) {
                     emit TransferSingle(operator, from, address(0), id, discountCost);
+                    emit DiscountCost(from, id, discountCost);
                 }
                 unchecked {
                     // Overflow not possible: value <= fromBalance
@@ -318,15 +319,20 @@ abstract contract ERC1155 is DiscountedBalances, Context, ERC165, IERC1155, IERC
      * Requirements:
      *
      * - `to` cannot be the zero address.
+     * - If `_doAcceptanceCheck` is true, it will perform ERC1155 acceptance check, otherwise only update
      * - If `to` refers to a smart contract, it must implement {IERC1155Receiver-onERC1155Received} and return the
      * acceptance magic value.
      */
-    function _mint(address to, uint256 id, uint256 value, bytes memory data) internal {
+    function _mint(address to, uint256 id, uint256 value, bytes memory data, bool _doAcceptanceCheck) internal {
         if (to == address(0)) {
             revert ERC1155InvalidReceiver(address(0));
         }
         (uint256[] memory ids, uint256[] memory values) = _asSingletonArrays(id, value);
-        _updateWithAcceptanceCheck(address(0), to, ids, values, data);
+        if (_doAcceptanceCheck) {
+            _updateWithAcceptanceCheck(address(0), to, ids, values, data);
+        } else {
+            _update(address(0), to, ids, values);
+        }
     }
 
     /**

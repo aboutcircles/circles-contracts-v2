@@ -4,7 +4,7 @@ pragma solidity >=0.8.24;
 import {ABDKMath64x64 as Math64x64} from "lib/abdk-libraries-solidity/ABDKMath64x64.sol";
 import "../errors/Errors.sol";
 
-contract Demurrage is ICirclesDemurrageErrors {
+contract Demurrage is ICirclesCompactErrors, ICirclesDemurrageErrors {
     // Type declarations
 
     /**
@@ -256,9 +256,10 @@ contract Demurrage is ICirclesDemurrageErrors {
                 R[_dayDifference] = demurrageFactor;
             }
             return demurrageFactor;
-        } else {
-            return Math64x64.pow(GAMMA_64x64, _dayDifference);
         }
+        // if the day difference is for older than 14 days, calculate the value
+        // and do not cache it
+        return Math64x64.pow(GAMMA_64x64, _dayDifference);
     }
 
     /**

@@ -31,7 +31,8 @@ contract InflationaryCircles is MasterCopyNonUpgradable, ERC20InflationaryBalanc
 
     modifier onlyHub(uint8 _code) {
         if (msg.sender != address(hub)) {
-            revert CirclesInvalidFunctionCaller(msg.sender, address(hub), _code);
+            // revert CirclesInvalidFunctionCaller(msg.sender, address(hub), _code);
+            revert CirclesErrorOneAddressArg(msg.sender, _code);
         }
         _;
     }
@@ -52,15 +53,18 @@ contract InflationaryCircles is MasterCopyNonUpgradable, ERC20InflationaryBalanc
         }
         if (address(_hub) == address(0)) {
             // Must not be the zero address.
-            revert CirclesAddressCannotBeZero(0);
+            // revert CirclesAddressCannotBeZero(0);
+            revert CirclesErrorNoArgs(0x0B);
         }
         if (address(_nameRegistry) == address(0)) {
             // Must not be the zero address.
-            revert CirclesAddressCannotBeZero(1);
+            // revert CirclesAddressCannotBeZero(1);
+            revert CirclesErrorNoArgs(0x0C);
         }
         if (_avatar == address(0)) {
             // Must not be the zero address.
-            revert CirclesAddressCannotBeZero(2);
+            // revert CirclesAddressCannotBeZero(2);
+            revert CirclesErrorNoArgs(0x0D);
         }
         hub = IHubV2(_hub);
         avatar = _avatar;
@@ -86,7 +90,7 @@ contract InflationaryCircles is MasterCopyNonUpgradable, ERC20InflationaryBalanc
     }
 
     function name() external view returns (string memory) {
-        // append suffix for "ERC20 static" to the ERC20 name
+        // append suffix for "-ERC20s" to the ERC20 name (s for "static")
         return string(abi.encodePacked(nameRegistry.name(avatar), "-ERC20s"));
     }
 
@@ -103,7 +107,7 @@ contract InflationaryCircles is MasterCopyNonUpgradable, ERC20InflationaryBalanc
     function onERC1155Received(address, address _from, uint256 _id, uint256 _amount, bytes memory)
         public
         override
-        onlyHub(0)
+        onlyHub(0xE3)
         returns (bytes4)
     {
         if (_id != toTokenId(avatar)) revert CirclesInvalidCirclesId(_id, 0);
@@ -119,7 +123,7 @@ contract InflationaryCircles is MasterCopyNonUpgradable, ERC20InflationaryBalanc
         public
         view
         override
-        onlyHub(1)
+        onlyHub(0xE4)
         returns (bytes4)
     {
         revert CirclesERC1155CannotReceiveBatch(0);

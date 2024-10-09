@@ -27,7 +27,8 @@ contract DemurrageCircles is MasterCopyNonUpgradable, ERC20DiscountedBalances, E
 
     modifier onlyHub(uint8 _code) {
         if (msg.sender != address(hub)) {
-            revert CirclesInvalidFunctionCaller(msg.sender, address(hub), _code);
+            // revert CirclesInvalidFunctionCaller(msg.sender, address(hub), _code);
+            revert CirclesErrorOneAddressArg(msg.sender, _code);
         }
         _;
     }
@@ -46,14 +47,17 @@ contract DemurrageCircles is MasterCopyNonUpgradable, ERC20DiscountedBalances, E
             revert CirclesProxyAlreadyInitialized();
         }
         if (address(_hub) == address(0)) {
-            revert CirclesAddressCannotBeZero(0);
+            // revert CirclesAddressCannotBeZero(0);
+            revert CirclesErrorNoArgs(0x04);
         }
         if (address(_nameRegistry) == address(0)) {
             // Must not be the zero address.
-            revert CirclesAddressCannotBeZero(1);
+            // revert CirclesAddressCannotBeZero(1);
+            revert CirclesErrorNoArgs(0x05);
         }
         if (_avatar == address(0)) {
-            revert CirclesAddressCannotBeZero(2);
+            // revert CirclesAddressCannotBeZero(2);
+            revert CirclesErrorNoArgs(0x06);
         }
         hub = IHubV2(_hub);
         avatar = _avatar;
@@ -97,7 +101,7 @@ contract DemurrageCircles is MasterCopyNonUpgradable, ERC20DiscountedBalances, E
     function onERC1155Received(address, address _from, uint256 _id, uint256 _amount, bytes memory)
         public
         override
-        onlyHub(0)
+        onlyHub(0xE1)
         returns (bytes4)
     {
         if (_id != toTokenId(avatar)) revert CirclesInvalidCirclesId(_id, 0);
@@ -114,7 +118,7 @@ contract DemurrageCircles is MasterCopyNonUpgradable, ERC20DiscountedBalances, E
         public
         view
         override
-        onlyHub(1)
+        onlyHub(0xE2)
         returns (bytes4)
     {
         revert CirclesERC1155CannotReceiveBatch(0);

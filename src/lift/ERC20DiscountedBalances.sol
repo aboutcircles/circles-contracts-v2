@@ -18,6 +18,10 @@ contract ERC20DiscountedBalances is ERC20Permit, BatchedDemurrage, IERC20 {
      */
     mapping(address => DiscountedBalance) public discountedBalances;
 
+    // Events
+
+    event DiscountCost(address indexed account, uint256 discountCost);
+
     // Constructor
 
     // External functions
@@ -79,9 +83,10 @@ contract ERC20DiscountedBalances is ERC20Permit, BatchedDemurrage, IERC20 {
         DiscountedBalance memory discountedBalance = discountedBalances[_account];
         if (_day < discountedBalance.lastUpdatedDay) {
             // ERC20 DiscountedBalances: day is before last updated day
-            revert CirclesDemurrageDayBeforeLastUpdatedDay(
-                _account, toTokenId(avatar), _day, discountedBalance.lastUpdatedDay, 0
-            );
+            // revert CirclesDemurrageDayBeforeLastUpdatedDay(
+            //     _account, toTokenId(avatar), _day, discountedBalance.lastUpdatedDay, 0
+            // );
+            revert CirclesErrorAddressUintArgs(_account, discountedBalance.lastUpdatedDay, 0xA2);
         }
         uint256 dayDifference;
         unchecked {
@@ -105,7 +110,8 @@ contract ERC20DiscountedBalances is ERC20Permit, BatchedDemurrage, IERC20 {
     function _updateBalance(address _account, uint256 _balance, uint64 _day) internal {
         if (_balance > MAX_VALUE) {
             // Balance exceeds maximum value.
-            revert CirclesDemurrageAmountExceedsMaxUint190(_account, toTokenId(avatar), _balance, 0);
+            // revert CirclesDemurrageAmountExceedsMaxUint192(_account, toTokenId(avatar), _balance, 0);
+            revert CirclesErrorAddressUintArgs(_account, toTokenId(avatar), 0x83);
         }
         DiscountedBalance memory discountedBalance = discountedBalances[_account];
         discountedBalance.balance = uint192(_balance);
@@ -117,9 +123,10 @@ contract ERC20DiscountedBalances is ERC20Permit, BatchedDemurrage, IERC20 {
         DiscountedBalance memory discountedBalance = discountedBalances[_account];
         if (_day < discountedBalance.lastUpdatedDay) {
             // ERC20 DiscountedBalances: day is before last updated day
-            revert CirclesDemurrageDayBeforeLastUpdatedDay(
-                _account, toTokenId(avatar), _day, discountedBalance.lastUpdatedDay, 1
-            );
+            // revert CirclesDemurrageDayBeforeLastUpdatedDay(
+            //     _account, toTokenId(avatar), _day, discountedBalance.lastUpdatedDay, 1
+            // );
+            revert CirclesErrorAddressUintArgs(_account, discountedBalance.lastUpdatedDay, 0xA3);
         }
         uint256 dayDifference;
         unchecked {
@@ -130,12 +137,14 @@ contract ERC20DiscountedBalances is ERC20Permit, BatchedDemurrage, IERC20 {
             uint256 discountCost = discountedBalance.balance - discountedBalanceOnDay;
             if (discountCost > 0) {
                 emit Transfer(_account, address(0), discountCost);
+                emit DiscountCost(_account, discountCost);
             }
         }
         uint256 updatedBalance = discountedBalanceOnDay + _value;
         if (updatedBalance > MAX_VALUE) {
             // Balance exceeds maximum value.
-            revert CirclesDemurrageAmountExceedsMaxUint190(_account, toTokenId(avatar), updatedBalance, 1);
+            // revert CirclesDemurrageAmountExceedsMaxUint192(_account, toTokenId(avatar), updatedBalance, 1);
+            revert CirclesErrorAddressUintArgs(_account, toTokenId(avatar), 0x84);
         }
         discountedBalance.balance = uint192(updatedBalance);
         discountedBalance.lastUpdatedDay = _day;
@@ -150,6 +159,7 @@ contract ERC20DiscountedBalances is ERC20Permit, BatchedDemurrage, IERC20 {
         }
         if (discountCost > 0) {
             emit Transfer(_from, address(0), discountCost);
+            emit DiscountCost(_from, discountCost);
         }
         unchecked {
             _updateBalance(_from, fromBalance - _amount, day);
@@ -172,6 +182,7 @@ contract ERC20DiscountedBalances is ERC20Permit, BatchedDemurrage, IERC20 {
         }
         if (discountCost > 0) {
             emit Transfer(_owner, address(0), discountCost);
+            emit DiscountCost(_owner, discountCost);
         }
         unchecked {
             _updateBalance(_owner, ownerBalance - _amount, day);

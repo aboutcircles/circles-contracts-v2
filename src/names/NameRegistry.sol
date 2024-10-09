@@ -6,7 +6,7 @@ import "../hub/IHub.sol";
 import "./Base58Converter.sol";
 import "./INameRegistry.sol";
 
-contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, ICirclesErrors {
+contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, ICirclesErrors, ICirclesCompactErrors {
     // Constants
 
     /**
@@ -63,16 +63,10 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
 
     // Modifiers
 
-    modifier mustBeRegistered(address _avatar, uint8 _code) {
-        if (hub.avatars(_avatar) == address(0)) {
-            revert CirclesAvatarMustBeRegistered(_avatar, _code);
-        }
-        _;
-    }
-
     modifier onlyHub(uint8 _code) {
         if (msg.sender != address(hub)) {
-            revert CirclesInvalidFunctionCaller(msg.sender, address(hub), _code);
+            // revert CirclesInvalidFunctionCaller(msg.sender, address(hub), _code);
+            revert CirclesErrorOneAddressArg(msg.sender, _code);
         }
         _;
     }
@@ -82,9 +76,14 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
     constructor(IHubV2 _hub) {
         if (address(_hub) == address(0)) {
             // Hub cannot be the zero address.
-            revert CirclesAddressCannotBeZero(0);
+            // revert CirclesAddressCannotBeZero(0);
+            revert CirclesErrorNoArgs(0x11);
         }
         hub = _hub;
+
+        // register the hub itself in the name registry
+        customNames[address(_hub)] = "Circles";
+        customSymbols[address(_hub)] = "CRC";
     }
 
     // External functions
@@ -92,7 +91,7 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
     /**
      * @notice Register a short name for the avatar
      */
-    function registerShortName() external mustBeRegistered(msg.sender, 0) {
+    function registerShortName() external {
         _registerShortName();
     }
 
@@ -100,19 +99,19 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
      * Registers a short name for the avatar using a specific nonce if the short name is available
      * @param _nonce nonce to be used in the calculation
      */
-    function registerShortNameWithNonce(uint256 _nonce) external mustBeRegistered(msg.sender, 1) {
+    function registerShortNameWithNonce(uint256 _nonce) external {
         _registerShortNameWithNonce(_nonce);
     }
 
-    function setMetadataDigest(address _avatar, bytes32 _metadataDigest) external onlyHub(0) {
+    function setMetadataDigest(address _avatar, bytes32 _metadataDigest) external onlyHub(0xE5) {
         _setMetadataDigest(_avatar, _metadataDigest);
     }
 
-    function updateMetadataDigest(bytes32 _metadataDigest) external mustBeRegistered(msg.sender, 2) {
+    function updateMetadataDigest(bytes32 _metadataDigest) external {
         _setMetadataDigest(msg.sender, _metadataDigest);
     }
 
-    function registerCustomName(address _avatar, string calldata _name) external onlyHub(1) {
+    function registerCustomName(address _avatar, string calldata _name) external onlyHub(0xE6) {
         if (bytes(_name).length == 0) {
             // if name is left empty, it will default to default name "Circles-<base58(short)Name>"
             return;
@@ -123,7 +122,7 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
         customNames[_avatar] = _name;
     }
 
-    function registerCustomSymbol(address _avatar, string calldata _symbol) external onlyHub(2) {
+    function registerCustomSymbol(address _avatar, string calldata _symbol) external onlyHub(0xE7) {
         if (bytes(_symbol).length == 0) {
             // if symbol is left empty, it will default to default symbol "CRC"
             return;
@@ -134,7 +133,7 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
         customSymbols[_avatar] = _symbol;
     }
 
-    function name(address _avatar) external view mustBeRegistered(_avatar, 3) returns (string memory) {
+    function name(address _avatar) external view returns (string memory) {
         if (!hub.isHuman(_avatar)) {
             // groups and organizations can have set a custom name
             string memory customName = customNames[_avatar];
@@ -148,7 +147,7 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
         return _getShortOrLongName(_avatar);
     }
 
-    function symbol(address _avatar) external view mustBeRegistered(_avatar, 4) returns (string memory) {
+    function symbol(address _avatar) external view returns (string memory) {
         if (hub.isOrganization(_avatar)) {
             revert CirclesNamesOrganizationHasNoSymbol(_avatar, 0);
         }
@@ -292,6 +291,11 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
     }
 
     function _storeShortName(address _avatar, uint72 _shortName, uint256 _nonce) internal {
+        if (_shortName == uint72(0)) {
+            // short name cannot be zero (but congrats if you got it!)
+            // this would break the reverse lookup
+            revert CirclesNamesShortNameZero(_avatar, _nonce);
+        }
         // assign the name to the address
         shortNames[_avatar] = _shortName;
         // assign the address to the name

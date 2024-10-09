@@ -18,6 +18,10 @@ contract DiscountedBalances is Demurrage {
      */
     mapping(uint256 => DiscountedBalance) internal discountedTotalSupplies;
 
+    // Events
+
+    event DiscountCost(address indexed account, uint256 indexed id, uint256 discountCost);
+
     // Constructor
 
     /**
@@ -46,7 +50,8 @@ contract DiscountedBalances is Demurrage {
         DiscountedBalance memory discountedBalance = discountedBalances[_id][_account];
         if (_day < discountedBalance.lastUpdatedDay) {
             // DiscountedBalances: day is before last updated day
-            revert CirclesDemurrageDayBeforeLastUpdatedDay(_account, _id, _day, discountedBalance.lastUpdatedDay, 0);
+            // revert CirclesDemurrageDayBeforeLastUpdatedDay(_account, _id, _day, discountedBalance.lastUpdatedDay, 0);
+            revert CirclesErrorAddressUintArgs(_account, discountedBalance.lastUpdatedDay, 0xA0);
         }
         uint256 dayDifference;
         unchecked {
@@ -93,7 +98,8 @@ contract DiscountedBalances is Demurrage {
     function _updateBalance(address _account, uint256 _id, uint256 _balance, uint64 _day) internal {
         if (_balance > MAX_VALUE) {
             // DiscountedBalances: balance exceeds maximum value
-            revert CirclesDemurrageAmountExceedsMaxUint190(_account, _id, _balance, 0);
+            // revert CirclesDemurrageAmountExceedsMaxUint192(_account, _id, _balance, 0);
+            revert CirclesErrorAddressUintArgs(_account, _id, 0x81);
         }
         DiscountedBalance memory discountedBalance = discountedBalances[_id][_account];
         discountedBalance.balance = uint192(_balance);
@@ -112,7 +118,8 @@ contract DiscountedBalances is Demurrage {
         DiscountedBalance memory discountedBalance = discountedBalances[_id][_account];
         if (_day < discountedBalance.lastUpdatedDay) {
             // DiscountedBalances: day is before last updated day
-            revert CirclesDemurrageDayBeforeLastUpdatedDay(_account, _id, _day, discountedBalance.lastUpdatedDay, 1);
+            // revert CirclesDemurrageDayBeforeLastUpdatedDay(_account, _id, _day, discountedBalance.lastUpdatedDay, 1);
+            revert CirclesErrorAddressUintArgs(_account, discountedBalance.lastUpdatedDay, 0xA1);
         }
         uint256 dayDifference;
         unchecked {
@@ -124,12 +131,14 @@ contract DiscountedBalances is Demurrage {
             uint256 discountCost = discountedBalance.balance - discountedBalanceOnDay;
             if (discountCost > 0) {
                 emit IERC1155.TransferSingle(msg.sender, _account, address(0), _id, discountCost);
+                emit DiscountCost(_account, _id, discountCost);
             }
         }
         uint256 updatedBalance = discountedBalanceOnDay + _value;
         if (updatedBalance > MAX_VALUE) {
             // DiscountedBalances: balance exceeds maximum value
-            revert CirclesDemurrageAmountExceedsMaxUint190(_account, _id, updatedBalance, 1);
+            // revert CirclesDemurrageAmountExceedsMaxUint190(_account, _id, updatedBalance, 1);
+            revert CirclesErrorAddressUintArgs(_account, _id, 0x82);
         }
         discountedBalance.balance = uint192(updatedBalance);
         discountedBalance.lastUpdatedDay = _day;
