@@ -1,11 +1,3 @@
-# Audit Competition for Circles
-This repository is for the audit competition for the Circles.
-To participate, submit your findings only by using the on-chain submission process on https://app.hats.finance/vulnerability .
-## How to participate
-- follow the instructions on https://app.hats.finance/
-## Good luck!
-We look forward to seeing your findings.
-* * *
 # Circles Protocol
 
 Circles is a decentralized protocol for creating and distributing fair and social money through personal currencies. Built on the Gnosis Chain, it utilizes smart contracts to manage the creation, distribution, and transfer of personal currencies using the ERC1155 multi-token standard.
