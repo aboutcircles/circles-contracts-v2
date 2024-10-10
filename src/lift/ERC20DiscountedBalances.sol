@@ -102,11 +102,6 @@ contract ERC20DiscountedBalances is ERC20Permit, BatchedDemurrage, IERC20 {
 
     // Internal functions
 
-    function _inflationaryBalanceOf(address _account) internal view returns (uint256) {
-        DiscountedBalance memory discountedBalance = discountedBalances[_account];
-        return _calculateInflationaryBalance(discountedBalance.balance, discountedBalance.lastUpdatedDay);
-    }
-
     function _updateBalance(address _account, uint256 _balance, uint64 _day) internal {
         if (_balance > MAX_VALUE) {
             // Balance exceeds maximum value.

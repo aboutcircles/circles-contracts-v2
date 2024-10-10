@@ -94,6 +94,6 @@ contract InflationaryCirclesOperator is BatchedDemurrage {
     function _inflationaryBalanceOf(address _account, uint256 _id) internal view returns (uint256) {
         // retrieve the balance in demurrage units (of today)
         uint256 balance = hub.balanceOf(_account, _id);
-        return _calculateInflationaryBalance(balance, day(block.timestamp));
+        return convertDemurrageToInflationaryValue(balance, day(block.timestamp));
     }
 }

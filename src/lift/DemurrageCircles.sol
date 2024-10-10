@@ -74,7 +74,7 @@ contract DemurrageCircles is MasterCopyNonUpgradable, ERC20DiscountedBalances, E
         _burn(msg.sender, _amount);
         hub.safeTransferFrom(address(this), msg.sender, toTokenId(avatar), _amount, "");
 
-        uint256 inflationaryAmount = _calculateInflationaryBalance(_amount, day(block.timestamp));
+        uint256 inflationaryAmount = convertDemurrageToInflationaryValue(_amount, day(block.timestamp));
 
         emit WithdrawDemurraged(msg.sender, _amount, inflationaryAmount);
     }
@@ -107,7 +107,7 @@ contract DemurrageCircles is MasterCopyNonUpgradable, ERC20DiscountedBalances, E
         if (_id != toTokenId(avatar)) revert CirclesInvalidCirclesId(_id, 0);
         _mint(_from, _amount);
 
-        uint256 inflationaryAmount = _calculateInflationaryBalance(_amount, day(block.timestamp));
+        uint256 inflationaryAmount = convertDemurrageToInflationaryValue(_amount, day(block.timestamp));
 
         emit DepositDemurraged(_from, _amount, inflationaryAmount);
 
