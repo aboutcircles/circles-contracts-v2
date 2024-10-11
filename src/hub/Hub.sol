@@ -603,6 +603,14 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         emit SetAdvancedUsageFlag(msg.sender, _flag);
     }
 
+    function name() external view returns (string memory) {
+        return nameRegistry.name(address(this));
+    }
+
+    function symbol() external view returns (string memory) {
+        return nameRegistry.symbol(address(this));
+    }
+
     // Public functions
 
     /**
