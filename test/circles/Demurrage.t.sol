@@ -55,4 +55,29 @@ contract DemurrageTest is Test, TimeCirclesSetup, Approximation {
             );
         }
     }
+
+    // Test on stable point of issuance
+
+    function testStablePointIssuance() public view {
+        // Stable point of issuance 120804.56 Circles
+        uint192 stable = uint192(120804563587458981173795 + 2343);
+        console.log("stable: ", stable);
+
+        // overshoot stable amount 120804563587458981178828 attoCRC
+        // undershoot stable amount 120804563587458981173795 attoCRC
+        // difference 0.000000000000005033 CRC
+
+        uint192 dailyIssuance = uint192(24 * CRC);
+
+        uint192 balance = stable;
+
+        for (uint256 i = 0; i < 20; i++) {
+            uint192 demurragedBalance = uint192(demurrage.calculateDiscountedBalance(balance, 1));
+            uint192 newBalance = demurragedBalance + dailyIssuance;
+            console.log("balance: ", newBalance);
+            balance = newBalance;
+        }
+
+        console.log("stable: ", stable);
+    }
 }
