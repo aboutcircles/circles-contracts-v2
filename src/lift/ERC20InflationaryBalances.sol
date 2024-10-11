@@ -6,15 +6,11 @@ import "../circles/BatchedDemurrage.sol";
 import "./ERC20Permit.sol";
 
 contract ERC20InflationaryBalances is ERC20Permit, BatchedDemurrage, IERC20 {
-    // Constants
-
-    uint8 internal constant EXTENDED_ACCURACY_BITS = 64;
-
     // State variables
 
-    uint256 internal _extendedTotalSupply;
+    uint256 internal _totalSupply;
 
-    mapping(address => uint256) private _extendedAccuracyBalances;
+    mapping(address => uint256) private _balances;
 
     // Constructor
 
@@ -55,7 +51,7 @@ contract ERC20InflationaryBalances is ERC20Permit, BatchedDemurrage, IERC20 {
     }
 
     function balanceOf(address _account) external view returns (uint256) {
-        return _extendedAccuracyBalances[_account] >> EXTENDED_ACCURACY_BITS;
+        return _balances[_account];
     }
 
     function allowance(address _owner, address _spender) external view returns (uint256) {
@@ -63,58 +59,46 @@ contract ERC20InflationaryBalances is ERC20Permit, BatchedDemurrage, IERC20 {
     }
 
     function totalSupply() external view returns (uint256) {
-        return _extendedTotalSupply >> EXTENDED_ACCURACY_BITS;
+        return _totalSupply;
     }
 
     // Internal functions
 
-    function _convertToExtended(uint256 _amount) internal pure returns (uint256) {
-        if (_amount > MAX_VALUE) revert CirclesAmountOverflow(_amount, 0);
-        return _amount << EXTENDED_ACCURACY_BITS;
-    }
-
     function _transfer(address _from, address _to, uint256 _amount) internal {
-        uint256 extendedAmount = _convertToExtended(_amount);
-        uint256 extendedFromBalance = _extendedAccuracyBalances[_from];
-        if (extendedFromBalance < extendedAmount) {
-            revert ERC20InsufficientBalance(_from, extendedFromBalance >> EXTENDED_ACCURACY_BITS, _amount);
+        uint256 fromBalance = _balances[_from];
+        if (fromBalance < _amount) {
+            revert ERC20InsufficientBalance(_from, fromBalance, _amount);
         }
         unchecked {
-            _extendedAccuracyBalances[_from] = extendedFromBalance - extendedAmount;
+            _balances[_from] = fromBalance - _amount;
             // rely on total supply not having overflowed
-            _extendedAccuracyBalances[_to] += extendedAmount;
+            _balances[_to] += _amount;
         }
         emit Transfer(_from, _to, _amount);
     }
 
     function _mintFromDemurragedAmount(address _owner, uint256 _demurragedAmount) internal returns (uint256) {
-        // first convert to extended accuracy representation so we have extra garbage bits,
-        // before we apply the inflation factor, which will produce errors in the least significant bits
-        uint256 extendedAmount =
-            _calculateInflationaryBalance(_convertToExtended(_demurragedAmount), day(block.timestamp));
+        uint256 inflationaryAmount = convertDemurrageToInflationaryValue(_demurragedAmount, day(block.timestamp));
         // here ensure total supply does not overflow
-        _extendedTotalSupply += extendedAmount;
+        _totalSupply += inflationaryAmount;
         unchecked {
-            _extendedAccuracyBalances[_owner] += extendedAmount;
+            _balances[_owner] += inflationaryAmount;
         }
-        emit Transfer(address(0), _owner, extendedAmount >> EXTENDED_ACCURACY_BITS);
+        emit Transfer(address(0), _owner, inflationaryAmount);
 
-        return extendedAmount >> EXTENDED_ACCURACY_BITS;
+        return inflationaryAmount;
     }
 
-    function _burn(address _owner, uint256 _amount) internal returns (uint256) {
-        uint256 extendedAmount = _convertToExtended(_amount);
-        uint256 extendedOwnerBalance = _extendedAccuracyBalances[_owner];
-        if (extendedOwnerBalance < extendedAmount) {
-            revert ERC20InsufficientBalance(_owner, _extendedAccuracyBalances[_owner], _amount);
+    function _burn(address _owner, uint256 _amount) internal {
+        uint256 ownerBalance = _balances[_owner];
+        if (ownerBalance < _amount) {
+            revert ERC20InsufficientBalance(_owner, ownerBalance, _amount);
         }
         unchecked {
-            _extendedAccuracyBalances[_owner] = extendedOwnerBalance - extendedAmount;
+            _balances[_owner] = ownerBalance - _amount;
             // rely on total supply tracking complete sum of balances
-            _extendedTotalSupply -= extendedAmount;
+            _totalSupply -= _amount;
         }
         emit Transfer(_owner, address(0), _amount);
-
-        return extendedAmount;
     }
 }

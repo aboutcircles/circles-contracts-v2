@@ -261,17 +261,4 @@ contract Demurrage is ICirclesCompactErrors, ICirclesDemurrageErrors {
         // and do not cache it
         return Math64x64.pow(GAMMA_64x64, _dayDifference);
     }
-
-    /**
-     * Calculate the inflationary balance of a demurraged balance
-     * @param _balance Demurraged balance to calculate the inflationary balance of
-     * @param _dayUpdated The day the balance was last updated
-     */
-    function _calculateInflationaryBalance(uint256 _balance, uint256 _dayUpdated) internal pure returns (uint256) {
-        // calculate the inflationary balance by dividing the balance by GAMMA^days
-        // note: GAMMA < 1, so dividing by a power of it, returns a bigger number,
-        //       so the numerical imprecision is in the least significant bits.
-        int128 i = Math64x64.pow(BETA_64x64, _dayUpdated);
-        return Math64x64.mulu(i, _balance);
-    }
 }
