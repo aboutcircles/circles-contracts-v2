@@ -14,6 +14,10 @@ contract MockDemurrage is Demurrage {
         return GAMMA_64x64;
     }
 
+    function beta_64x64() external pure returns (int128) {
+        return BETA_64x64;
+    }
+
     function r(uint256 _i) external view returns (int128) {
         return R[_i];
     }

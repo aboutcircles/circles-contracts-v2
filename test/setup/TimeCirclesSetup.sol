@@ -7,7 +7,7 @@ import {StdCheats} from "forge-std/StdCheats.sol";
 contract TimeCirclesSetup is Test {
     // Constants
 
-    uint256 internal constant CRC = uint256(10 ** 18);
+    uint192 internal constant CRC = uint192(10 ** 18);
 
     /**
      * Arbitrary origin for counting time since 10 December 2021
