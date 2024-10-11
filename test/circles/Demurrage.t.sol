@@ -58,26 +58,49 @@ contract DemurrageTest is Test, TimeCirclesSetup, Approximation {
 
     // Test on stable point of issuance
 
-    function testStablePointIssuance() public view {
+    function testFuzzStablePointIssuance(int192 x) public {
+        vm.assume(x >= -100000000);
+        vm.assume(x <= 100000000);
+
         // Stable point of issuance 120804.56 Circles
-        uint192 stable = uint192(120804563587458981173795 + 2343);
-        console.log("stable: ", stable);
+        int192 stable = int192(120804563587458981173795);
 
         // overshoot stable amount 120804563587458981178828 attoCRC
         // undershoot stable amount 120804563587458981173795 attoCRC
         // difference 0.000000000000005033 CRC
 
-        uint192 dailyIssuance = uint192(24 * CRC);
-
-        uint192 balance = stable;
+        int192 dailyIssuance = int192(24 * int256(CRC));
+        // start with a balance offset by x
+        int192 balance = stable + x;
 
         for (uint256 i = 0; i < 20; i++) {
-            uint192 demurragedBalance = uint192(demurrage.calculateDiscountedBalance(balance, 1));
-            uint192 newBalance = demurragedBalance + dailyIssuance;
-            console.log("balance: ", newBalance);
+            int192 demurragedBalance =
+                int192(int256(demurrage.calculateDiscountedBalance(uint256(uint192(balance)), 1)));
+            int192 newBalance = demurragedBalance + dailyIssuance;
+            console.log("balance: ", uint256(int256(newBalance)));
             balance = newBalance;
         }
+        console.log("stable: ", uint256(int256(stable)));
 
-        console.log("stable: ", stable);
+        // to get to the exact stable point, you may need to run this loop ~100.000 times
+        // but once we're close it converges quickly (loop of 20)
+        assertTrue(relativeApproximatelyEqual(uint256(int256(balance)), uint256(int256(stable)), 1000 * DUST));
+    }
+
+    // Test repeated multiplication versus exponentiation
+
+    function testRepeatedDemurrage() public {
+        uint256 numberDays = 365 * 10;
+        uint192 balance = uint192(1000 * CRC);
+        uint192 demurragedBalance = uint192(demurrage.calculateDiscountedBalance(balance, numberDays));
+
+        // Calculate the demurraged balance by repeated multiplication
+        for (uint256 i = 1; i < numberDays + 1; i++) {
+            uint192 newBalance = uint192(demurrage.calculateDiscountedBalance(balance, 1));
+            console.log("day ", i, ": ", newBalance);
+            balance = newBalance;
+        }
+        console.log("demurragedBalance: ", demurragedBalance);
+        assertTrue(relativeApproximatelyEqual(demurragedBalance, balance, 1000 * DUST));
     }
 }
