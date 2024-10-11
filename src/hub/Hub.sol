@@ -560,7 +560,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         uint16[] memory coordinates = _unpackCoordinates(_packedCoordinates, _flow.length);
 
         // check all senders have the operator authorized
-        for (uint16 i = 0; i < _streams.length; i++) {
+        for (uint256 i = 0; i < _streams.length; i++) {
             if (!isApprovedForAll(_flowVertices[_streams[i].sourceCoordinate], msg.sender)) {
                 // Operator not approved for source.
                 // revert CirclesHubOperatorNotApprovedForSource(
@@ -777,7 +777,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
 
         {
             // check all vertices are valid avatars, groups or organizations
-            for (uint64 i = 0; i < _flowVertices.length - 1; i++) {
+            for (uint256 i = 0; i < _flowVertices.length - 1; i++) {
                 if (uint160(_flowVertices[i]) >= uint160(_flowVertices[i + 1])) {
                     // Flow vertices must be in ascending order.
                     // revert CirclesHubFlowVerticesMustBeSorted();
@@ -802,7 +802,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             // iterate over the coordinate index
             uint16 index = uint16(0);
 
-            for (uint64 i = 0; i < _flow.length; i++) {
+            for (uint256 i = 0; i < _flow.length; i++) {
                 // index: coordinate of Circles identifier avatar address
                 // index + 1: sender coordinate
                 // index + 2: receiver coordinate
@@ -852,7 +852,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             // iterate over the coordinate index
             uint16 index = uint16(0);
 
-            for (uint16 i = 0; i < _flow.length; i++) {
+            for (uint256 i = 0; i < _flow.length; i++) {
                 // index: coordinate of Circles identifier avatar address
                 // index + 1: sender coordinate
                 // index + 2: receiver coordinate
@@ -910,7 +910,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             emit FlowEdgesScopeLastEnded();
 
             // check that all streams are properly defined
-            for (uint16 i = 0; i < _streams.length; i++) {
+            for (uint256 i = 0; i < _streams.length; i++) {
                 if (streamReceivers[i] == address(0) || streamBatchCounter[i] != _streams[i].flowEdgeIds.length) {
                     // Invalid stream receiver
                     revert CirclesHubStreamMismatch(i);
@@ -936,11 +936,11 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         int256[] memory nettedFlow = new int256[](_flowVertices.length);
 
         // effect the stream transfers with acceptance calls
-        for (uint16 i = 0; i < _streams.length; i++) {
+        for (uint256 i = 0; i < _streams.length; i++) {
             uint256[] memory ids = new uint256[](_streams[i].flowEdgeIds.length);
             uint256[] memory amounts = new uint256[](_streams[i].flowEdgeIds.length);
             uint256 streamTotal = uint256(0);
-            for (uint16 j = 0; j < _streams[i].flowEdgeIds.length; j++) {
+            for (uint256 j = 0; j < _streams[i].flowEdgeIds.length; j++) {
                 // the Circles identifier coordinate is the first of three coordinates per flow edge
                 ids[j] = toTokenId(_flowVertices[_coordinates[3 * _streams[i].flowEdgeIds[j]]]);
                 amounts[j] = _flow[_streams[i].flowEdgeIds[j]].amount;
@@ -975,7 +975,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
             // revert CirclesArraysLengthMismatch(_streamsNettedFlow.length, _matrixNettedFlow.length, 5);
             revert CirclesErrorNoArgs(0xA5);
         }
-        for (uint16 i = 0; i < _streamsNettedFlow.length; i++) {
+        for (uint256 i = 0; i < _streamsNettedFlow.length; i++) {
             if (_streamsNettedFlow[i] != _matrixNettedFlow[i]) {
                 // Intended flow does not match verified flow.
                 revert CirclesHubNettedFlowMismatch(i, _matrixNettedFlow[i], _streamsNettedFlow[i]);
