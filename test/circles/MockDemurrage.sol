@@ -25,4 +25,8 @@ contract MockDemurrage is Demurrage {
     function rLength() external pure returns (uint256) {
         return R_TABLE_LOOKUP;
     }
+
+    function calculateDiscountedBalance(uint256 _balance, uint256 _daysDifference) external view returns (uint256) {
+        return _calculateDiscountedBalance(_balance, _daysDifference);
+    }
 }

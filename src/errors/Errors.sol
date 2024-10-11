@@ -103,11 +103,11 @@ interface IHubErrors {
     // CirclesErrorNoArgs 3
     // error CirclesHubFlowVerticesMustBeSorted();
 
-    error CirclesHubFlowEdgeStreamMismatch(uint16 flowEdgeId, uint16 streamId, uint8 code);
+    error CirclesHubFlowEdgeStreamMismatch(uint256 flowEdgeId, uint256 streamId, uint8 code);
 
-    error CirclesHubStreamMismatch(uint16 streamId);
+    error CirclesHubStreamMismatch(uint256 streamId);
 
-    error CirclesHubNettedFlowMismatch(uint16 vertexPosition, int256 matrixNettedFlow, int256 streamNettedFlow);
+    error CirclesHubNettedFlowMismatch(uint256 vertexPosition, int256 matrixNettedFlow, int256 streamNettedFlow);
 }
 
 interface ICirclesDemurrageErrors {
