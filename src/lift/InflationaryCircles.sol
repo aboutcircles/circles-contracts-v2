@@ -78,11 +78,10 @@ contract InflationaryCircles is MasterCopyNonUpgradable, ERC20InflationaryBalanc
     // External functions
 
     function unwrap(uint256 _amount) external {
-        uint256 extendedAmount = _burn(msg.sender, _amount);
+        _burn(msg.sender, _amount);
         // calculate demurraged amount in extended accuracy representation
         // then discard garbage bits by shifting right
-        uint256 demurragedAmount =
-            convertInflationaryToDemurrageValue(extendedAmount, day(block.timestamp)) >> EXTENDED_ACCURACY_BITS;
+        uint256 demurragedAmount = convertInflationaryToDemurrageValue(_amount, day(block.timestamp));
 
         hub.safeTransferFrom(address(this), msg.sender, toTokenId(avatar), demurragedAmount, "");
 
