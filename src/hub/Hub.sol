@@ -73,7 +73,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
      * new avatars can be invited by registered avatars. After this time
      * only registered avatars can invite new avatars.
      */
-    uint256 internal immutable invitationOnlyTime;
+    uint256 public immutable invitationOnlyTime;
 
     /**
      * @notice The standard treasury contract address used when

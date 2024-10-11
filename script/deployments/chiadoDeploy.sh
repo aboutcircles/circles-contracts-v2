@@ -74,8 +74,33 @@ V1_HUB_ADDRESS='0xdbF22D4e8962Db3b2F1d9Ff55be728A887e47710'
 # but like on mainnet we want to offset this to midnight to start day zero 
 # on the Feb 1 2023, which has unix time 1675209600
 INFLATION_DAY_ZERO=1675209600
-# put a long bootstrap time for testing bootstrap 
-BOOTSTRAP_ONE_YEAR=31540000
+
+# Set the bootstrap end date to Nov 15, 2024 23:59:59 UTC
+BOOTSTRAP_END_DATE="2024-11-15 23:59:59"
+
+# Function to convert UTC date to seconds since epoch
+utc_to_seconds() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS
+        date -j -u -f "%Y-%m-%d %H:%M:%S" "$1" "+%s"
+    else
+        # GNU/Linux
+        date -u -d "$1" "+%s"
+    fi
+}
+
+# Calculate the bootstrap period
+CURRENT_TIME=$(date -u +"%Y-%m-%d %H:%M:%S")
+BOOTSTRAP_END_SECONDS=$(utc_to_seconds "$BOOTSTRAP_END_DATE")
+CURRENT_TIME_SECONDS=$(utc_to_seconds "$CURRENT_TIME")
+BOOTSTRAP_PERIOD=$((BOOTSTRAP_END_SECONDS - CURRENT_TIME_SECONDS))
+
+# Ensure the bootstrap period is not negative
+if [ $BOOTSTRAP_PERIOD -lt 0 ]; then
+    echo "Error: The specified end date is in the past. Please update the BOOTSTRAP_END_DATE." >&2
+    exit 1
+fi
+
 # fallback URI 
 URI='https://gateway.aboutcircles.com/v1/circles/{id}.json'
 
@@ -133,7 +158,7 @@ HUB=$(deploy_and_store_details "Hub" $HUB_ADDRESS_01 \
   --constructor-args $V1_HUB_ADDRESS \
   $NAMEREGISTRY_ADDRESS_03 $MIGRATION_ADDRESS_02 $ERC20LIFT_ADDRESS_04 \
   $STANDARD_TREASURY_ADDRESS_05 $INFLATION_DAY_ZERO \
-  $BOOTSTRAP_ONE_YEAR $URI)
+  $BOOTSTRAP_PERIOD $URI)
 
 MIGRATION=$(deploy_and_store_details "Migration" $MIGRATION_ADDRESS_02 \
   src/migration/Migration.sol:Migration \
@@ -190,4 +215,10 @@ summary_file="${OUT_DIR}/chiado-${identifier}.log"
     echo "MastercopyDemurrageERC20: ${MC_ERC20_DEMURRAGE}"
     echo "MastercopyInflationaryERC20: ${MC_ERC20_INFLATION}"
     echo "MastercopyStandardVault: ${MC_STANDARD_VAULT}"
+    echo ""
+    echo "Bootstrap End Date: $BOOTSTRAP_END_DATE UTC"
+    echo "Current Time: $CURRENT_TIME UTC"
+    echo "Bootstrap Period: ${BOOTSTRAP_PERIOD} seconds"
+    echo "Bootstrap End Date (Unix time): $BOOTSTRAP_END_SECONDS"
+    echo "Current Time (Unix time): $CURRENT_TIME_SECONDS"
 } >> "$summary_file"
