@@ -95,7 +95,7 @@ For more details on Circles and details of the implementation please refer to [h
 
 4. The deploy script will create a folder locally on your machine:
     ```
-    <root>/script/deployments/gnosischain-rc-1.0.0-beta-<commit>-<day>-<time>/
+    <root>/script/deployments/gnosischain-rc-1.0.0-beta-bb1ed9a-<day>-<time>/
     ```
     with two important files (and extra helper files):
     - `gnosischain-artefacts-<identifier>.txt` with verification data for each deployed contract
