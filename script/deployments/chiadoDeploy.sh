@@ -203,7 +203,7 @@ summary_file="${OUT_DIR}/chiado-${identifier}.log"
     echo "Version: $(node -p "require('./package.json').version")"
     echo "Git Commit: $(git rev-parse HEAD)"
     echo "Deployer Address: $DEPLOYER_ADDRESS, Intitial nonce: $NONCE_USED"
-    echo "Compiler Version: v0.8.23+commit.f704f362" # todo: figure out where to extract this from
+    echo "Compiler Version: v0.8.24+commit.e11b9ed9"
     echo ""
     echo "Deployed Contracts:"
     echo "Hub: ${HUB}"
