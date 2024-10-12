@@ -1,0 +1,24 @@
+Chiado deployment
+=================
+Deployment Date: 2024-10-11 18:35:52
+Version: rc-0.3.7-beta
+Git Commit: 0a69b5570dfe3923a1aba226c161ebf2360a34a8
+Deployer Address: 0x7619F26728Ced663E50E578EB6ff42430931564c, Intitial nonce: 232
+Compiler Version: v0.8.23+commit.f704f362
+
+Deployed Contracts:
+Hub: 0x2DCD3A230D58a17e71C3DF8ce1f818dE8550d707
+Migration: 0xF012f3B9050E7b2082A59ceF6C468C4b1Ce59da6
+NameRegistry: 0x8cBcc6C8B9dE41e08E21C0011F2BE4A2793da018
+ERC20Lift: 0x78Bd902450245d68F89dAB1330312c35C8FCfBB5
+StandardTreasury: 0xccc1278A3e6353D5AAcD12a1e3715B13D1806684
+BaseGroupMintPolicy: 0x2F9ee26c2D5A40B71D887481B7D8fAa6752711F8
+MastercopyDemurrageERC20: 0x39b15b5d02351E4802d95362fA3C524766F65d06
+MastercopyInflationaryERC20: 0x402a0575267466a6de08DC87ff26b36d8363c2A0
+MastercopyStandardVault: 0xABD156E80Ef7F2625D163dc11EE31808D3295a10
+
+Bootstrap End Date: 2024-11-15 23:59:59 UTC
+Current Time: 2024-10-11 17:35:52 UTC
+Bootstrap Period: 3047047 seconds
+Bootstrap End Date (Unix time): 1731715199
+Current Time (Unix time): 1728668152

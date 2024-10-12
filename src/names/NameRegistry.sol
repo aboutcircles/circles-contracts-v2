@@ -17,15 +17,13 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
 
     /**
      * @notice The default name prefix for Circles
-     * @dev to test pre-release codes, we use a toy name prefix
-     * so that we can easily identify the test Circles
      */
-    string public constant DEFAULT_CIRCLES_NAME_PREFIX = "Rings-";
+    string public constant DEFAULT_CIRCLES_NAME_PREFIX = "Circles-";
 
     /**
      * @notice The default symbol for Circles
      */
-    string public constant DEFAULT_CIRCLES_SYMBOL = "RING";
+    string public constant DEFAULT_CIRCLES_SYMBOL = "CRC";
 
     // State variables
 

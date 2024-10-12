@@ -35,7 +35,7 @@ contract NamesTest is Test, HumanRegistration {
     function testShortName() public {
         // without a short name registered, first get the long name
         string memory longName = mockNameRegistry.getShortOrLongName(addresses[0]);
-        assertEq(longName, "Rings-3fNX29VBXc9WSxAT2dG3RYSfj6uX");
+        assertEq(longName, "Circles-3fNX29VBXc9WSxAT2dG3RYSfj6uX");
 
         // now register a short name
         vm.prank(addresses[0]);
@@ -43,7 +43,7 @@ contract NamesTest is Test, HumanRegistration {
 
         // and get the short name
         string memory shortName = mockNameRegistry.getShortOrLongName(addresses[0]);
-        assertEq(shortName, "Rings-Q6sQpEYS9Dg1");
+        assertEq(shortName, "Circles-Q6sQpEYS9Dg1");
 
         // can't register a second time
         vm.expectRevert();
@@ -55,7 +55,7 @@ contract NamesTest is Test, HumanRegistration {
         vm.prank(addresses[0]);
         mockNameRegistry.registerShortNameWithNonceNoChecks(839892892);
         string memory shortName = mockNameRegistry.getShortOrLongName(addresses[0]);
-        assertEq(shortName, "Rings-uNJGyf6sN6vY");
+        assertEq(shortName, "Circles-uNJGyf6sN6vY");
     }
 
     function testShortNameWithPadding() public {
@@ -65,7 +65,7 @@ contract NamesTest is Test, HumanRegistration {
         // but as a short name it shold be padded to 12 characters
         mockNameRegistry.storeShortName(addresses[0], 42);
         string memory shortName = mockNameRegistry.getShortOrLongName(addresses[0]);
-        assertEq(shortName, "Rings-11111111111j");
+        assertEq(shortName, "Circles-11111111111j");
     }
 
     function testBase58Conversion() public {
