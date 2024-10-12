@@ -18,12 +18,12 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
     /**
      * @notice The default name prefix for Circles
      */
-    string public constant DEFAULT_CIRCLES_NAME_PREFIX = "Circles-";
+    string public constant DEFAULT_CIRCLES_NAME_PREFIX = "Rings-";
 
     /**
      * @notice The default symbol for Circles
      */
-    string public constant DEFAULT_CIRCLES_SYMBOL = "CRC";
+    string public constant DEFAULT_CIRCLES_SYMBOL = "RING";
 
     // State variables
 
@@ -80,8 +80,8 @@ contract NameRegistry is Base58Converter, INameRegistry, INameRegistryErrors, IC
         hub = _hub;
 
         // register the hub itself in the name registry
-        customNames[address(_hub)] = "Circles";
-        customSymbols[address(_hub)] = "CRC";
+        customNames[address(_hub)] = "Rings";
+        customSymbols[address(_hub)] = "RING";
     }
 
     // External functions
