@@ -117,9 +117,6 @@ BOOTSTRAP_END_SECONDS=$(utc_to_seconds "$BOOTSTRAP_END_DATE")
 CURRENT_TIME_SECONDS=$(utc_to_seconds "$CURRENT_TIME")
 BOOTSTRAP_PERIOD=$((BOOTSTRAP_END_SECONDS - CURRENT_TIME_SECONDS))
 
-# temporarily for quick test, set bootstrap period to 10 seconds
-BOOTSTRAP_PERIOD=10
-
 # Ensure the bootstrap period is not negative
 if [ $BOOTSTRAP_PERIOD -lt 0 ]; then
     echo "Error: The specified end date is in the past. Please update the BOOTSTRAP_END_DATE." >&2
