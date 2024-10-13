@@ -73,13 +73,18 @@ For more details on Circles and details of the implementation please refer to [h
     ```
     git checkout rc-v1.0.0-beta
     ```
+2. If you haven't already, be sure to first build the code so that we separate that step from the deployment process (forge test will `build` and then run the unit tests).
+    ```
+    forge test
+    ```
 2. Copy `.env.example` to `.env` and set your private key; in particular for deployment the script only requires a private key for a deployer address on Gnosis Chain (with minimal funding, deployment costs are far less than 1 XDAI):
     ```
     PRIVATE_KEY_GNOSIS='YOUR_PRIVATE_KEY'
     ```
-3. Run the mainnet deployment script:
+3. Run the mainnet deployment script (CORRECTION: be sure to also run `npm install`):
     ```
     cd script/deployments
+    npm install
     ./gnosisChainDeploy.sh
     ```
     Forge SHOULD auto-configure the build parameters from the foundry.toml file,
