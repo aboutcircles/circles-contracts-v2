@@ -287,16 +287,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     function registerGroup(address _mint, string calldata _name, string calldata _symbol, bytes32 _metadataDigest)
         external
     {
-        _registerGroup(msg.sender, _mint, standardTreasury, _name, _symbol);
-
-        // for groups register possible custom name and symbol
-        _registerCustomName(_name);
-        nameRegistry.registerCustomSymbol(msg.sender, _symbol);
-
-        // store the IPFS CIDv0 digest for the group metadata
-        _setMetadataDigest(_metadataDigest);
-
-        emit RegisterGroup(msg.sender, _mint, standardTreasury, _name, _symbol);
+        registerCustomGroup(_mint, standardTreasury, _name, _symbol, _metadataDigest);
     }
 
     /**
@@ -313,7 +304,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         string calldata _name,
         string calldata _symbol,
         bytes32 _metadataDigest
-    ) external {
+    ) public {
         _registerGroup(msg.sender, _mint, _treasury, _name, _symbol);
 
         // for groups register possible custom name and symbol
