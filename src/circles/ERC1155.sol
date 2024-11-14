@@ -114,10 +114,7 @@ abstract contract ERC1155 is DiscountedBalances, Context, ERC165, IERC1155, IERC
      * @dev See {IERC1155-safeTransferFrom}.
      */
     function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes memory _data) public {
-        address sender = _msgSender();
-        if (_from != sender && !isApprovedForAll(_from, sender)) {
-            revert ERC1155MissingApprovalForAll(sender, _from);
-        }
+        _allowanceCheck(_from);
         _safeTransferFrom(_from, _to, _id, _value, _data);
     }
 
@@ -131,10 +128,7 @@ abstract contract ERC1155 is DiscountedBalances, Context, ERC165, IERC1155, IERC
         uint256[] memory _values,
         bytes memory _data
     ) public virtual {
-        address sender = _msgSender();
-        if (_from != sender && !isApprovedForAll(_from, sender)) {
-            revert ERC1155MissingApprovalForAll(sender, _from);
-        }
+        _allowanceCheck(_from);
         _safeBatchTransferFrom(_from, _to, _ids, _values, _data);
     }
 
@@ -214,6 +208,16 @@ abstract contract ERC1155 is DiscountedBalances, Context, ERC165, IERC1155, IERC
     ) internal virtual {
         _update(from, to, ids, values);
         _acceptanceCheck(from, to, ids, values, data);
+    }
+
+    /**
+     * @dev do the ERC1155 token the sender allowance check
+     */
+    function _allowanceCheck(address _from) internal view {
+        address sender = _msgSender();
+        if (_from != sender && !isApprovedForAll(_from, sender)) {
+            revert ERC1155MissingApprovalForAll(sender, _from);
+        }
     }
 
     /**

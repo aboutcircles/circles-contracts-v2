@@ -91,10 +91,7 @@ contract DiscountedBalances is Demurrage {
             // revert CirclesDemurrageAmountExceedsMaxUint192(_account, _id, _balance, 0);
             revert CirclesErrorAddressUintArgs(_account, _id, 0x81);
         }
-        DiscountedBalance memory discountedBalance = discountedBalances[_id][_account];
-        discountedBalance.balance = uint192(_balance);
-        discountedBalance.lastUpdatedDay = _day;
-        discountedBalances[_id][_account] = discountedBalance;
+        discountedBalances[_id][_account] = DiscountedBalance({balance: uint192(_balance), lastUpdatedDay: _day});
     }
 
     /**

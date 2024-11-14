@@ -273,7 +273,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
 
         // store the metadata digest for the avatar metadata
         if (_metadataDigest != bytes32(0)) {
-            nameRegistry.setMetadataDigest(msg.sender, _metadataDigest);
+            _setMetadataDigest(_metadataDigest);
         }
     }
 
@@ -287,16 +287,7 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
     function registerGroup(address _mint, string calldata _name, string calldata _symbol, bytes32 _metadataDigest)
         external
     {
-        _registerGroup(msg.sender, _mint, standardTreasury, _name, _symbol);
-
-        // for groups register possible custom name and symbol
-        nameRegistry.registerCustomName(msg.sender, _name);
-        nameRegistry.registerCustomSymbol(msg.sender, _symbol);
-
-        // store the IPFS CIDv0 digest for the group metadata
-        nameRegistry.setMetadataDigest(msg.sender, _metadataDigest);
-
-        emit RegisterGroup(msg.sender, _mint, standardTreasury, _name, _symbol);
+        registerCustomGroup(_mint, standardTreasury, _name, _symbol, _metadataDigest);
     }
 
     /**
@@ -313,15 +304,15 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         string calldata _name,
         string calldata _symbol,
         bytes32 _metadataDigest
-    ) external {
+    ) public {
         _registerGroup(msg.sender, _mint, _treasury, _name, _symbol);
 
         // for groups register possible custom name and symbol
-        nameRegistry.registerCustomName(msg.sender, _name);
+        _registerCustomName(_name);
         nameRegistry.registerCustomSymbol(msg.sender, _symbol);
 
         // store the metadata digest for the group metadata
-        nameRegistry.setMetadataDigest(msg.sender, _metadataDigest);
+        _setMetadataDigest(_metadataDigest);
 
         emit RegisterGroup(msg.sender, _mint, _treasury, _name, _symbol);
     }
@@ -335,10 +326,10 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
         _insertAvatar(msg.sender);
 
         // for organizations, only register possible custom name
-        nameRegistry.registerCustomName(msg.sender, _name);
+        _registerCustomName(_name);
 
         // store the IPFS CIDv0 digest for the organization metadata
-        nameRegistry.setMetadataDigest(msg.sender, _metadataDigest);
+        _setMetadataDigest(_metadataDigest);
 
         emit RegisterOrganization(msg.sender, _name);
     }
@@ -1227,5 +1218,21 @@ contract Hub is Circles, TypeDefinitions, IHubErrors {
 
         // update the expiry; checks must be done by caller
         trustMarker.expiry = _expiry;
+    }
+
+    /**
+     * @dev Calls nameRegistry to store the metadata digest.
+     * @param _metadataDigest sha256 metadata digest for the avatar metadata.
+     */
+    function _setMetadataDigest(bytes32 _metadataDigest) private {
+        nameRegistry.setMetadataDigest(msg.sender, _metadataDigest);
+    }
+
+    /**
+     * @dev Calls nameRegistry to register the custom name.
+     * @param _name immutable name of the group Circles or organization.
+     */
+    function _registerCustomName(string calldata _name) private {
+        nameRegistry.registerCustomName(msg.sender, _name);
     }
 }

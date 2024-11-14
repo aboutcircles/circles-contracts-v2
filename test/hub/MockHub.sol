@@ -4,6 +4,7 @@ pragma solidity >=0.8.24;
 import "../../src/hub/Hub.sol";
 
 contract MockHub is Hub {
+    bool public IS_TEST = true;
     // Constructor
 
     constructor(uint256 _inflationDayZero, uint256 _bootstrapTime)
