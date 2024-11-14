@@ -14,6 +14,7 @@ import "../lift/MockERC20Lift.sol";
 import "./MockHub.sol";
 
 contract MockDeployment {
+    bool public IS_TEST = true;
     // State variables
 
     MockHub public hub;

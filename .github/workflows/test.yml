@@ -2,9 +2,9 @@ name: test
 
 on: 
   push:
-    branches: [ master, develop ]
+    branches: [ master, develop, beta, candidate/stable ]
   pull_request:
-    branches: [ master, develop ]
+    branches: [ master, develop, beta, candidate/stable ]
   workflow_dispatch:
 
 env:
@@ -42,3 +42,13 @@ jobs:
         run: |
           forge test -vvv
         id: test
+      
+      - name: Print compiled non-test contract sizes
+        run: |
+          forge build --skip test --sizes
+        id: build-sizes
+      
+      - name: Print gas difference against a pre-existing snapshot
+        run: |
+          forge snapshot --diff
+        id: gas-diff

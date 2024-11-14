@@ -7,6 +7,7 @@ import "../../src/migration/IHub.sol";
 import "../../src/names/INameRegistry.sol";
 
 contract MockPathTransferHub is Hub {
+    bool public IS_TEST = true;
     // Constructor
 
     constructor(uint256 _inflationDayZero, uint256 _bootstrapTime)

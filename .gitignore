@@ -5,8 +5,6 @@ out/
 # docs
 
 
-# gas snapshot files
-.gas-snapshot
 
 # Ignores development broadcast logs
 !/broadcast
