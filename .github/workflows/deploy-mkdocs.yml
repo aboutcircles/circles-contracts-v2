@@ -6,59 +6,91 @@ on:
       - beta
       - candidate/stable
       - testdocs
+      
+permissions:
+  contents: write
+  pages: write
+  id-token: write
 
 jobs:
   deploy:
-    permissions:
-      contents: write      # This allows writing to the repository contents
-      pages: write         # This allows deploying to GitHub Pages
-      id-token: write      # This is required for requesting the JWT
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-
-      - name: Set up Conda
-        uses: conda-incubator/setup-miniconda@v2
+      - uses: actions/checkout@v4
         with:
-          auto-update-conda: true
-          python-version: 3.9
-
+          fetch-depth: 1
+          
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+          
       - name: Install dependencies
-        shell: bash -l {0}
         run: |
           cd docs/
-          conda install -c conda-forge --file requirements.txt
-
-      - name: Build Beta Docs
+          pip install -r requirements.txt
+          
+      - name: Build Beta Documentation
         run: |
+          git fetch --depth 1 origin beta:beta
           git checkout beta
           cd docs/
           mkdocs build
           mkdir -p ../gh-pages/beta
-          cp -R site/* ../gh-pages/beta
-
-      - name: Build Stable Docs
+          cp -R site/* ../gh-pages/beta/
+          
+      - name: Build Stable Documentation
         run: |
+          git fetch --depth 1 origin candidate/stable:candidate/stable
           git checkout candidate/stable
           cd docs/
           mkdocs build
           mkdir -p ../gh-pages/stable
-          cp -R site/* ../gh-pages/stable
-
+          cp -R site/* ../gh-pages/stable/
+          
       - name: Create Redirect Index
         run: |
-          echo '<!DOCTYPE html>
+          cat > ./gh-pages/index.html << 'EOF'
+          <!DOCTYPE html>
           <html>
-            <head>
-              <meta http-equiv="refresh" content="0; url=beta/" />
-            </head>
-            <body>
+          <head>
+              <title>Documentation Redirect</title>
+              <meta http-equiv="refresh" content="0; url=beta/">
+              <style>
+                  body {
+                      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                      max-width: 600px;
+                      margin: 50px auto;
+                      text-align: center;
+                      line-height: 1.6;
+                  }
+                  .links {
+                      margin-top: 20px;
+                  }
+                  a {
+                      color: #0366d6;
+                      text-decoration: none;
+                  }
+                  a:hover {
+                      text-decoration: underline;
+                  }
+              </style>
+          </head>
+          <body>
+              <h1>Documentation</h1>
               <p>Redirecting to the latest beta documentation...</p>
-            </body>
-          </html>' > ./gh-pages/index.html
+              <div class="links">
+                  <p>If you are not redirected, please choose a version:</p>
+                  <p><a href="beta/">Beta Documentation</a> | <a href="stable/">Stable Documentation</a></p>
+              </div>
+          </body>
+          </html>
+          EOF
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./gh-pages
+          force_orphan: true
