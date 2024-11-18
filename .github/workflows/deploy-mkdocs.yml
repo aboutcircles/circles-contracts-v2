@@ -5,6 +5,7 @@ on:
     branches:
       - beta
       - candidate/stable
+      - 20241118-docs-update-beta
       
 permissions:
   contents: write
@@ -39,14 +40,14 @@ jobs:
           mkdir -p ../gh-pages/beta
           cp -R site/* ../gh-pages/beta/
           
-      - name: Build Stable Documentation
+      - name: Build Candidate Stable Documentation
         run: |
           git fetch --depth 1 origin candidate/stable:candidate/stable
           git checkout candidate/stable
           cd docs/
           mkdocs build
-          mkdir -p ../gh-pages/stable
-          cp -R site/* ../gh-pages/stable/
+          mkdir -p ../gh-pages/candidate-stable
+          cp -R site/* ../gh-pages/candidate-stable/
           
       - name: Create Redirect Index
         run: |
@@ -81,7 +82,7 @@ jobs:
               <p>Redirecting to the latest beta documentation...</p>
               <div class="links">
                   <p>If you are not redirected, please choose a version:</p>
-                  <p><a href="beta/">Beta Documentation</a> | <a href="stable/">Stable Documentation</a></p>
+                  <p><a href="beta/">Beta Documentation</a> | <a href="candidate-stable/">Candidate Stable Documentation</a></p>
               </div>
           </body>
           </html>
