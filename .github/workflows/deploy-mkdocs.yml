@@ -5,7 +5,6 @@ on:
     branches:
       - beta
       - candidate/stable
-      - testdocs
       
 permissions:
   contents: write
