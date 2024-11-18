@@ -3,7 +3,9 @@ name: Deploy MkDocs to GitHub Pages
 on:
   push:
     branches:
-      - v0.3.6-docs
+      - beta
+      - candidate/stable
+      - testdocs
 
 jobs:
   deploy:
@@ -33,8 +35,47 @@ jobs:
           cd docs/
           mkdocs build
 
+      - name: Create Redirect Index
+        run: |
+          echo '<!DOCTYPE html>
+          <html>
+            <head>
+              <meta http-equiv="refresh" content="0; url=beta/" />
+            </head>
+            <body>
+              <p>Redirecting to the latest beta documentation...</p>
+            </body>
+          </html>' > ./docs/site/index.html
+
+      - name: Determine Deployment Directory
+        id: branch
+        run: |
+          if [[ "${GITHUB_REF_NAME}" == "beta" ]]; then
+            echo "DEPLOY_DIR=beta" >> $GITHUB_ENV
+          elif [[ "${GITHUB_REF_NAME}" == "candidate/stable" ]]; then
+            echo "DEPLOY_DIR=candidate" >> $GITHUB_ENV
+          else
+            echo "Unknown branch: ${GITHUB_REF_NAME}" && exit 1
+          fi
+
+      - name: Prepare Deployment Directory
+        run: |
+          mkdir -p ./gh-pages/${{ env.DEPLOY_DIR }}
+          cp -R ./docs/site/* ./gh-pages/${{ env.DEPLOY_DIR }}
+          if [[ "${GITHUB_REF_NAME}" == "beta" ]]; then
+            echo '<!DOCTYPE html>
+            <html>
+              <head>
+                <meta http-equiv="refresh" content="0; url=beta/" />
+              </head>
+              <body>
+                <p>Redirecting to the latest beta documentation...</p>
+              </body>
+            </html>' > ./gh-pages/index.html
+          fi
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs/site
+          publish_dir: ./gh-pages
