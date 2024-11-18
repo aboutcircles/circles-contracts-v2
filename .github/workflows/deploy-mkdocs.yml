@@ -29,11 +29,21 @@ jobs:
           cd docs/
           conda install -c conda-forge --file requirements.txt
 
-      - name: Build site
-        shell: bash -l {0}
+      - name: Build Beta Docs
         run: |
+          git checkout beta
           cd docs/
           mkdocs build
+          mkdir -p ../gh-pages/beta
+          cp -R site/* ../gh-pages/beta
+
+      - name: Build Stable Docs
+        run: |
+          git checkout candidate/stable
+          cd docs/
+          mkdocs build
+          mkdir -p ../gh-pages/stable
+          cp -R site/* ../gh-pages/stable
 
       - name: Create Redirect Index
         run: |
@@ -45,36 +55,7 @@ jobs:
             <body>
               <p>Redirecting to the latest beta documentation...</p>
             </body>
-          </html>' > ./docs/site/index.html
-
-      - name: Determine Deployment Directory
-        id: branch
-        run: |
-          if [[ "${GITHUB_REF_NAME}" == "beta" ]]; then
-            echo "DEPLOY_DIR=beta" >> $GITHUB_ENV
-          elif [[ "${GITHUB_REF_NAME}" == "candidate/stable" ]]; then
-            echo "DEPLOY_DIR=candidate" >> $GITHUB_ENV
-          elif [[ "${GITHUB_REF_NAME}" == "testdocs" ]]; then
-            echo "DEPLOY_DIR=test" >> $GITHUB_ENV
-          else
-            echo "Unknown branch: ${GITHUB_REF_NAME}" && exit 1
-          fi
-
-      - name: Prepare Deployment Directory
-        run: |
-          mkdir -p ./gh-pages/${{ env.DEPLOY_DIR }}
-          cp -R ./docs/site/* ./gh-pages/${{ env.DEPLOY_DIR }}
-          if [[ "${GITHUB_REF_NAME}" == "beta" ]]; then
-            echo '<!DOCTYPE html>
-            <html>
-              <head>
-                <meta http-equiv="refresh" content="0; url=beta/" />
-              </head>
-              <body>
-                <p>Redirecting to the latest beta documentation...</p>
-              </body>
-            </html>' > ./gh-pages/index.html
-          fi
+          </html>' > ./gh-pages/index.html
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
