@@ -33,8 +33,10 @@ jobs:
           
       - name: Build Beta Documentation
         run: |
-          git fetch --depth 1 origin beta:beta
-          git checkout beta
+          if [[ $GITHUB_REF != "refs/heads/beta" ]]; then
+            git fetch --depth 1 origin beta:beta
+            git checkout beta
+          fi
           cd docs/
           mkdocs build
           mkdir -p ../gh-pages/beta
@@ -42,8 +44,10 @@ jobs:
           
       - name: Build Candidate Stable Documentation
         run: |
-          git fetch --depth 1 origin candidate/stable:candidate/stable
-          git checkout candidate/stable
+          if [[ $GITHUB_REF != "refs/heads/candidate/stable" ]]; then
+            git fetch --depth 1 origin candidate/stable:candidate/stable
+            git checkout candidate/stable
+          fi
           cd docs/
           mkdocs build
           mkdir -p ../gh-pages/candidate-stable
