@@ -5,9 +5,15 @@ import {Test} from "forge-std/Test.sol";
 import {StdCheats} from "forge-std/StdCheats.sol";
 import {StorageSlot} from "@openzeppelin/contracts/utils/StorageSlot.sol";
 import "forge-std/console.sol";
-import "../../../src/groups/UpgradeableRenounceableProxy.sol";
-import "../../../src/errors/Errors.sol";
-import "../groupSetup.sol";
+import "src/errors/Errors.sol";
+import "test/groups/groupSetup.sol";
+import {
+    UpgradeableRenounceableProxy, IUpgradeableRenounceableProxy
+} from "src/groups/UpgradeableRenounceableProxy.sol";
+import {
+    MockMintPolicyWithSelectorClashes,
+    IMockMintPolicyWithSelectorClashes
+} from "test/groups/upgradeableProxy/mocks/MockMintPolicyWithSelectorClashes.sol";
 
 contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
     // Constants
@@ -18,6 +24,9 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
 
     address public group;
     IUpgradeableRenounceableProxy public proxy;
+    // copy of BaseMintPolicy
+    address public newMintPolicy;
+    address public mockMintPolicyWithSelectorClashes;
 
     // Constructor
 
@@ -43,9 +52,17 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
             vm.prank(group);
             hub.trust(addresses[i], INDEFINITE_FUTURE);
         }
+
+        // deploy a new copy of base mint policy
+        newMintPolicy = address(new MintPolicy());
+
+        // deploy a policy mock designed to simulate proxy selector clashes
+        mockMintPolicyWithSelectorClashes = address(new MockMintPolicyWithSelectorClashes());
     }
 
     // Tests
+
+    // External implementation() returns(address)
 
     function testGetImplementation() public {
         address implementation = proxy.implementation();
@@ -60,14 +77,16 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
      *       - test accessibility of interface functions from non-Admin callers
      */
 
-    function testUpgradeToAndCall() public {
+    // External upgradeToAndCall(address,bytes)
+
+    function testAdminUpgradeToAndCall() public {
         address originalImplementation = proxy.implementation();
         assertEq(originalImplementation, mintPolicy);
 
-        // deploy a new copy of base mint policy
-        address newMintPolicy = address(new MintPolicy());
+        // let's upgrade to implementation with selector clashes
+        _upgradeToAndCall(mockMintPolicyWithSelectorClashes, "");
 
-        // upgrade the proxy to the new implementation
+        // should upgrade the proxy to the new implementation as called by admin
         vm.prank(group);
         proxy.upgradeToAndCall(newMintPolicy, "");
 
@@ -77,6 +96,29 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
 
         // test minting to group with new policy
         _testGroupMintOwnCollateral(addresses[0], group, 1 * CRC);
+    }
+
+    function testNonAdminUpgradeToAndCall(address nonAdmin) public {
+        vm.assume(nonAdmin != group);
+
+        vm.prank(nonAdmin);
+        // should revert as proxy fallback after checking that caller is not admin
+        // redirects call to implementation, which doesn't have related selector
+        vm.expectRevert();
+        proxy.upgradeToAndCall(newMintPolicy, "");
+
+        // let's upgrade to implementation with selector clashes
+        _upgradeToAndCall(mockMintPolicyWithSelectorClashes, "");
+
+        vm.prank(nonAdmin);
+        (address returnedAddress, bytes memory returnedBytes) =
+            IMockMintPolicyWithSelectorClashes(address(proxy)).upgradeToAndCall(newMintPolicy, "newMintPolicy");
+        // should not call proxy native upgradeToAndCall as fallback must redirect call to the implementation,
+        // however should find a selector match inside the implementation and execute the implementation logic
+        assertEq(returnedAddress, newMintPolicy);
+        assertEq(keccak256(returnedBytes), keccak256("newMintPolicy"));
+        // implementation shouldn't be changed
+        assertEq(mockMintPolicyWithSelectorClashes, proxy.implementation(), "implementation has changed");
     }
 
     function testRenounceAdmin() public {
@@ -119,5 +161,14 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
         // check balance of group after mint
         uint256 balanceAfter = hub.balanceOf(_minter, tokenIdGroup);
         assertEq(balanceAfter, balanceBefore + _amount);
+    }
+
+    // @dev makes admin (set to group) upgradeToAndCall call until admin is not renounced
+    function _upgradeToAndCall(address newImplementation, bytes memory data) internal {
+        // upgrade the proxy to the new implementation
+        vm.prank(group);
+        proxy.upgradeToAndCall(newImplementation, data);
+        // should be new implementation
+        assertEq(newImplementation, proxy.implementation(), "upgrade to new implementation failed");
     }
 }
