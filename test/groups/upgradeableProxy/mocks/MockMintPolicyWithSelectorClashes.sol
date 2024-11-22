@@ -26,6 +26,6 @@ contract MockMintPolicyWithSelectorClashes is MintPolicy {
     }
 
     function renounceUpgradeability() external pure returns (bool) {
-        return false;
+        return true;
     }
 }

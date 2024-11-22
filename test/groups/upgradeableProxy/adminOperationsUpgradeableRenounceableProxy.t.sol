@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.8.13;
 
-import {Test} from "forge-std/Test.sol";
-import {StdCheats} from "forge-std/StdCheats.sol";
-import {StorageSlot} from "@openzeppelin/contracts/utils/StorageSlot.sol";
-import "forge-std/console.sol";
+import {console2, Test} from "forge-std/Test.sol";
 import "src/errors/Errors.sol";
 import "test/groups/groupSetup.sol";
 import {
@@ -64,9 +61,22 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
 
     // External implementation() returns(address)
 
-    function testGetImplementation() public {
+    function testGetImplementation(address anyCaller) public {
         address implementation = proxy.implementation();
         assertEq(implementation, mintPolicy);
+
+        // static call is hardcoded in the proxy, this means that function with the same
+        // selector in any implementation is unreachable (selector clashes)
+
+        // let's upgrade to implementation with selector clashes
+        _upgradeToAndCall(mockMintPolicyWithSelectorClashes, "");
+
+        vm.prank(anyCaller);
+        implementation = proxy.implementation();
+        // should not return the mockPolicy value
+        assertTrue(implementation != address(0xff));
+        // should return the current implementation
+        assertEq(implementation, mockMintPolicyWithSelectorClashes);
     }
 
     /* todo: - test getting admin from proxy
@@ -87,6 +97,7 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
         _upgradeToAndCall(mockMintPolicyWithSelectorClashes, "");
 
         // should upgrade the proxy to the new implementation as called by admin
+        // despite the fact that current implementation has upgradeToAndCall function with different logic
         vm.prank(group);
         proxy.upgradeToAndCall(newMintPolicy, "");
 
@@ -121,23 +132,76 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
         assertEq(mockMintPolicyWithSelectorClashes, proxy.implementation(), "implementation has changed");
     }
 
-    function testRenounceAdmin() public {
+    // External renounceUpgradeability()
+
+    function testAdminRenounceUpgradeability() public {
         // current admin
-        address admin = address(uint160(uint256(vm.load(address(proxy), ADMIN_SLOT))));
+        address admin = _readProxyAdminSlot();
         assertEq(admin, group);
 
-        // renounce admin
+        // let's upgrade to implementation with selector clashes
+        _upgradeToAndCall(mockMintPolicyWithSelectorClashes, "");
+
+        // should renounce admin as called by admin
+        // despite the fact that current implementation has renounceUpgradeability function with different logic
         vm.prank(group);
         proxy.renounceUpgradeability();
 
         // renounced admin
-        admin = address(uint160(uint256(vm.load(address(proxy), ADMIN_SLOT))));
+        admin = _readProxyAdminSlot();
         assertEq(admin, address(0x1));
+    }
 
-        // expect revert when trying to upgrade to implementation 0xdead
+    function testNonAdminRenounceUpgradeability(address nonAdmin) public {
+        vm.assume(nonAdmin != group);
+
+        vm.prank(nonAdmin);
+        // should revert as proxy fallback after checking that caller is not admin
+        // redirects call to implementation, which doesn't have related selector
+        vm.expectRevert();
+        proxy.renounceUpgradeability();
+
+        // let's upgrade to implementation with selector clashes
+        _upgradeToAndCall(mockMintPolicyWithSelectorClashes, "");
+
+        vm.prank(nonAdmin);
+        bool returnedBool = IMockMintPolicyWithSelectorClashes(address(proxy)).renounceUpgradeability();
+        // should not call proxy native renounceUpgradeability as fallback must redirect call to the implementation,
+        // however should find a selector match inside the implementation and execute the implementation logic
+        assertTrue(returnedBool);
+        // admin shouldn't be renounced
+        address admin = _readProxyAdminSlot();
+        assertEq(admin, group);
+    }
+
+    function testRenouncedAdminEqualNonAdmin() public {
+        // todo: update forge-std
+        uint256 snapshot = vm.snapshot();
+
+        // admin should experience same behaviour as non admin after renounced upgradeability
+
+        // default implementation
         vm.startPrank(group);
+        proxy.renounceUpgradeability();
+        vm.expectRevert();
+        proxy.renounceUpgradeability();
         vm.expectRevert();
         proxy.upgradeToAndCall(address(0xdead), "");
+        vm.stopPrank();
+
+        // let's revert to initial state to upgrade to implementation with selector clashes
+        vm.revertTo(snapshot);
+        _upgradeToAndCall(mockMintPolicyWithSelectorClashes, "");
+
+        // implementation with selector clashes
+        vm.startPrank(group);
+        proxy.renounceUpgradeability();
+        bool returnedBool = IMockMintPolicyWithSelectorClashes(address(proxy)).renounceUpgradeability();
+        assertTrue(returnedBool);
+        (address returnedAddress, bytes memory returnedBytes) =
+            IMockMintPolicyWithSelectorClashes(address(proxy)).upgradeToAndCall(newMintPolicy, "newMintPolicy");
+        assertEq(returnedAddress, newMintPolicy);
+        assertEq(keccak256(returnedBytes), keccak256("newMintPolicy"));
         vm.stopPrank();
     }
 
@@ -170,5 +234,9 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
         proxy.upgradeToAndCall(newImplementation, data);
         // should be new implementation
         assertEq(newImplementation, proxy.implementation(), "upgrade to new implementation failed");
+    }
+
+    function _readProxyAdminSlot() internal view returns (address admin) {
+        admin = address(uint160(uint256(vm.load(address(proxy), ADMIN_SLOT))));
     }
 }
