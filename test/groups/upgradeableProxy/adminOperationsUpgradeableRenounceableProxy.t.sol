@@ -16,6 +16,7 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
     // Constants
 
     bytes32 internal constant ADMIN_SLOT = 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
+    bytes32 internal constant IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
     // State variables
 
@@ -64,6 +65,7 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
     function testGetImplementation(address anyCaller) public {
         address implementation = proxy.implementation();
         assertEq(implementation, mintPolicy);
+        assertEq(implementation, _readImplementationSlot());
 
         // static call is hardcoded in the proxy, this means that function with the same
         // selector in any implementation is unreachable (selector clashes)
@@ -77,14 +79,15 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
         assertTrue(implementation != address(0xff));
         // should return the current implementation
         assertEq(implementation, mockMintPolicyWithSelectorClashes);
+        assertEq(implementation, _readImplementationSlot());
     }
 
-    /* todo: - test getting admin from proxy
+    /* todo: - test getting admin from proxy (DONE)
      *       - test admin cannot be changed
      *       - test noone else can call upgradeToAndCall
      *       - test upgradeToAndCall with call data
      *       - test renouncing admin (DONE)
-     *       - test accessibility of interface functions from non-Admin callers
+     *       - test accessibility of interface functions from non-Admin callers (DONE)
      */
 
     // External upgradeToAndCall(address,bytes)
@@ -238,5 +241,9 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
 
     function _readProxyAdminSlot() internal view returns (address admin) {
         admin = address(uint160(uint256(vm.load(address(proxy), ADMIN_SLOT))));
+    }
+
+    function _readImplementationSlot() internal view returns (address implementation) {
+        implementation = address(uint160(uint256(vm.load(address(proxy), IMPLEMENTATION_SLOT))));
     }
 }
