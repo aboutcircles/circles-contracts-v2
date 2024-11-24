@@ -190,6 +190,11 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
         IMockMintPolicyExtended(address(proxy)).setProxyAdmin(address(this));
         vm.expectRevert();
         IMockMintPolicyExtended(address(proxy)).setProxyImplementation(address(this), "");
+
+        // proxy admin should be able to make delegate call to implementation
+        vm.prank(group);
+        IMockMintPolicyExtended(address(proxy)).setWhitelisted(address(this), true);
+        assertTrue(IMockMintPolicyExtended(address(proxy)).isWhitelisted(address(this)));
     }
 
     // External renounceUpgradeability()
@@ -264,6 +269,14 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
         assertEq(returnedAddress, newMintPolicy);
         assertEq(keccak256(returnedBytes), keccak256("newMintPolicy"));
         vm.stopPrank();
+    }
+
+    // External receive()
+
+    function testReceive(address anyAddress) public {
+        vm.deal(anyAddress, 1 ether);
+        vm.expectRevert(UpgradeableRenounceableProxy.BlockReceive.selector);
+        address(proxy).call{value: 1 ether}("");
     }
 
     // Internal functions
