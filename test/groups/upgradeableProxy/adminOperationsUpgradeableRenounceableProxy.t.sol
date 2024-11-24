@@ -11,6 +11,10 @@ import {
     MockMintPolicyWithSelectorClashes,
     IMockMintPolicyWithSelectorClashes
 } from "test/groups/upgradeableProxy/mocks/MockMintPolicyWithSelectorClashes.sol";
+import {
+    MockMintPolicyExtended,
+    IMockMintPolicyExtended
+} from "test/groups/upgradeableProxy/mocks/MockMintPolicyExtended.sol";
 
 contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
     // Constants
@@ -25,6 +29,8 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
     // copy of BaseMintPolicy
     address public newMintPolicy;
     address public mockMintPolicyWithSelectorClashes;
+    address public mockMintPolicyExtended;
+    address public whitelistAdmin;
 
     // Constructor
 
@@ -56,6 +62,11 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
 
         // deploy a policy mock designed to simulate proxy selector clashes
         mockMintPolicyWithSelectorClashes = address(new MockMintPolicyWithSelectorClashes());
+
+        // deploy a policy mock designed to test implementation with state and bypass renounce upgradeability
+        mockMintPolicyExtended = address(new MockMintPolicyExtended());
+        // set whitelist admin for mock mint policy extended
+        whitelistAdmin = makeAddr("mockMintPolicyExtendedWhitelistAdmin");
     }
 
     // Tests
@@ -133,6 +144,13 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
         assertEq(keccak256(returnedBytes), keccak256("newMintPolicy"));
         // implementation shouldn't be changed
         assertEq(mockMintPolicyWithSelectorClashes, proxy.implementation(), "implementation has changed");
+    }
+
+    function testUpgradeToAndCallWithCalldata() public {
+        bytes4 initializeSelector = bytes4(keccak256("initialize(address,address[])"));
+        // encode whitelist admin and initial list of whitelisted addresses
+        bytes memory data = abi.encodeWithSelector(initializeSelector, whitelistAdmin, addresses);
+        _upgradeToAndCall(mockMintPolicyExtended, data);
     }
 
     // External renounceUpgradeability()
