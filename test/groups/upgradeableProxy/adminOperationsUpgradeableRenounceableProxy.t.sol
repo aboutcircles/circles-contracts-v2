@@ -97,8 +97,8 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
     }
 
     /* todo: - test getting admin from proxy (DONE)
-     *       - test admin cannot be changed
-     *       - test noone else can call upgradeToAndCall
+     *       - test admin cannot be changed (FAILED)
+     *       - test noone else can call upgradeToAndCall (FAILED)
      *       - test upgradeToAndCall with call data (DONE)
      *       - test renouncing admin (DONE)
      *       - test accessibility of interface functions from non-Admin callers (DONE)
@@ -276,7 +276,53 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
     function testReceive(address anyAddress) public {
         vm.deal(anyAddress, 1 ether);
         vm.expectRevert(UpgradeableRenounceableProxy.BlockReceive.selector);
-        address(proxy).call{value: 1 ether}("");
+        (bool success,) = address(proxy).call{value: 1 ether}("");
+        console2.log(success);
+    }
+
+    // Test admin cannot be changed
+
+    // failed test demonstrates that admin can be changed to any address, however it doesn't make sense
+    // since newAdmin != ADMIN_INIT. it make sense only when upgradeability is renounced to revert this action.
+    function testFail_AdminCannotBeChanged(address newAdmin) public {
+        vm.assume(newAdmin != group);
+        // upgrade to mock mint policy extended
+        _upgradeToAndCall(mockMintPolicyExtended, _defaultMockExtendedData(whitelistAdmin));
+
+        address proxyAdmin = _readProxyAdminSlot();
+        assertEq(proxyAdmin, group);
+
+        // should not change admin
+        vm.prank(whitelistAdmin);
+        // vm.expectRevert();
+        IMockMintPolicyExtended(address(proxy)).setProxyAdmin(newAdmin);
+
+        proxyAdmin = _readProxyAdminSlot();
+        assertTrue(proxyAdmin != newAdmin);
+    }
+
+    // Test noone else can call upgradeToAndCall
+
+    // failed test demonstrates that implementation can be changed by any address (everyone can call upgradeToAndCall)
+    function testFail_NonAdminCannotCallUpgradeToAndCall(address anyAddress) public {
+        vm.assume(anyAddress != group);
+        // upgrade to mock mint policy extended
+        _upgradeToAndCall(mockMintPolicyExtended, _defaultMockExtendedData(whitelistAdmin));
+
+        address implementation = _readImplementationSlot();
+        assertEq(implementation, mockMintPolicyExtended);
+
+        // make any address whitelist admin
+        vm.prank(whitelistAdmin);
+        IMockMintPolicyExtended(address(proxy)).changeWhitelistAdmin(anyAddress);
+
+        // any address should not be able to call upgradeToAndCall
+        vm.prank(anyAddress);
+        // vm.expectRevert();
+        IMockMintPolicyExtended(address(proxy)).setProxyImplementation(mintPolicy, "");
+
+        implementation = _readImplementationSlot();
+        assertTrue(implementation != mintPolicy);
     }
 
     // Internal functions
@@ -301,7 +347,7 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
         assertEq(balanceAfter, balanceBefore + _amount);
     }
 
-    // @dev makes admin (set to group) upgradeToAndCall call until admin is not renounced
+    /// @dev makes admin (set to group) upgradeToAndCall call until admin is not renounced
     function _upgradeToAndCall(address newImplementation, bytes memory data) internal {
         // upgrade the proxy to the new implementation
         _expectEmitUpgradedEvent(newImplementation);
@@ -309,6 +355,14 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
         proxy.upgradeToAndCall(newImplementation, data);
         // should be new implementation
         assertEq(newImplementation, proxy.implementation(), "upgrade to new implementation failed");
+    }
+
+    /// @dev returns encoded data for mock mint policy extended initialization
+    function _defaultMockExtendedData(address _whitelistAdmin) internal pure returns (bytes memory data) {
+        bytes4 initializeSelector = bytes4(keccak256("initialize(address,address[])"));
+        address[] memory emptyList;
+        // encode whitelist admin and empty initial list
+        data = abi.encodeWithSelector(initializeSelector, _whitelistAdmin, emptyList);
     }
 
     /// @dev should emit Upgraded event
