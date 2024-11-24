@@ -4,6 +4,7 @@ pragma solidity >=0.8.13;
 import {console2, Test} from "forge-std/Test.sol";
 import "src/errors/Errors.sol";
 import "test/groups/groupSetup.sol";
+import {ERC1967Utils} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
 import {
     UpgradeableRenounceableProxy, IUpgradeableRenounceableProxy
 } from "src/groups/UpgradeableRenounceableProxy.sol";
@@ -87,7 +88,9 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
         vm.prank(anyCaller);
         implementation = proxy.implementation();
         // should not return the mockPolicy value
-        assertTrue(implementation != address(0xff));
+        assertTrue(
+            implementation != IMockMintPolicyWithSelectorClashes(mockMintPolicyWithSelectorClashes).implementation()
+        );
         // should return the current implementation
         assertEq(implementation, mockMintPolicyWithSelectorClashes);
         assertEq(implementation, _readImplementationSlot());
@@ -96,7 +99,7 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
     /* todo: - test getting admin from proxy (DONE)
      *       - test admin cannot be changed
      *       - test noone else can call upgradeToAndCall
-     *       - test upgradeToAndCall with call data
+     *       - test upgradeToAndCall with call data (DONE)
      *       - test renouncing admin (DONE)
      *       - test accessibility of interface functions from non-Admin callers (DONE)
      */
@@ -112,6 +115,7 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
 
         // should upgrade the proxy to the new implementation as called by admin
         // despite the fact that current implementation has upgradeToAndCall function with different logic
+        _expectEmitUpgradedEvent(newMintPolicy);
         vm.prank(group);
         proxy.upgradeToAndCall(newMintPolicy, "");
 
@@ -151,6 +155,41 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
         // encode whitelist admin and initial list of whitelisted addresses
         bytes memory data = abi.encodeWithSelector(initializeSelector, whitelistAdmin, addresses);
         _upgradeToAndCall(mockMintPolicyExtended, data);
+        // proxy state should be initialized
+        assertEq(whitelistAdmin, IMockMintPolicyExtended(address(proxy)).getWhitelistAdmin());
+        for (uint256 i; i < addresses.length;) {
+            assertTrue(IMockMintPolicyExtended(address(proxy)).isWhitelisted(addresses[i]));
+            unchecked {
+                ++i;
+            }
+        }
+        // initialize should not be called twice
+        vm.expectRevert();
+        IMockMintPolicyExtended(address(proxy)).initialize(group, addresses);
+
+        // beforeMintPolicy should be overridden correctly
+        uint256[] memory empty;
+        address random = makeAddr("random");
+        assertTrue(!IMockMintPolicyExtended(address(proxy)).beforeMintPolicy(random, group, empty, empty, ""));
+        assertTrue(IMockMintPolicyExtended(address(proxy)).beforeMintPolicy(addresses[1], group, empty, empty, ""));
+
+        // new functions should work correctly
+        vm.prank(whitelistAdmin);
+        IMockMintPolicyExtended(address(proxy)).setWhitelisted(random, true);
+        assertTrue(IMockMintPolicyExtended(address(proxy)).beforeMintPolicy(random, group, empty, empty, ""));
+
+        vm.prank(whitelistAdmin);
+        IMockMintPolicyExtended(address(proxy)).changeWhitelistAdmin(group);
+        assertEq(group, IMockMintPolicyExtended(address(proxy)).getWhitelistAdmin());
+        // not whitelisted admin
+        vm.expectRevert();
+        IMockMintPolicyExtended(address(proxy)).setWhitelisted(address(this), true);
+        vm.expectRevert();
+        IMockMintPolicyExtended(address(proxy)).changeWhitelistAdmin(address(this));
+        vm.expectRevert();
+        IMockMintPolicyExtended(address(proxy)).setProxyAdmin(address(this));
+        vm.expectRevert();
+        IMockMintPolicyExtended(address(proxy)).setProxyImplementation(address(this), "");
     }
 
     // External renounceUpgradeability()
@@ -165,6 +204,7 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
 
         // should renounce admin as called by admin
         // despite the fact that current implementation has renounceUpgradeability function with different logic
+        _expectEmitAdminChangedEvent(group, address(0x1));
         vm.prank(group);
         proxy.renounceUpgradeability();
 
@@ -251,10 +291,23 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
     // @dev makes admin (set to group) upgradeToAndCall call until admin is not renounced
     function _upgradeToAndCall(address newImplementation, bytes memory data) internal {
         // upgrade the proxy to the new implementation
+        _expectEmitUpgradedEvent(newImplementation);
         vm.prank(group);
         proxy.upgradeToAndCall(newImplementation, data);
         // should be new implementation
         assertEq(newImplementation, proxy.implementation(), "upgrade to new implementation failed");
+    }
+
+    /// @dev should emit Upgraded event
+    function _expectEmitUpgradedEvent(address newImplementation) internal {
+        vm.expectEmit(true, true, true, true);
+        emit ERC1967Utils.Upgraded(newImplementation);
+    }
+
+    /// @dev should emit AdminChanged event
+    function _expectEmitAdminChangedEvent(address previousAdmin, address newAdmin) internal {
+        vm.expectEmit(true, true, true, true);
+        emit ERC1967Utils.AdminChanged(previousAdmin, newAdmin);
     }
 
     function _readProxyAdminSlot() internal view returns (address admin) {

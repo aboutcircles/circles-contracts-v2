@@ -4,6 +4,7 @@ pragma solidity >=0.8.13;
 import {MintPolicy} from "src/groups/BaseMintPolicy.sol";
 
 interface IMockMintPolicyWithSelectorClashes {
+    function implementation() external pure returns (address);
     function upgradeToAndCall(address _newImplementation, bytes memory _data)
         external
         returns (address, bytes memory);

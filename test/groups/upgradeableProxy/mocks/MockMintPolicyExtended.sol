@@ -6,6 +6,8 @@ import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.s
 import {ERC1967Utils} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
 
 interface IMockMintPolicyExtended is IMintPolicy {
+    function initialize(address _admin, address[] calldata _initWhitelist) external;
+    function setProxyAdmin(address newAdmin) external;
     function setProxyImplementation(address newImplementation, bytes memory data) external;
     function changeWhitelistAdmin(address newWhitelistAdmin) external;
     function setWhitelisted(address minter, bool whitelist) external;
