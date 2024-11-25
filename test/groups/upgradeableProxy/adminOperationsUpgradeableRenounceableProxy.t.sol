@@ -276,6 +276,7 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
     function testReceive(address anyAddress) public {
         vm.deal(anyAddress, 1 ether);
         vm.expectRevert(UpgradeableRenounceableProxy.BlockReceive.selector);
+        vm.prank(anyAddress);
         (bool success,) = address(proxy).call{value: 1 ether}("");
         console2.log(success);
     }
