@@ -15,6 +15,9 @@ contract UpgradeableRenounceableProxy is ERC1967Proxy {
 
     error BlockReceive();
 
+    /// The implementation interacts with the native functionality of the proxy
+    error ProxyNative();
+
     // Constants
 
     /// @dev Initial proxy admin.
@@ -46,6 +49,46 @@ contract UpgradeableRenounceableProxy is ERC1967Proxy {
             _dispatchAdmin();
         } else {
             super._fallback();
+        }
+    }
+
+    /// @dev Overriding to add a check admin and implementation slots are not rewritten
+    function _delegate(address implementation) internal virtual override {
+        address proxyAdmin = ERC1967Utils.getAdmin();
+        assembly {
+            //
+            function assertValuesEqualOrRevertProxyNativeError(prevValue, currValue) {
+                switch eq(prevValue, currValue)
+                case 0 {
+                    // ProxyNative
+                    mstore(0, 0x73afa62800000000000000000000000000000000000000000000000000000000)
+                    revert(0, 0x20)
+                }
+            }
+
+            // Copy msg.data. We take full control of memory in this inline assembly
+            // block because it will not return to Solidity code. We overwrite the
+            // Solidity scratch pad at memory position 0.
+            calldatacopy(0, 0, calldatasize())
+
+            // Call the implementation.
+            // out and outsize are 0 because we don't know the size yet.
+            let result := delegatecall(gas(), implementation, 0, calldatasize(), 0, 0)
+
+            // Copy the returned data.
+            returndatacopy(0, 0, returndatasize())
+            switch result
+            // delegatecall returns 0 on error.
+            case 0 { revert(0, returndatasize()) }
+            default {
+                // ERC1967Utils.IMPLEMENTATION_SLOT
+                let postImplementation := sload(0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc)
+                assertValuesEqualOrRevertProxyNativeError(implementation, postImplementation)
+                // ERC1967Utils.ADMIN_SLOT
+                let postAdmin := sload(0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103)
+                assertValuesEqualOrRevertProxyNativeError(proxyAdmin, postAdmin)
+                return(0, returndatasize())
+            }
         }
     }
 
