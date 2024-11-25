@@ -347,7 +347,7 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
         assertEq(balanceAfter, balanceBefore + _amount);
     }
 
-    /// @dev makes admin (set to group) upgradeToAndCall call until admin is not renounced
+    /// @dev calls the upgradeToAndCall function by the proxy admin (works until admin is renounced)
     function _upgradeToAndCall(address newImplementation, bytes memory data) internal {
         // upgrade the proxy to the new implementation
         _expectEmitUpgradedEvent(newImplementation);
