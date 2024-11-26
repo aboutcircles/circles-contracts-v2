@@ -15,7 +15,7 @@ contract UpgradeableRenounceableProxy is ERC1967Proxy {
 
     error BlockReceive();
 
-    /// The implementation interacts with the native functionality of the proxy.
+    /// Triggered when the delegatecall modifies values, indicating a violation of proxy-native functionality.
     error ProxyNative();
 
     // Constants
@@ -84,7 +84,7 @@ contract UpgradeableRenounceableProxy is ERC1967Proxy {
                 ) {
                     // revert with ProxyNative error, as delegatecall has modified values (proxy-native functionality)
                     mstore(0, errorProxyNative)
-                    revert(0, 0x20)
+                    revert(0, 0x04)
                 }
                 return(0, returndatasize())
             }
