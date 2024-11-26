@@ -6,7 +6,7 @@ import {ERC1967Utils} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.s
 
 interface IUpgradeableRenounceableProxy {
     function implementation() external view returns (address);
-    function upgradeToAndCall(address _newImplementation, bytes memory _data) external;
+    function upgradeToAndCall(address newImplementation, bytes memory data) external;
     function renounceUpgradeability() external;
 }
 
@@ -18,18 +18,11 @@ contract UpgradeableRenounceableProxy is ERC1967Proxy {
     /// Triggered when the delegatecall modifies values, indicating a violation of proxy-native functionality.
     error ProxyNative();
 
-    // Constants
-
-    /// @dev Initial proxy admin.
-    address internal immutable ADMIN_INIT;
-
     // Constructor
 
     constructor(address _implementation, bytes memory _data) ERC1967Proxy(_implementation, _data) {
         // set the admin to the deployer
         ERC1967Utils.changeAdmin(msg.sender);
-        // set the admin as immutable
-        ADMIN_INIT = msg.sender;
     }
 
     /// @dev Handles proxy function calls: attempts to dispatch to a specific
@@ -45,10 +38,10 @@ contract UpgradeableRenounceableProxy is ERC1967Proxy {
             }
         }
         // dispatch if caller is admin, otherwise delegate to the implementation
-        if (msg.sender == ADMIN_INIT && msg.sender == ERC1967Utils.getAdmin()) {
+        if (msg.sender == ERC1967Utils.getAdmin()) {
             _dispatchAdmin();
         } else {
-            super._fallback();
+            _delegate(_implementation());
         }
     }
 
