@@ -41,6 +41,8 @@ contract UpgradeableRenounceableProxy is ERC1967Proxy {
         if (msg.sender == ERC1967Utils.getAdmin()) {
             _dispatchAdmin();
         } else {
+            // in principle this can allow the admin to reenter the proxy,
+            // and hot swap the implementation.
             _delegate(_implementation());
         }
     }
