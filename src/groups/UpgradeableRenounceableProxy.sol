@@ -6,7 +6,7 @@ import {ERC1967Utils} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.s
 
 interface IUpgradeableRenounceableProxy {
     function implementation() external view returns (address);
-    function upgradeToAndCall(address _newImplementation, bytes memory _data) external;
+    function upgradeToAndCall(address newImplementation, bytes memory data) external;
     function renounceUpgradeability() external;
 }
 
@@ -15,18 +15,14 @@ contract UpgradeableRenounceableProxy is ERC1967Proxy {
 
     error BlockReceive();
 
-    // Constants
-
-    /// @dev Initial proxy admin.
-    address internal immutable ADMIN_INIT;
+    /// Triggered when the delegatecall modifies values, indicating a violation of proxy-native functionality.
+    error ProxyNative();
 
     // Constructor
 
     constructor(address _implementation, bytes memory _data) ERC1967Proxy(_implementation, _data) {
         // set the admin to the deployer
         ERC1967Utils.changeAdmin(msg.sender);
-        // set the admin as immutable
-        ADMIN_INIT = msg.sender;
     }
 
     /// @dev Handles proxy function calls: attempts to dispatch to a specific
@@ -42,10 +38,51 @@ contract UpgradeableRenounceableProxy is ERC1967Proxy {
             }
         }
         // dispatch if caller is admin, otherwise delegate to the implementation
-        if (msg.sender == ADMIN_INIT && msg.sender == ERC1967Utils.getAdmin()) {
+        if (msg.sender == ERC1967Utils.getAdmin()) {
             _dispatchAdmin();
         } else {
-            super._fallback();
+            // in principle this can allow the admin to reenter the proxy,
+            // and hot swap the implementation.
+            _delegate(_implementation());
+        }
+    }
+
+    /// @dev Overrides the function to add a check that prevents rewriting of admin and implementation slots.
+    function _delegate(address implementation) internal virtual override {
+        bytes32 adminSlot = ERC1967Utils.ADMIN_SLOT;
+        bytes32 implementationSlot = ERC1967Utils.IMPLEMENTATION_SLOT;
+        bytes32 errorProxyNative = ProxyNative.selector;
+        assembly {
+            // put the admin value on the stack before delegatecall (the implementation value has already been read and is on the stack)
+            let originalAdminValue := sload(adminSlot)
+            // Copy msg.data. We take full control of memory in this inline assembly
+            // block because it will not return to Solidity code. We overwrite the
+            // Solidity scratch pad at memory position 0.
+            calldatacopy(0, 0, calldatasize())
+
+            // Call the implementation.
+            // out and outsize are 0 because we don't know the size yet.
+            let result := delegatecall(gas(), implementation, 0, calldatasize(), 0, 0)
+
+            // Copy the returned data.
+            returndatacopy(0, 0, returndatasize())
+            switch result
+            // delegatecall returns 0 on error.
+            case 0 { revert(0, returndatasize()) }
+            default {
+                // read the values after the delegatecall
+                let currentAdminValue := sload(adminSlot)
+                let currentImplementationValue := sload(implementationSlot)
+                // check that the values remain unchanged
+                if iszero(
+                    and(eq(originalAdminValue, currentAdminValue), eq(implementation, currentImplementationValue))
+                ) {
+                    // revert with ProxyNative error, as delegatecall has modified values (proxy-native functionality)
+                    mstore(0, errorProxyNative)
+                    revert(0, 0x04)
+                }
+                return(0, returndatasize())
+            }
         }
     }
 

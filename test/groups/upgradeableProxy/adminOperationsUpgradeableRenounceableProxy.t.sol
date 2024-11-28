@@ -96,14 +96,6 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
         assertEq(implementation, _readImplementationSlot());
     }
 
-    /* todo: - test getting admin from proxy (DONE)
-     *       - test admin cannot be changed (FAILED)
-     *       - test noone else can call upgradeToAndCall (FAILED)
-     *       - test upgradeToAndCall with call data (DONE)
-     *       - test renouncing admin (DONE)
-     *       - test accessibility of interface functions from non-Admin callers (DONE)
-     */
-
     // External upgradeToAndCall(address,bytes)
 
     function testAdminUpgradeToAndCall() public {
@@ -281,12 +273,10 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
         console2.log(success);
     }
 
-    // Test admin cannot be changed
+    // Test admin cannot be modified
 
-    // failed test demonstrates that admin can be changed to any address, however it doesn't make sense
-    // since newAdmin != ADMIN_INIT. it make sense only when upgradeability is renounced to revert this action.
-    function testFail_AdminCannotBeChanged(address newAdmin) public {
-        vm.assume(newAdmin != group);
+    function testAdminCannotBeModified(address newAdmin) public {
+        vm.assume(newAdmin != group && newAdmin != address(0));
         // upgrade to mock mint policy extended
         _upgradeToAndCall(mockMintPolicyExtended, _defaultMockExtendedData(whitelistAdmin));
 
@@ -295,7 +285,7 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
 
         // should not change admin
         vm.prank(whitelistAdmin);
-        // vm.expectRevert();
+        vm.expectRevert(UpgradeableRenounceableProxy.ProxyNative.selector);
         IMockMintPolicyExtended(address(proxy)).setProxyAdmin(newAdmin);
 
         proxyAdmin = _readProxyAdminSlot();
@@ -304,8 +294,7 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
 
     // Test noone else can call upgradeToAndCall
 
-    // failed test demonstrates that implementation can be changed by any address (everyone can call upgradeToAndCall)
-    function testFail_NonAdminCannotCallUpgradeToAndCall(address anyAddress) public {
+    function testNonAdminCannotCallUpgradeToAndCall(address anyAddress) public {
         vm.assume(anyAddress != group);
         // upgrade to mock mint policy extended
         _upgradeToAndCall(mockMintPolicyExtended, _defaultMockExtendedData(whitelistAdmin));
@@ -319,7 +308,7 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
 
         // any address should not be able to call upgradeToAndCall
         vm.prank(anyAddress);
-        // vm.expectRevert();
+        vm.expectRevert(UpgradeableRenounceableProxy.ProxyNative.selector);
         IMockMintPolicyExtended(address(proxy)).setProxyImplementation(mintPolicy, "");
 
         implementation = _readImplementationSlot();
