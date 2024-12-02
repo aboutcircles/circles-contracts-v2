@@ -34,7 +34,7 @@ contract usePolicyUpgradeableRenounceableProxyTest is Test, GroupSetup {
     }
 
     function testMintGroupWithProxyPolicy() public {
-        UpgradeableRenounceableProxy proxy = _createGroupWithProxyPolicy();
+        _createGroupWithProxyPolicy();
 
         address alice = addresses[0];
 
