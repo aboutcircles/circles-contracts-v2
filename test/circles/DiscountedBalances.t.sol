@@ -5,7 +5,7 @@ import {console2, Test} from "forge-std/Test.sol";
 import {TimeCirclesSetup} from "../setup/TimeCirclesSetup.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {ICirclesCompactErrors, ICirclesDemurrageErrors} from "src/errors/Errors.sol";
-import {IDiscountedBalances, MockDiscountedBalances} from "./MockDiscountedBalances.sol";
+import {IDiscountedBalances, MockDiscountedBalances} from "test/circles/mocks/MockDiscountedBalances.sol";
 
 contract DiscountedBalancesTest is Test, TimeCirclesSetup, ICirclesCompactErrors, ICirclesDemurrageErrors {
     MockDiscountedBalances public discountedBalances;

@@ -6,7 +6,7 @@ import {StdCheats} from "forge-std/StdCheats.sol";
 import "forge-std/console.sol";
 import "../setup/TimeCirclesSetup.sol";
 import "../utils/Approximation.sol";
-import "./MockDemurrage.sol";
+import "test/circles/mocks/MockDemurrage.sol";
 
 contract DemurrageTest is Test, TimeCirclesSetup, Approximation {
     // State variables

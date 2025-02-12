@@ -4,7 +4,7 @@ pragma solidity >=0.8.13;
 import {Test} from "forge-std/Test.sol";
 import {StdCheats} from "forge-std/StdCheats.sol";
 import "forge-std/console.sol";
-import "./MockCircles.sol";
+import "test/circles/mocks/MockCircles.sol";
 import "../setup/TimeCirclesSetup.sol";
 import "../utils/Approximation.sol";
 

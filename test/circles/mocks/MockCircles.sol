@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.8.13;
 
-import "../../src/circles/Circles.sol";
+import "src/circles/Circles.sol";
 
 contract MockCircles is Circles {
     // State variables
