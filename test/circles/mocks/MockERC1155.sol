@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.8.13;
 
+import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {MockDiscountedBalances} from "test/circles/mocks/MockDiscountedBalances.sol";
 import {ERC1155} from "src/circles/ERC1155.sol";
 
@@ -129,5 +130,105 @@ contract MockERC1155 is ERC1155, MockDiscountedBalances {
      */
     function setURI(string memory _newuri) public {
         _setURI(_newuri);
+    }
+}
+
+/*//////////////////////////////////////////////////////////////////////////
+                            MOCK RECEIVERS
+//////////////////////////////////////////////////////////////////////////*/
+
+/**
+ * @dev Receiver that always returns the correct magic value for both single and batch transfers.
+ */
+contract MockERC1155ReceiverOk is IERC1155Receiver {
+    function onERC1155Received(
+        address, /* operator */
+        address, /* from */
+        uint256, /* id */
+        uint256, /* value */
+        bytes calldata /* data */
+    ) external pure override returns (bytes4) {
+        return this.onERC1155Received.selector;
+    }
+
+    function onERC1155BatchReceived(
+        address, /* operator */
+        address, /* from */
+        uint256[] calldata, /* ids */
+        uint256[] calldata, /* values */
+        bytes calldata /* data */
+    ) external pure override returns (bytes4) {
+        return this.onERC1155BatchReceived.selector;
+    }
+
+    function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
+        return interfaceId == type(IERC1155Receiver).interfaceId;
+    }
+}
+
+/**
+ * @dev Receiver that always reverts (for single and batch) to mimic rejection.
+ */
+contract MockERC1155ReceiverRevert is IERC1155Receiver {
+    function onERC1155Received(address, address, uint256, uint256, bytes calldata)
+        external
+        pure
+        override
+        returns (bytes4)
+    {
+        revert("No thanks");
+    }
+
+    function onERC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata, bytes calldata)
+        external
+        pure
+        override
+        returns (bytes4)
+    {
+        revert("No thanks");
+    }
+
+    function supportsInterface(bytes4) external pure returns (bool) {
+        return true;
+    }
+}
+
+/**
+ * @dev Receiver that returns a wrong magic value (instead of the standard acceptance magic).
+ */
+contract MockERC1155ReceiverWrongReturn is IERC1155Receiver {
+    function onERC1155Received(address, address, uint256, uint256, bytes calldata)
+        external
+        pure
+        override
+        returns (bytes4)
+    {
+        return 0xDEADDEAD; // Wrong return
+    }
+
+    function onERC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata, bytes calldata)
+        external
+        pure
+        override
+        returns (bytes4)
+    {
+        return 0xDEADDEAD; // Wrong return
+    }
+
+    function supportsInterface(bytes4) external pure returns (bool) {
+        return true;
+    }
+}
+
+/**
+ * @dev Receiver that *always reverts without a message* in the fallback,
+ *      causing the revert reason to be an empty bytes array.
+ */
+contract MockERC1155ReceiverNoReasonRevert {
+    // No onERC1155Received / onERC1155BatchReceived => not a valid receiver
+
+    fallback() external {
+        // Revert with no message => reason.length == 0
+        revert();
     }
 }
