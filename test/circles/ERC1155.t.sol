@@ -3,6 +3,7 @@ pragma solidity >=0.8.13;
 
 import {console2, Test} from "forge-std/Test.sol";
 import {IERC1155Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
+import {ICirclesCompactErrors} from "src/errors/Errors.sol";
 import {TimeCirclesSetup} from "test/setup/TimeCirclesSetup.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {IDiscountedBalances} from "test/circles/mocks/MockDiscountedBalances.sol";
@@ -14,7 +15,7 @@ import {
     MockERC1155ReceiverNoReasonRevert
 } from "test/circles/mocks/MockERC1155.sol";
 
-contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors {
+contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactErrors {
     MockERC1155 public erc1155;
 
     // Represents Demurrage.MAX_VALUE in MockDiscountedBalances
@@ -168,6 +169,88 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors {
     }
 
     // -------------------------------------------------------------------------
+    // Test internal `_mint` function
+    // -------------------------------------------------------------------------
+    /**
+     * @notice Tests `_mint` logic via fuzzy inputs.
+     *         Covers revert paths, acceptance checks, events, and final balances.
+     *
+     * @param to    The recipient of the minted tokens.
+     * @param id    The token ID being minted.
+     * @param value The amount to mint.
+     * @param data  Extra data for acceptance checks.
+     * @param _doAcceptanceCheck Whether to perform an ERC1155Receiver check.
+     */
+    function testMint(address to, uint256 id, uint256 value, bytes memory data, bool _doAcceptanceCheck) public {
+        // 1. If `to == address(0)`, must revert.
+        if (to == address(0)) {
+            vm.expectRevert(abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidReceiver.selector, address(0)));
+            erc1155.mint(to, id, value, data, _doAcceptanceCheck);
+            return;
+        }
+
+        // 2. If `value > maxBalance` to mint, must revert
+        if (value > maxBalance) {
+            vm.expectRevert(
+                abi.encodeWithSelector(ICirclesCompactErrors.CirclesErrorAddressUintArgs.selector, to, id, 0x82)
+            );
+            erc1155.mint(to, id, value, data, _doAcceptanceCheck);
+            return;
+        }
+
+        // 3. If `_doAcceptanceCheck == true` test `to` as a contract and EOA,
+        //    we check for revert/wrong return cases.
+        //    We'll do separate logic for each known mock receiver.
+        if (_doAcceptanceCheck) {
+            // EOA
+            if (to.code.length == 0) {
+                _expectEmitTransferSingle(address(0), to, id, value);
+                erc1155.mint(to, id, value, data, _doAcceptanceCheck);
+                assertEq(_getBalance(to, id), value, "Balance mismatch after mint");
+            }
+
+            // Test all mocks
+            {
+                to = address(receiverOk);
+                // Should succeed
+                // Expect a TransferSingle event from address(0) to `to`
+                _expectEmitTransferSingle(address(0), to, id, value);
+                // Then do the mint
+                erc1155.mint(to, id, value, data, _doAcceptanceCheck);
+
+                // Verify final balance
+                assertEq(_getBalance(to, id), value, "Balance should match minted amount");
+            }
+            {
+                to = address(receiverRevert);
+                // Should revert with "No thanks"
+                vm.expectRevert("No thanks");
+                erc1155.mint(to, id, value, data, _doAcceptanceCheck);
+            }
+            {
+                to = address(receiverWrongReturn);
+                // Should revert with ERC1155InvalidReceiver
+                vm.expectRevert(abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidReceiver.selector, to));
+                erc1155.mint(to, id, value, data, _doAcceptanceCheck);
+            }
+            {
+                to = address(receiverNoReasonRevert);
+                // Should revert with reason.length == 0 => ERC1155InvalidReceiver
+                vm.expectRevert(abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidReceiver.selector, to));
+                erc1155.mint(to, id, value, data, _doAcceptanceCheck);
+            }
+        } else {
+            // 4. If `_doAcceptanceCheck == false`,
+            //    no acceptance check. We only expect a TransferSingle event.
+            _expectEmitTransferSingle(address(0), to, id, value);
+
+            erc1155.mint(to, id, value, data, _doAcceptanceCheck);
+            // Check final balance
+            assertEq(_getBalance(to, id), value, "Balance mismatch after mint");
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Test internal `_update` function
     // -------------------------------------------------------------------------
     /**
@@ -273,8 +356,8 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors {
 
             erc1155.update(from, to, ids, values);
             // check balances update
-            if (to != from) assertEq(_getCurrentBalance(from, ids[0]), 0);
-            if (to != address(0)) assertEq(_getCurrentBalance(to, ids[0]), values[0]);
+            if (to != from) assertEq(_getBalance(from, ids[0]), 0);
+            if (to != address(0)) assertEq(_getBalance(to, ids[0]), values[0]);
         } else {
             // Skip discount check, works same as above
             // length = 0 || length > 1 => TransferBatch event
@@ -285,8 +368,8 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors {
             // check balances update
             if (to != address(0)) {
                 for (uint256 i; i < ids.length;) {
-                    if (to != from) assertEq(_getCurrentBalance(from, ids[i]), 0);
-                    assertEq(_getCurrentBalance(to, ids[i]), values[i]);
+                    if (to != from) assertEq(_getBalance(from, ids[i]), 0);
+                    assertEq(_getBalance(to, ids[i]), values[i]);
                     unchecked {
                         ++i;
                     }
@@ -299,8 +382,8 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors {
     // Internal helpers
     // -------------------------------------------------------------------------
 
-    function _getCurrentBalance(address avatar, uint256 id) internal view returns (uint256 currentBalance) {
-        (currentBalance,) = erc1155.balanceOfOnDay(avatar, id, erc1155.day(block.timestamp));
+    function _getBalance(address avatar, uint256 id) internal view returns (uint256) {
+        return erc1155.balanceOf(avatar, id);
     }
 
     /// @dev should emit IERC1155.TransferSingle
