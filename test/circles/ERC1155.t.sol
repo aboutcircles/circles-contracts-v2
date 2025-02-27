@@ -251,6 +251,70 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactE
     }
 
     // -------------------------------------------------------------------------
+    // Test internal `_burn` function
+    // -------------------------------------------------------------------------
+    /**
+     * @notice Tests `_burn` with various fuzzed parameters.
+     *
+     * @param from  The address whose tokens will be burned.
+     * @param id    The token ID to burn.
+     * @param value The amount of tokens to burn.
+     */
+    function testBurn(address from, uint256 id, uint256 value) public {
+        // 1) If `from == address(0)`, must revert with ERC1155InvalidSender.
+        if (from == address(0)) {
+            vm.expectRevert(abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidSender.selector, address(0)));
+            erc1155.burn(from, id, value);
+            return;
+        }
+        // polish fuzzing, as mint test shows impossible to mint > maxBalance
+        if (value > maxBalance) value = maxBalance;
+
+        // 2) Before burning, we need `from` to hold tokens. Mint some to `from`.
+        //    Possibly test insufficient balance by randomly minting less than needed.
+        //    For demonstration, do a 50/50 chance:
+        bool insufficient = (uint256(keccak256(abi.encodePacked(from, block.timestamp))) & 1) == 1;
+
+        uint256 minted = insufficient ? value / 2 : value; // if insufficient, minted < value
+        // Mint up to `minted` (unless minted=0, no effect)
+        if (minted > 0) {
+            erc1155.mint(from, id, minted, "", false);
+        }
+
+        // 3) If insufficient => expect revert on burn.
+        if (insufficient && value > 0) {
+            vm.expectRevert(
+                abi.encodeWithSelector(IERC1155Errors.ERC1155InsufficientBalance.selector, from, minted, value, id)
+            );
+            erc1155.burn(from, id, value);
+            return;
+        }
+
+        // 4) Do a 50/50 chance: to test discount cost
+        bool discount = (uint256(keccak256(abi.encodePacked(from))) & 1) == 1;
+        if (discount && value > 0) {
+            // skip some time to ensure demurrage might have accrued for `from`.
+            skip(1 days);
+            // distinguish balance and discount
+            (uint256 balance, uint256 discountCost) = _getBalanceOnDay(from, id);
+            // test insufficient revert trying to burn value (includes discount)
+            vm.expectRevert(
+                abi.encodeWithSelector(IERC1155Errors.ERC1155InsufficientBalance.selector, from, balance, value, id)
+            );
+            erc1155.burn(from, id, value);
+            // test happy path burning valid balance (excludes discount)
+            _expectEmitDiscountEvents(from, id, discountCost); // discount
+            _expectEmitTransferSingle(from, address(0), id, balance); // burned balance
+            erc1155.burn(from, id, balance);
+        } else {
+            _expectEmitTransferSingle(from, address(0), id, value);
+            erc1155.burn(from, id, value);
+        }
+        // check balance get burned
+        assertEq(_getBalance(from, id), 0, "Incorrect final balance after burn");
+    }
+
+    // -------------------------------------------------------------------------
     // Test internal `_update` function
     // -------------------------------------------------------------------------
     /**
@@ -342,8 +406,7 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactE
             // event to 0 + DiscountCost event.
             // We'll just expect them if the discount cost is > 0, which we can check
             // using a function from the mock:
-            (uint256 fromBalance, uint256 discountCost) =
-                erc1155.balanceOfOnDay(from, ids[0], erc1155.day(block.timestamp));
+            (uint256 fromBalance, uint256 discountCost) = _getBalanceOnDay(from, ids[0]);
             // update transferable value accordingly
             values[0] = fromBalance;
             // There's no direct way to forcibly set discount cost > 0 aside from time skipping,
@@ -384,6 +447,14 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactE
 
     function _getBalance(address avatar, uint256 id) internal view returns (uint256) {
         return erc1155.balanceOf(avatar, id);
+    }
+
+    function _getBalanceOnDay(address avatar, uint256 id)
+        internal
+        view
+        returns (uint256 balance, uint256 discountCost)
+    {
+        (balance, discountCost) = erc1155.balanceOfOnDay(avatar, id, erc1155.day(block.timestamp));
     }
 
     /// @dev should emit IERC1155.TransferSingle
