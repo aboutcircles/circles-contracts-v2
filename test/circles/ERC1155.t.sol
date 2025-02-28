@@ -499,15 +499,14 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactE
         if (ids.length == 1) {
             _expectEmitTransferSingle(from, to, ids[0], values[0]);
             // second event has reentrant receiver as operator
-            vm.expectEmit(true, true, true, true);
-            emit IERC1155.TransferSingle(to, from, to, ids[0], values[0]);
+            _expectEmitTransferSingle(to, from, to, ids[0], values[0]);
         } else {
             _expectEmitTransferBatch(from, to, ids, values);
             // second event has reentrant receiver as operator
-            vm.expectEmit(true, true, true, true);
-            emit IERC1155.TransferBatch(to, from, to, ids, values);
+            _expectEmitTransferBatch(to, from, to, ids, values);
         }
-        erc1155.updateWithAcceptanceCheck(from, to, ids, values, "");
+        bytes memory data = abi.encode(erc1155.updateWithAcceptanceCheck.selector);
+        erc1155.updateWithAcceptanceCheck(from, to, ids, values, data);
         // check balances should be twice values
         for (uint256 i; i < ids.length;) {
             assertEq(_getBalance(to, ids[i]), values[i] * 2, "Balance should be updated twice");
@@ -532,6 +531,121 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactE
     }
 
     // -------------------------------------------------------------------------
+    // Test external `safeTransferFrom` function
+    // -------------------------------------------------------------------------
+    /**
+     * @notice Fuzz test for `safeTransferFrom` to ensure all revert paths
+     *         and successful flows are covered.
+     *
+     * @param from   The address sending tokens.
+     * @param to     The address receiving tokens.
+     * @param id     The token type ID to transfer.
+     * @param value  The amount of tokens to transfer.
+     */
+    function testSafeTransferFrom(address from, address to, uint256 id, uint256 value) public {
+        // 1) If `from != msg.sender` and no approval, revert with `ERC1155MissingApprovalForAll`.
+        // We'll handle that scenario by default if `from != address(this)`.
+        if (from != address(this)) {
+            // Expect revert
+            vm.expectRevert(
+                abi.encodeWithSelector(IERC1155Errors.ERC1155MissingApprovalForAll.selector, address(this), from)
+            );
+            erc1155.safeTransferFrom(from, to, id, value, "");
+
+            // make from approve address(this)
+            vm.prank(from);
+            erc1155.setApprovalForAll(address(this), true);
+        }
+
+        // 2) If `from == address(0)`, must revert with `ERC1155InvalidSender`.
+        if (from == address(0)) {
+            vm.expectRevert(abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidSender.selector, address(0)));
+            erc1155.safeTransferFrom(from, to, id, value, "");
+            return;
+        }
+
+        // 3) If `to == address(0)`, must revert with `ERC1155InvalidReceiver`.
+        if (to == address(0)) {
+            // We don't even need to mint to `from` because it should revert
+            // before checking balances.
+            vm.expectRevert(abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidReceiver.selector, address(0)));
+            erc1155.safeTransferFrom(from, to, id, value, "");
+            return;
+        }
+
+        bool random = (uint256(keccak256(abi.encodePacked(from, value))) & 1) == 1;
+        // 4) Make sure `from` has enough tokens. If `value > 0`, we must mint >= `value`.
+        // We'll mint exactly `value` to `from`, unless value=0 => no need
+        if (value > 0) {
+            // 5) before minting we can test revert with `ERC1155InsufficientBalance`.
+            // make random 50/50 calls operator from/address(this)
+            if (random) vm.prank(from);
+            vm.expectRevert(
+                abi.encodeWithSelector(IERC1155Errors.ERC1155InsufficientBalance.selector, from, 0, value, id)
+            );
+            erc1155.safeTransferFrom(from, to, id, value, "");
+
+            // polish fuzzing
+            if (value > maxBalance) value = maxBalance;
+            erc1155.mint(from, id, value, "", false);
+        }
+
+        // 6) Next, we test acceptance logic. If `to` is a contract that reverts or returns a wrong
+        //    selector or tries to reenter, we expect a revert from `_doSafeTransferAcceptanceCheck`.
+        if (to.code.length != 0 && to != address(receiverOk)) {
+            // rewrite to with implementation of all known revert branches
+            to = address(receiverRevert);
+            vm.expectRevert("No thanks");
+            erc1155.safeTransferFrom(from, to, id, value, "");
+            to = address(receiverWrongReturn);
+            vm.expectRevert(abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidReceiver.selector, to));
+            erc1155.safeTransferFrom(from, to, id, value, "");
+            to = address(receiverNoReasonRevert);
+            vm.expectRevert(abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidReceiver.selector, to));
+            erc1155.safeTransferFrom(from, to, id, value, "");
+            // rewrite to for reentrancy
+            to = address(receiverReentrant);
+            bytes memory data = abi.encode(erc1155.safeTransferFrom.selector);
+            // Expect revert: receiver is not approved
+            vm.expectRevert(abi.encodeWithSelector(IERC1155Errors.ERC1155MissingApprovalForAll.selector, to, from));
+            erc1155.safeTransferFrom(from, to, id, value, data);
+        } else {
+            // 7) Everything is valid for transfer execution.
+            // Make snapshot
+            uint256 snapshot = vm.snapshot(); // TODO: update forge-std to use vm.snapshotState()
+            // transfer
+            // Finally, do the call
+            if (random) {
+                _expectEmitTransferSingle(from, from, to, id, value);
+                vm.prank(from);
+            } else {
+                _expectEmitTransferSingle(from, to, id, value);
+            }
+            erc1155.safeTransferFrom(from, to, id, value, "");
+            // check balance updates
+            assertEq(_getBalance(from, id), 0, "Incorrect final balance for `from`");
+            assertEq(_getBalance(to, id), value, "Incorrect final balance for `to`");
+            // Revert to snapshot
+            vm.revertTo(snapshot); // TODO: update forge-std to use vm.revertToStateAndDelete(snapshot)
+            // Skip a day for discount to occur
+            skip(1 days);
+            // 8) Everything is valid for transfer with discount execution.
+            (uint256 balance, uint256 discount) = _getBalanceOnDay(from, id);
+            if (random) {
+                if (discount > 0) _expectEmitDiscountEvents(from, from, id, discount);
+                _expectEmitTransferSingle(from, from, to, id, balance);
+                vm.prank(from);
+            } else {
+                if (discount > 0) _expectEmitDiscountEvents(from, id, discount);
+                _expectEmitTransferSingle(from, to, id, balance);
+            }
+            erc1155.safeTransferFrom(from, to, id, balance, "");
+            assertEq(_getBalance(from, id), 0, "Incorrect final balance for `from`");
+            assertEq(_getBalance(to, id), balance, "Incorrect final balance for `to`");
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Internal helpers
     // -------------------------------------------------------------------------
 
@@ -549,21 +663,46 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactE
 
     /// @dev should emit IERC1155.TransferSingle
     function _expectEmitTransferSingle(address from, address to, uint256 id, uint256 amount) internal {
+        _expectEmitTransferSingle(address(this), from, to, id, amount);
+    }
+
+    function _expectEmitTransferSingle(address operator, address from, address to, uint256 id, uint256 amount)
+        internal
+    {
         vm.expectEmit(true, true, true, true);
-        emit IERC1155.TransferSingle(address(this), from, to, id, amount);
+        emit IERC1155.TransferSingle(operator, from, to, id, amount);
     }
 
     /// @dev should emit IERC1155.TransferBatch
     function _expectEmitTransferBatch(address from, address to, uint256[] memory ids, uint256[] memory values)
         internal
     {
+        _expectEmitTransferBatch(address(this), from, to, ids, values);
+    }
+
+    function _expectEmitTransferBatch(
+        address operator,
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory values
+    ) internal {
         vm.expectEmit(true, true, true, true);
-        emit IERC1155.TransferBatch(address(this), from, to, ids, values);
+        emit IERC1155.TransferBatch(operator, from, to, ids, values);
     }
 
     /// @dev should emit IERC1155.TransferSingle and DiscountCost events
     function _expectEmitDiscountEvents(address from, uint256 id, uint256 discountCost) internal {
         _expectEmitTransferSingle(from, address(0), id, discountCost);
+        _expectEmitDiscount(from, id, discountCost);
+    }
+
+    function _expectEmitDiscountEvents(address operator, address from, uint256 id, uint256 discountCost) internal {
+        _expectEmitTransferSingle(operator, from, address(0), id, discountCost);
+        _expectEmitDiscount(from, id, discountCost);
+    }
+
+    function _expectEmitDiscount(address from, uint256 id, uint256 discountCost) internal {
         vm.expectEmit(true, true, false, true);
         emit IDiscountedBalances.DiscountCost(from, id, discountCost);
     }

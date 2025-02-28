@@ -246,27 +246,29 @@ contract MockReentrantReceiver is IERC1155Receiver {
 
     /**
      * @notice Called by ERC1155 contract after a single token transfer/mint.
-     *         We'll attempt a reentrant call back into `updateWithAcceptanceCheck` exactly once.
+     *         We'll attempt a reentrant call back into `updateWithAcceptanceCheck` or `safeTransferFrom` exactly once.
      */
-    function onERC1155Received(address, address, uint256 id, uint256 value, bytes calldata data)
+    function onERC1155Received(address, address from, uint256 id, uint256 value, bytes calldata data)
         external
         override
         returns (bytes4)
     {
         if (!hasReentered) {
             hasReentered = true;
-
-            // Attempt a second mint from=0, same ID/value.
-            // This call is reentrant because we're still in the middle
-            // of `updateWithAcceptanceCheck` from the first call.
-            uint256[] memory ids = new uint256[](1);
-            ids[0] = id;
-
-            uint256[] memory values = new uint256[](1);
-            values[0] = value;
-
+            bytes4 selector = abi.decode(data, (bytes4));
             // Reenter!
-            erc1155.updateWithAcceptanceCheck(address(0), address(this), ids, values, data);
+            if (selector == erc1155.updateWithAcceptanceCheck.selector) {
+                // Attempt a second mint from=0, same ID/value.
+                // This call is reentrant because we're still in the middle
+                // of `updateWithAcceptanceCheck` from the first call.
+                uint256[] memory ids = new uint256[](1);
+                ids[0] = id;
+                uint256[] memory values = new uint256[](1);
+                values[0] = value;
+                erc1155.updateWithAcceptanceCheck(address(0), address(this), ids, values, data);
+            } else if (selector == erc1155.safeTransferFrom.selector) {
+                erc1155.safeTransferFrom(from, address(this), id, value, data);
+            }
         }
 
         return this.onERC1155Received.selector;
@@ -274,19 +276,24 @@ contract MockReentrantReceiver is IERC1155Receiver {
 
     /**
      * @notice Called by ERC1155 contract after a batch transfer.
-     *         We'll attempt a reentrant call back into `updateWithAcceptanceCheck` exactly once.
+     *         We'll attempt a reentrant call back into `updateWithAcceptanceCheck` or `safeBatchTransferFrom` exactly once.
      */
     function onERC1155BatchReceived(
         address,
-        address,
+        address from,
         uint256[] calldata ids,
         uint256[] calldata values,
         bytes calldata data
     ) external override returns (bytes4) {
         if (!hasReentered) {
             hasReentered = true;
+            bytes4 selector = abi.decode(data, (bytes4));
             // Reenter!
-            erc1155.updateWithAcceptanceCheck(address(0), address(this), ids, values, data);
+            if (selector == erc1155.updateWithAcceptanceCheck.selector) {
+                erc1155.updateWithAcceptanceCheck(address(0), address(this), ids, values, data);
+            } else if (selector == erc1155.safeBatchTransferFrom.selector) {
+                erc1155.safeBatchTransferFrom(from, address(this), ids, values, data);
+            }
         }
         return this.onERC1155BatchReceived.selector;
     }
