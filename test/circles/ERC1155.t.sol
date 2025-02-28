@@ -12,7 +12,8 @@ import {
     MockERC1155ReceiverOk,
     MockERC1155ReceiverRevert,
     MockERC1155ReceiverWrongReturn,
-    MockERC1155ReceiverNoReasonRevert
+    MockERC1155ReceiverNoReasonRevert,
+    MockReentrantReceiver
 } from "test/circles/mocks/MockERC1155.sol";
 
 contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactErrors {
@@ -26,6 +27,7 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactE
     MockERC1155ReceiverRevert internal receiverRevert;
     MockERC1155ReceiverWrongReturn internal receiverWrongReturn;
     MockERC1155ReceiverNoReasonRevert internal receiverNoReasonRevert;
+    MockReentrantReceiver internal receiverReentrant;
 
     function setUp() public {
         // set time in 2021 (from TimeCirclesSetup)
@@ -39,6 +41,7 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactE
         receiverRevert = new MockERC1155ReceiverRevert();
         receiverWrongReturn = new MockERC1155ReceiverWrongReturn();
         receiverNoReasonRevert = new MockERC1155ReceiverNoReasonRevert();
+        receiverReentrant = new MockReentrantReceiver(erc1155);
     }
 
     // -------------------------------------------------------------------------
@@ -437,6 +440,93 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactE
                         ++i;
                     }
                 }
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Test internal `_updateWithAcceptanceCheck` function
+    // -------------------------------------------------------------------------
+    /// @notice As _updateWithAcceptanceCheck implementation only calls internal _update and _acceptanceCheck functions,
+    ///      which are fully tested we are going to test 3 scenarios:
+    ///      - the call doesn't make any state changes emerging from _update due to _acceptanceCheck reverts (all branches)
+    ///      - the reentrancy case, demonstrates that pure usage of a function leads to reentrancy and must be properly covered
+    ///        (check-effect-interaction pattern) at external function implementation, which is using _updateWithAcceptanceCheck
+    ///      - one positive path
+    function testUpdateWithAcceptanceCheck(uint256[] memory values) public {
+        // - from = address(0) => "mint"
+        address from = address(0);
+        // generate ids and polish values
+        uint256[] memory ids = new uint256[](values.length);
+        for (uint256 i; i < values.length;) {
+            // exclude testing mint > maxBalance / 2
+            if (values[i] > maxBalance / 2) values[i] = maxBalance / 2;
+            ids[i] = i + 1;
+            unchecked {
+                ++i;
+            }
+        }
+        address to;
+        // SCENARIO - revert:
+        // - to = reverting receiver
+        address[] memory revertingReceivers = new address[](3);
+        revertingReceivers[0] = address(receiverRevert);
+        revertingReceivers[1] = address(receiverWrongReturn);
+        revertingReceivers[2] = address(receiverNoReasonRevert);
+        for (uint256 k; k < 3; k++) {
+            to = revertingReceivers[k];
+            // Expect revert from acceptance check
+            if (k == 0) vm.expectRevert("No thanks");
+            else vm.expectRevert(abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidReceiver.selector, to));
+            // Attempt the updateWithAcceptanceCheck
+            erc1155.updateWithAcceptanceCheck(from, to, ids, values, "");
+            // Confirm that "to" ended up with 0 balances for theses ids
+            // Because the entire tx was reverted, the mint didn't stick.
+            for (uint256 i; i < ids.length;) {
+                assertEq(_getBalance(to, ids[i]), 0, "Balance should remain 0 after revert");
+                unchecked {
+                    ++i;
+                }
+            }
+        }
+
+        // SCENARIO - reentrancy:
+        // - to = reentrant receiver
+        // The reentrant receiver is coded to call `updateWithAcceptanceCheck`
+        to = address(receiverReentrant);
+        // makes reenter, because there's no reentrancy guard at this level,
+        // we expect update and event emit twice
+        if (ids.length == 1) {
+            _expectEmitTransferSingle(from, to, ids[0], values[0]);
+            // second event has reentrant receiver as operator
+            vm.expectEmit(true, true, true, true);
+            emit IERC1155.TransferSingle(to, from, to, ids[0], values[0]);
+        } else {
+            _expectEmitTransferBatch(from, to, ids, values);
+            // second event has reentrant receiver as operator
+            vm.expectEmit(true, true, true, true);
+            emit IERC1155.TransferBatch(to, from, to, ids, values);
+        }
+        erc1155.updateWithAcceptanceCheck(from, to, ids, values, "");
+        // check balances should be twice values
+        for (uint256 i; i < ids.length;) {
+            assertEq(_getBalance(to, ids[i]), values[i] * 2, "Balance should be updated twice");
+            unchecked {
+                ++i;
+            }
+        }
+
+        // SCENARIO - happy path:
+        // - to = receiver ok
+        to = address(receiverOk);
+        if (ids.length == 1) _expectEmitTransferSingle(from, to, ids[0], values[0]);
+        else _expectEmitTransferBatch(from, to, ids, values);
+        erc1155.updateWithAcceptanceCheck(from, to, ids, values, "");
+        // check balances should equal values
+        for (uint256 i; i < ids.length;) {
+            assertEq(_getBalance(to, ids[i]), values[i], "Balance should be updated");
+            unchecked {
+                ++i;
             }
         }
     }

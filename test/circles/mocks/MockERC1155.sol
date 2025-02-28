@@ -232,3 +232,66 @@ contract MockERC1155ReceiverNoReasonRevert {
         revert();
     }
 }
+
+/**
+ * @dev This receiver attempts a single reentrant call in `onERC1155Received`.
+ */
+contract MockReentrantReceiver is IERC1155Receiver {
+    MockERC1155 public erc1155;
+    bool private hasReentered; // to avoid infinite loops
+
+    constructor(MockERC1155 _erc1155) {
+        erc1155 = _erc1155;
+    }
+
+    /**
+     * @notice Called by ERC1155 contract after a single token transfer/mint.
+     *         We'll attempt a reentrant call back into `updateWithAcceptanceCheck` exactly once.
+     */
+    function onERC1155Received(address, address, uint256 id, uint256 value, bytes calldata data)
+        external
+        override
+        returns (bytes4)
+    {
+        if (!hasReentered) {
+            hasReentered = true;
+
+            // Attempt a second mint from=0, same ID/value.
+            // This call is reentrant because we're still in the middle
+            // of `updateWithAcceptanceCheck` from the first call.
+            uint256[] memory ids = new uint256[](1);
+            ids[0] = id;
+
+            uint256[] memory values = new uint256[](1);
+            values[0] = value;
+
+            // Reenter!
+            erc1155.updateWithAcceptanceCheck(address(0), address(this), ids, values, data);
+        }
+
+        return this.onERC1155Received.selector;
+    }
+
+    /**
+     * @notice Called by ERC1155 contract after a batch transfer.
+     *         We'll attempt a reentrant call back into `updateWithAcceptanceCheck` exactly once.
+     */
+    function onERC1155BatchReceived(
+        address,
+        address,
+        uint256[] calldata ids,
+        uint256[] calldata values,
+        bytes calldata data
+    ) external override returns (bytes4) {
+        if (!hasReentered) {
+            hasReentered = true;
+            // Reenter!
+            erc1155.updateWithAcceptanceCheck(address(0), address(this), ids, values, data);
+        }
+        return this.onERC1155BatchReceived.selector;
+    }
+
+    function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
+        return interfaceId == type(IERC1155Receiver).interfaceId;
+    }
+}
