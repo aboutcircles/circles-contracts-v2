@@ -889,6 +889,76 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactE
     }
 
     // -------------------------------------------------------------------------
+    // Test `balanceOfBatch(...)` function
+    // -------------------------------------------------------------------------
+    /**
+     * @notice Fuzz test for `balanceOfBatch(accounts, ids)`. Ensures correct handling of
+     *         array length mismatch, empty arrays, minted balances, and discount logic.
+     *
+     * @param accounts An array of addresses to check.
+     * @param ids      The corresponding token IDs.
+     * @param values   The amounts we might mint for testing.
+     */
+    function testBalanceOfBatch(address[] memory accounts, uint256[] memory ids, uint256[] memory values) public {
+        // 1) If `accounts.length != ids.length`, revert with `ERC1155InvalidArrayLength`.
+        if (accounts.length != ids.length) {
+            vm.expectRevert(
+                abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidArrayLength.selector, ids.length, accounts.length)
+            );
+            erc1155.balanceOfBatch(accounts, ids);
+        }
+
+        // Simplify ids and accounts input to avoid minting different values of the same id per account
+        ids = new uint256[](values.length);
+        accounts = new address[](values.length);
+        for (uint256 i; i < values.length;) {
+            ids[i] = i + 1;
+            accounts[i] = address(uint160(i + 1));
+            unchecked {
+                ++i;
+            }
+        }
+
+        // 2) If arrays are empty, `balanceOfBatch([], [])` returns an empty array, no revert.
+        if (accounts.length == 0) {
+            uint256[] memory batch = erc1155.balanceOfBatch(accounts, ids);
+            assertEq(batch.length, 0, "Expected an empty array result when input arrays are empty");
+            return;
+        }
+
+        // 3) Now we have matching lengths. We'll do a step to mint each `(ids[i])` to `accounts[i]`
+        //    if `values[i]` is non-zero.
+        //    First, we clamp `values[i]` to `maxBalance`.
+        for (uint256 i = 0; i < accounts.length; i++) {
+            if (values[i] > maxBalance) {
+                values[i] = maxBalance;
+            }
+            // Mint tokens if non-zero.
+            if (values[i] > 0) {
+                erc1155.mint(accounts[i], ids[i], values[i], "", false);
+            }
+        }
+
+        // 4) Check the immediate results.
+        //    The returned array from `balanceOfBatch` must match the minted amounts
+        uint256[] memory mintedBalances = erc1155.balanceOfBatch(accounts, ids);
+
+        for (uint256 i; i < accounts.length; i++) {
+            assertEq(mintedBalances[i], values[i], "batch balance shouldn't be equal minted amount");
+        }
+
+        // 5) Now optionally skip time to see if discount is reflected in balanceOfBatch
+        skip(1 days);
+
+        uint256[] memory afterTimeBalances = erc1155.balanceOfBatch(accounts, ids);
+        for (uint256 i = 0; i < accounts.length; i++) {
+            if (mintedBalances[i] > 0) {
+                assertLt(afterTimeBalances[i], mintedBalances[i], "batch discount logic mismatch");
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Internal helpers
     // -------------------------------------------------------------------------
 
