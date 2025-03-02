@@ -839,6 +839,56 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactE
     }
 
     // -------------------------------------------------------------------------
+    // Test `balanceOf(...)` function
+    // -------------------------------------------------------------------------
+    /**
+     * @notice Checks that `balanceOf(account, id)` reflects the correct state
+     *         of minted tokens and any time-based discount if applicable.
+     *
+     * @param account The address whose balance we query.
+     * @param id      The token type ID to check.
+     * @param value   The amount of tokens to mint for testing.
+     */
+    function testBalanceOf(address account, uint256 id, uint256 value) public {
+        // 1) If `account` is zero, typically returns 0. There's no restriction
+        //    in the standard that it reverts. Let's just confirm it’s 0.
+        if (account == address(0)) {
+            // Without any mint, obviously 0
+            uint256 balZero = erc1155.balanceOf(account, id);
+            assertEq(balZero, 0, "balanceOf(0, id) should be 0");
+            return;
+        }
+
+        // 2) If `value > maxBalance`, clamp to avoid nonsense (tested on mint)
+        if (value > maxBalance) {
+            value = maxBalance;
+        }
+
+        // 3) Initially, nobody has minted anything → so balance is 0
+        uint256 initialBal = erc1155.balanceOf(account, id);
+        assertEq(initialBal, 0, "Expected initial balance to be 0");
+
+        // 4) Mint some tokens if `value > 0`
+        if (value > 0) {
+            erc1155.mint(account, id, value, "", false);
+
+            // Check the updated balance
+            uint256 balAfterMint = erc1155.balanceOf(account, id);
+            assertEq(balAfterMint, value, "balanceOf(account, id) mismatch after mint");
+
+            // 5) Skip time to see if discount/demurrage affects `balanceOf`.
+            skip(1 days);
+
+            // 6) Query `balanceOf` again. The discount logic automatically lowers
+            //    the reported balance, there is a difference from the minted value.
+            uint256 balWithTime = erc1155.balanceOf(account, id);
+
+            // We can do an assertion that the current balance is < value:
+            assertLt(balWithTime, value, "balanceOf should be strickly less than minted amount");
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Internal helpers
     // -------------------------------------------------------------------------
 
