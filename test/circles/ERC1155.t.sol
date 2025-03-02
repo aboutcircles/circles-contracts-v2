@@ -646,6 +646,199 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactE
     }
 
     // -------------------------------------------------------------------------
+    // Test external `safeBatchTransferFrom` function
+    // -------------------------------------------------------------------------
+    /**
+     * @notice Fuzz test for `safeBatchTransferFrom` to ensure all revert paths
+     *         and successful flows are covered.
+     *
+     * @param from    The address sending tokens.
+     * @param to      The address receiving tokens.
+     * @param ids     The array of token type IDs to transfer.
+     * @param values  The array of token amounts corresponding to `ids`.
+     */
+    function testSafeBatchTransferFrom(address from, address to, uint256[] memory ids, uint256[] memory values)
+        public
+    {
+        // 1) If from != address(this) and no approval => revert with `ERC1155MissingApprovalForAll`.
+        if (from != address(this)) {
+            // We expect a revert due to missing approval
+            vm.expectRevert(
+                abi.encodeWithSelector(IERC1155Errors.ERC1155MissingApprovalForAll.selector, address(this), from)
+            );
+            erc1155.safeBatchTransferFrom(from, to, ids, values, "");
+
+            // Now grant approval so we can continue
+            vm.prank(from);
+            erc1155.setApprovalForAll(address(this), true);
+        }
+
+        // 2) If from == address(0), must revert with `ERC1155InvalidSender`.
+        if (from == address(0)) {
+            vm.expectRevert(abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidSender.selector, address(0)));
+            erc1155.safeBatchTransferFrom(from, to, ids, values, "");
+            return;
+        }
+
+        // 3) If to == address(0), must revert with `ERC1155InvalidReceiver`.
+        if (to == address(0)) {
+            vm.expectRevert(abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidReceiver.selector, address(0)));
+            erc1155.safeBatchTransferFrom(from, to, ids, values, "");
+            return;
+        }
+
+        // 4) If ids.length != values.length => revert with ERC1155InvalidArrayLength
+        if (ids.length != values.length) {
+            vm.expectRevert(
+                abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidArrayLength.selector, ids.length, values.length)
+            );
+            erc1155.safeBatchTransferFrom(from, to, ids, values, "");
+        }
+
+        // generate ids and polish values to avoid length mismatch and mint > maxBalance by dup ids
+        ids = new uint256[](values.length);
+        uint256 nonZeroId;
+        for (uint256 i; i < values.length;) {
+            // exclude testing mint > maxBalance
+            if (values[i] > maxBalance) values[i] = maxBalance;
+            if (values[i] > 0 && nonZeroId == 0) nonZeroId = i + 1;
+            ids[i] = i + 1;
+            unchecked {
+                ++i;
+            }
+        }
+
+        // do a quick random approach
+        bool random = (uint256(keccak256(abi.encodePacked(from, values.length))) & 1) == 1;
+
+        // 5) Try transferring before minting to trigger `ERC1155InsufficientBalance`
+        // if any non-zero value is required.
+        // We'll attempt the batch transfer first and expect a revert if there's any non-zero entry.
+        if (nonZeroId > 0) {
+            if (random) vm.prank(from);
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    IERC1155Errors.ERC1155InsufficientBalance.selector,
+                    from,
+                    0,
+                    values[nonZeroId - 1],
+                    ids[nonZeroId - 1]
+                )
+            );
+            erc1155.safeBatchTransferFrom(from, to, ids, values, "");
+        }
+
+        // Now ensure each token is minted up to required amounts (clamped by maxBalance).
+        for (uint256 i; i < ids.length;) {
+            if (values[i] > 0) {
+                erc1155.mint(from, ids[i], values[i], "", false);
+            }
+            unchecked {
+                ++i;
+            }
+        }
+
+        // 6) If `to` is a contract with revert/wrongReturn logic,
+        //    we test acceptance check reverts for each and reentrancy.
+        if (to.code.length != 0 && to != address(receiverOk)) {
+            // Revert with reason
+            vm.expectRevert("No thanks");
+            erc1155.safeBatchTransferFrom(from, address(receiverRevert), ids, values, "");
+            // Wrong-return version
+            vm.expectRevert(
+                abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidReceiver.selector, address(receiverWrongReturn))
+            );
+            erc1155.safeBatchTransferFrom(from, address(receiverWrongReturn), ids, values, "");
+            // No-reason revert
+            vm.expectRevert(
+                abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidReceiver.selector, address(receiverNoReasonRevert))
+            );
+            erc1155.safeBatchTransferFrom(from, address(receiverNoReasonRevert), ids, values, "");
+
+            // Reentrant scenario
+            bytes memory data = abi.encode(erc1155.safeBatchTransferFrom.selector);
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    IERC1155Errors.ERC1155MissingApprovalForAll.selector, address(receiverReentrant), from
+                )
+            );
+            erc1155.safeBatchTransferFrom(from, address(receiverReentrant), ids, values, data);
+        } else {
+            // 7) Everything is valid => we expect a `TransferBatch` event.
+            //    We might have discount cost if time has passed. Let's do a 2-step approach:
+            //    - Step 1: Transfer with no time skip
+            //    - Step 2: Revert to snapshot, skip time, then transfer again to see discount events
+
+            // Step 1: Transfer now
+            uint256 snapshot = vm.snapshot(); // TODO: update forge-std
+            if (random) {
+                if (values.length == 1) _expectEmitTransferSingle(from, from, to, ids[0], values[0]);
+                else _expectEmitTransferBatch(from, from, to, ids, values);
+                vm.prank(from);
+            } else {
+                if (values.length == 1) _expectEmitTransferSingle(from, to, ids[0], values[0]);
+                else _expectEmitTransferBatch(from, to, ids, values);
+            }
+            erc1155.safeBatchTransferFrom(from, to, ids, values, "");
+
+            // Check final balances for step 1
+            for (uint256 i; i < ids.length;) {
+                // from should be 0 and to should be `values[i]`
+                assertEq(_getBalance(from, ids[i]), 0, "Incorrect final balance for `from` after first transfer");
+                assertEq(_getBalance(to, ids[i]), values[i], "Incorrect final balance for `to` after first transfer");
+                unchecked {
+                    ++i;
+                }
+            }
+
+            // Revert to snapshot
+            vm.revertTo(snapshot); // TODO: update forge-std
+
+            // 8) Skip time so discount cost can accumulate.
+            skip(1 days);
+
+            // We'll gather new `values` because after demurrage, the "effective" balances were adjusted.
+            uint256[] memory newValues = new uint256[](ids.length);
+            for (uint256 i; i < ids.length;) {
+                (uint256 balance, uint256 discount) = _getBalanceOnDay(from, ids[i]);
+                newValues[i] = balance;
+                if (random && discount > 0) {
+                    // operator if from
+                    _expectEmitDiscountEvents(from, from, ids[i], discount);
+                } else if (discount > 0) {
+                    _expectEmitDiscountEvents(from, ids[i], discount);
+                }
+                unchecked {
+                    ++i;
+                }
+            }
+
+            // Finally we expect a TransferBatch from => to
+            if (random) {
+                if (values.length == 1) _expectEmitTransferSingle(from, from, to, ids[0], newValues[0]);
+                else _expectEmitTransferBatch(from, from, to, ids, newValues);
+                vm.prank(from);
+            } else {
+                if (values.length == 1) _expectEmitTransferSingle(from, to, ids[0], newValues[0]);
+                else _expectEmitTransferBatch(from, to, ids, newValues);
+            }
+            erc1155.safeBatchTransferFrom(from, to, ids, newValues, "");
+
+            // Check final balances for step 2
+            for (uint256 i; i < ids.length;) {
+                // now from should be 0, and to should be newValues[i].
+                assertEq(_getBalance(from, ids[i]), 0, "Incorrect final balance for `from` after second transfer");
+                assertEq(
+                    _getBalance(to, ids[i]), newValues[i], "Incorrect final balance for `to` after second transfer"
+                );
+                unchecked {
+                    ++i;
+                }
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Internal helpers
     // -------------------------------------------------------------------------
 
