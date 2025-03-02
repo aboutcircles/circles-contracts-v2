@@ -1018,6 +1018,37 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactE
     }
 
     // -------------------------------------------------------------------------
+    // Test internal `_setURI(...)` and external `uri(...)`
+    // -------------------------------------------------------------------------
+    /**
+     * @notice Fuzz test that verifies:
+     *  1) The contract’s initial URI (set by the constructor) is returned by `uri(tokenId)`.
+     *  2) Calling `setURI(newUri)` changes the internal URI.
+     *  3) `uri(tokenId)` then reflects the updated URI.
+     *
+     * @param caller  The address calling `setURI`.
+     * @param newUri  The new URI to set.
+     * @param tokenId Arbitrary token ID to pass into `uri(...)`.
+     */
+    function testUri(address caller, string memory newUri, uint256 tokenId) public {
+        // 1) Check the initial URI set in the constructor.
+        string memory initial = erc1155.uri(tokenId);
+        assertEq(initial, "circles", "Initial URI mismatch");
+
+        // 2) Now we have a `setURI(string memory)` function in `MockERC1155`
+        //    that wraps `_setURI`.
+        //    There's no typical revert scenario for `_setURI` in standard code,
+        //    so we just do it from `caller` to get coverage.
+
+        vm.prank(caller);
+        erc1155.setURI(newUri);
+
+        // 3) `uri(tokenId)` should now be `newUri`.
+        string memory afterSet = erc1155.uri(tokenId);
+        assertEq(afterSet, newUri, "uri(...) did not return the newly set URI");
+    }
+
+    // -------------------------------------------------------------------------
     // Internal helpers
     // -------------------------------------------------------------------------
 

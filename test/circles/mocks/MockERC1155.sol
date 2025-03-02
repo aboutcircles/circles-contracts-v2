@@ -119,10 +119,6 @@ contract MockERC1155 is ERC1155, MockDiscountedBalances {
         _burn(from, id, value);
     }
 
-    // The functions to test safeTransferFrom, safeBatchTransferFrom, balanceOf, balanceOfBatch,
-    // setApprovalForAll, isApprovedForAll, and uri() are inherited from the parent contracts.
-    // Only setURI is implemented here.
-
     /**
      * @notice Changes the metadata URI used by this ERC1155 contract.
      * @dev This function modifies the internal `_uri` state variable in the inherited contract.
