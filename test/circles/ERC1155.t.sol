@@ -959,6 +959,65 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactE
     }
 
     // -------------------------------------------------------------------------
+    // Test external `setApprovalForAll(...)` & `isApprovedForAll(...)`
+    // -------------------------------------------------------------------------
+    /**
+     * @notice Fuzz test to cover:
+     *         1) `operator == address(0)` => revert
+     *         2) Setting approval to true => emit event, isApprovedForAll(...) == true
+     *         3) Setting approval back to false => new event, isApprovedForAll(...) == false
+     *         4) Behavior with `owner == address(0)` doesn't revert by default
+     *
+     * @param owner    The address calling `setApprovalForAll`.
+     * @param operator The address to be approved.
+     * @param approved The boolean approval status to set.
+     */
+    function testSetApprovalForAll(address owner, address operator, bool approved) public {
+        // Scenario 1: If operator == address(0), must revert with ERC1155InvalidOperator.
+        if (operator == address(0)) {
+            vm.prank(owner);
+            vm.expectRevert(abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidOperator.selector, address(0)));
+            erc1155.setApprovalForAll(operator, approved);
+            return;
+        }
+
+        // We do not skip the case where owner == address(0), because
+        // the function doesn't explicitly revert in that scenario.
+        // (Though a real transaction from address(0) can't occur on chain.)
+
+        // We'll just do the actual call from `owner`.
+        vm.startPrank(owner);
+
+        // We'll first ensure that `isApprovedForAll(owner, operator)` is initially false.
+        bool initialApproval = erc1155.isApprovedForAll(owner, operator);
+        assertFalse(initialApproval);
+
+        // Expect an ApprovalForAll event
+        vm.expectEmit(true, true, false, true);
+        emit IERC1155.ApprovalForAll(owner, operator, approved);
+
+        // Set the approval
+        erc1155.setApprovalForAll(operator, approved);
+
+        // Now `isApprovedForAll` should match `approved`.
+        bool finalApproval = erc1155.isApprovedForAll(owner, operator);
+        assertEq(finalApproval, approved, "isApprovedForAll mismatch after setting");
+
+        // Flip the approval status to cover toggling from true=>false or false=>true in a single fuzz run
+        bool flipped = !approved;
+
+        vm.expectEmit(true, true, false, true);
+        emit IERC1155.ApprovalForAll(owner, operator, flipped);
+
+        erc1155.setApprovalForAll(operator, flipped);
+
+        bool flippedApproval = erc1155.isApprovedForAll(owner, operator);
+        assertEq(flippedApproval, flipped, "isApprovedForAll mismatch after flipping");
+
+        vm.stopPrank();
+    }
+
+    // -------------------------------------------------------------------------
     // Internal helpers
     // -------------------------------------------------------------------------
 
