@@ -3,6 +3,8 @@ pragma solidity >=0.8.13;
 
 import {console2, Test} from "forge-std/Test.sol";
 import {IERC1155Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
+import {IERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import {IERC1155MetadataURI} from "@openzeppelin/contracts/token/ERC1155/extensions/IERC1155MetadataURI.sol";
 import {ICirclesCompactErrors} from "src/errors/Errors.sol";
 import {TimeCirclesSetup} from "test/setup/TimeCirclesSetup.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
@@ -1046,6 +1048,39 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactE
         // 3) `uri(tokenId)` should now be `newUri`.
         string memory afterSet = erc1155.uri(tokenId);
         assertEq(afterSet, newUri, "uri(...) did not return the newly set URI");
+    }
+
+    // -------------------------------------------------------------------------
+    // Test `supportsInterface(...)` function
+    // -------------------------------------------------------------------------
+    /**
+     * @notice Confirms that the contract supports the expected interfaces:
+     *         - IERC165
+     *         - IERC1155
+     *         - IERC1155MetadataURI
+     *         and does not support random ones.
+     */
+    function testSupportsInterface(bytes4 randomId) public {
+        // 1) Check known supported interfaces
+        //    a) IERC165
+        bytes4 iERC165 = type(IERC165).interfaceId;
+        assertTrue(erc1155.supportsInterface(iERC165), "Should support IERC165");
+
+        //    b) IERC1155
+        bytes4 iERC1155 = type(IERC1155).interfaceId;
+        assertTrue(erc1155.supportsInterface(iERC1155), "Should support IERC1155");
+
+        //    c) IERC1155MetadataURI
+        bytes4 iERC1155MetadataURI = type(IERC1155MetadataURI).interfaceId;
+        assertTrue(erc1155.supportsInterface(iERC1155MetadataURI), "Should support IERC1155MetadataURI");
+
+        // If the randomId is one of the known supported IDs, we expect true. Otherwise false.
+        bool isSupported = randomId == iERC165 || randomId == iERC1155 || randomId == iERC1155MetadataURI;
+
+        bool result = erc1155.supportsInterface(randomId);
+
+        if (isSupported) assertTrue(result, "Expected supportsInterface to be true for known ID");
+        else assertFalse(result, "Expected supportsInterface to be false for random ID");
     }
 
     // -------------------------------------------------------------------------
