@@ -574,13 +574,10 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactE
         }
 
         // 3) If `to == address(0)`, must revert with `ERC1155InvalidReceiver`.
-        if (to == address(0)) {
-            // We don't even need to mint to `from` because it should revert
-            // before checking balances.
-            vm.expectRevert(abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidReceiver.selector, address(0)));
-            erc1155.safeTransferFrom(from, to, id, value, "");
-            return;
-        }
+        vm.expectRevert(abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidReceiver.selector, address(0)));
+        erc1155.safeTransferFrom(from, address(0), id, value, "");
+        // We don't even need to mint to `from` because it should revert
+        if (to == address(0)) return;
 
         bool random = (uint256(keccak256(abi.encodePacked(from, value))) & 1) == 1;
         // 4) Make sure `from` has enough tokens. If `value > 0`, we must mint >= `value`.
@@ -690,11 +687,9 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactE
         }
 
         // 3) If to == address(0), must revert with `ERC1155InvalidReceiver`.
-        if (to == address(0)) {
-            vm.expectRevert(abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidReceiver.selector, address(0)));
-            erc1155.safeBatchTransferFrom(from, to, ids, values, "");
-            return;
-        }
+        vm.expectRevert(abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidReceiver.selector, address(0)));
+        erc1155.safeBatchTransferFrom(from, address(0), ids, values, "");
+        if (to == address(0)) return;
 
         // 4) If ids.length != values.length => revert with ERC1155InvalidArrayLength
         if (ids.length != values.length) {
@@ -983,12 +978,10 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactE
      */
     function testSetApprovalForAll(address owner, address operator, bool approved) public {
         // Scenario 1: If operator == address(0), must revert with ERC1155InvalidOperator.
-        if (operator == address(0)) {
-            vm.prank(owner);
-            vm.expectRevert(abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidOperator.selector, address(0)));
-            erc1155.setApprovalForAll(operator, approved);
-            return;
-        }
+        vm.prank(owner);
+        vm.expectRevert(abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidOperator.selector, address(0)));
+        erc1155.setApprovalForAll(address(0), approved);
+        if (operator == address(0)) return;
 
         // We do not skip the case where owner == address(0), because
         // the function doesn't explicitly revert in that scenario.
