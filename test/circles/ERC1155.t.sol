@@ -5,6 +5,7 @@ import {console2, Test} from "forge-std/Test.sol";
 import {IERC1155Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import {IERC1155MetadataURI} from "@openzeppelin/contracts/token/ERC1155/extensions/IERC1155MetadataURI.sol";
+import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {ICirclesCompactErrors} from "src/errors/Errors.sol";
 import {TimeCirclesSetup} from "test/setup/TimeCirclesSetup.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
@@ -44,6 +45,12 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactE
         receiverWrongReturn = new MockERC1155ReceiverWrongReturn();
         receiverNoReasonRevert = new MockERC1155ReceiverNoReasonRevert();
         receiverReentrant = new MockReentrantReceiver(erc1155);
+
+        bytes4 iERC1155Receiver = type(IERC1155Receiver).interfaceId;
+        assertTrue(receiverOk.supportsInterface(iERC1155Receiver));
+        assertTrue(receiverRevert.supportsInterface(iERC1155Receiver));
+        assertTrue(receiverWrongReturn.supportsInterface(iERC1155Receiver));
+        assertTrue(receiverReentrant.supportsInterface(iERC1155Receiver));
     }
 
     // -------------------------------------------------------------------------
