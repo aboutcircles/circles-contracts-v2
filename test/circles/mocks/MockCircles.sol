@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.8.13;
 
+import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {Circles} from "src/circles/Circles.sol";
 
 /**
@@ -208,5 +209,55 @@ contract MockCircles is Circles {
      */
     function getTotalSupplyLastUpdatedDayValue(uint256 id) external view returns (uint64) {
         return discountedTotalSupplies[id].lastUpdatedDay;
+    }
+}
+
+/*//////////////////////////////////////////////////////////////////////////
+                            MOCK RECEIVERS
+//////////////////////////////////////////////////////////////////////////*/
+
+/**
+ * @dev This receiver attempts a single reentrant call in `onERC1155Received`.
+ */
+contract MockReentrantReceiver is IERC1155Receiver {
+    MockCircles public circles;
+    bool private hasReentered; // to avoid infinite loops
+
+    constructor(MockCircles _circles) {
+        circles = _circles;
+    }
+
+    /**
+     * @notice Called by Circles contract after `_mintAndUpdateTotalSupply` with `_doAcceptanceCheck` as true.
+     *         We'll attempt a reentrant call back into `mintAndUpdateTotalSupply` exactly once.
+     */
+    function onERC1155Received(address, address, uint256 id, uint256 value, bytes calldata data)
+        external
+        override
+        returns (bytes4)
+    {
+        if (!hasReentered) {
+            hasReentered = true;
+            // Reenter!
+            // This call is reentrant because we're still in the middle
+            // of `mintAndUpdateTotalSupply` from the first call.
+            circles.mintAndUpdateTotalSupply(address(this), id, value, data, true);
+        }
+
+        return this.onERC1155Received.selector;
+    }
+
+    function onERC1155BatchReceived(
+        address, /* operator */
+        address, /* from */
+        uint256[] calldata, /* ids */
+        uint256[] calldata, /* values */
+        bytes calldata /* data */
+    ) external pure override returns (bytes4) {
+        return this.onERC1155BatchReceived.selector;
+    }
+
+    function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
+        return interfaceId == type(IERC1155Receiver).interfaceId;
     }
 }
