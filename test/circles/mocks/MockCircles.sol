@@ -6,7 +6,7 @@ import {Circles} from "src/circles/Circles.sol";
 /**
  * @title MockCircles
  * @notice A mock implementation of the Circles contract, exposing
- *         certain internal functions for testing purposes.
+ *         certain internal variables and functions for testing purposes.
  */
 contract MockCircles is Circles {
     /**
@@ -19,6 +19,63 @@ contract MockCircles is Circles {
     constructor(uint256 _inflationDayZero, string memory newuri) Circles(_inflationDayZero, newuri) {}
 
     // -------------------------------------------------------------------------
+    // Getters for Circles' constants
+    // -------------------------------------------------------------------------
+
+    /**
+     * @notice Returns the maximum claim duration constant, in seconds.
+     * @return The maximum claim duration (2 weeks).
+     */
+    function getMAX_CLAIM_DURATION() external pure returns (uint256) {
+        return MAX_CLAIM_DURATION;
+    }
+
+    /**
+     * @notice Returns the special address that indicates
+     *         the associated v1 Circles contract has been stopped.
+     * @return The address(0x1) constant.
+     */
+    function getCIRCLES_STOPPED_V1() external pure returns (address) {
+        return CIRCLES_STOPPED_V1;
+    }
+
+    /**
+     * @notice Returns the constant used to represent an indefinite future time.
+     * @return The maximum value of uint96.
+     */
+    function getINDEFINITE_FUTURE() external pure returns (uint96) {
+        return INDEFINITE_FUTURE;
+    }
+
+    // -------------------------------------------------------------------------
+    // Getter and Setter for the mintTimes mapping
+    // -------------------------------------------------------------------------
+
+    /**
+     * @notice Returns the `mintV1Status` and `lastMintTime` for a given avatar.
+     * @param _human The address of the avatar for which to retrieve mint info.
+     * @return mintV1Status The status of the v1 Circles minting for `_human`.
+     * @return lastMintTime The last recorded mint timestamp for `_human`.
+     */
+    function getMintTime(address _human) external view returns (address mintV1Status, uint96 lastMintTime) {
+        MintTime memory mt = mintTimes[_human];
+        return (mt.mintV1Status, mt.lastMintTime);
+    }
+
+    /**
+     * @notice Sets the `mintV1Status` and `lastMintTime` for a given avatar.
+     * @dev Be cautious when directly modifying `mintTimes`, as it can affect
+     *      the claim issuance logic if used incorrectly in tests.
+     * @param _human The address of the avatar for which to set mint info.
+     * @param _mintV1Status The new v1 Circles minting status.
+     * @param _lastMintTime The new last mint timestamp.
+     */
+    function setMintTime(address _human, address _mintV1Status, uint96 _lastMintTime) external {
+        mintTimes[_human].mintV1Status = _mintV1Status;
+        mintTimes[_human].lastMintTime = _lastMintTime;
+    }
+
+    // -------------------------------------------------------------------------
     // Wrapped internal functions to enable testing
     // -------------------------------------------------------------------------
 
@@ -28,8 +85,8 @@ contract MockCircles is Circles {
      *      along with the start and end of the claimable period.
      * @param _human The address of the avatar/human to calculate issuance for.
      * @return issuance The claimable Circles in attoCircles.
-     * @return startPeriod The timestamp that marks the start of the claimable period.
-     * @return endPeriod The timestamp that marks the end of the claimable period.
+     * @return startPeriod The timestamp marking the start of the claimable period.
+     * @return endPeriod The timestamp marking the end of the claimable period.
      */
     function calculateIssuance(address _human)
         external
