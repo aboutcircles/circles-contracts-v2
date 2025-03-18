@@ -166,18 +166,6 @@ contract MockCircles is Circles {
     }
 
     /**
-     * @notice Returns the discounted balance for a given token ID and avatar address.
-     * @dev The returned balance is stored without applying demurrage for the current block.
-     *      Use the parent contract logic if you need real-time discounted values.
-     * @param id The token ID whose balance is queried.
-     * @param avatar The address of the avatar whose discounted balance is queried.
-     * @return The raw discounted balance for the specified avatar and token ID.
-     */
-    function getAvatarBalanceValue(uint256 id, address avatar) external view returns (uint192) {
-        return discountedBalances[id][avatar].balance;
-    }
-
-    /**
      * @notice Returns the last updated day for a given token ID and avatar address.
      * @dev This value is used internally for demurrage calculations.
      * @param id The token ID whose last updated day is queried.
@@ -186,18 +174,6 @@ contract MockCircles is Circles {
      */
     function getAvatarLastUpdatedDayValue(uint256 id, address avatar) external view returns (uint64) {
         return discountedBalances[id][avatar].lastUpdatedDay;
-    }
-
-    /**
-     * @notice Returns the discounted total supply for a given token ID.
-     * @dev This is the total supply stored in the contract without applying
-     *      real-time demurrage for the current block or day. Refer to the demurrage
-     *      logic for updated values.
-     * @param id The token ID whose total supply is queried.
-     * @return The raw discounted total supply for the specified token ID.
-     */
-    function getTotalSupplyBalanceValue(uint256 id) external view returns (uint192) {
-        return discountedTotalSupplies[id].balance;
     }
 
     /**
