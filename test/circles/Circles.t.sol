@@ -300,6 +300,100 @@ contract CirclesTest is Test, TimeCirclesSetup, IERC1155Errors, ICirclesErrors {
     }
 
     // -------------------------------------------------------------------------
+    // Test internal `_burnAndUpdateTotalSupply` function
+    // -------------------------------------------------------------------------
+
+    /**
+     * @notice Tests the `_burnAndUpdateTotalSupply` function in Circles by:
+     *         1) Minting tokens to `from` so there is a balance to burn.
+     *         2) Checking for edge cases like burning more than the user’s balance,
+     *            burning when the total supply is discounted, and overall supply updates.
+     * @param account The address from which tokens are burned.
+     * @param id The token ID for burning.
+     * @param value The number of tokens to attempt burning.
+     */
+    function testBurnAndUpdateTotalSupply(address account, uint256 id, uint256 value) public {
+        // 1. We cannot burn from address(0). This will fail logically in an actual contract scenario.
+        if (account == address(0)) {
+            vm.expectRevert(abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidSender.selector, address(0)));
+            circles.burnAndUpdateTotalSupply(account, id, value);
+            return;
+        }
+
+        // 2. If value > maxBalance, clamp it for consistent testing.
+        if (value > maxBalance) {
+            value = maxBalance;
+        }
+
+        // 3. Before burning, we need `account` to hold tokens. Mint some to `account`.
+        //    Test insufficient balance by randomly minting less than needed.
+        bool insufficient = (uint256(keccak256(abi.encodePacked(account, block.timestamp))) & 1) == 1;
+        // if insufficient, minted < value
+        uint256 minted = insufficient ? value / 2 : value;
+        // Mint up to `minted` (unless minted=0, no effect)
+        if (minted > 0) {
+            // We do not test acceptance checks here because we are focusing on burning logic.
+            circles.mintAndUpdateTotalSupply(account, id, minted, "", false);
+        }
+
+        // 4. If insufficient => expect revert on burn.
+        if (insufficient && value > 0) {
+            vm.expectRevert(
+                abi.encodeWithSelector(IERC1155Errors.ERC1155InsufficientBalance.selector, account, minted, value, id)
+            );
+            circles.burnAndUpdateTotalSupply(account, id, value);
+            return;
+        }
+
+        // 5. Test discount scenario: if minted value is large, skip a day so it might demurrage.
+        //    Test discount randomly.
+        bool discount = (uint256(keccak256(abi.encodePacked(account))) & 1) == 1;
+
+        if (discount && value > 0) {
+            // Skip one day to trigger demurrage
+            skip(1 days);
+            currentDay = circles.day(block.timestamp);
+
+            // distinguish balance and discount
+            (uint256 balance, uint256 discountCost) = _getBalanceOnDay(account, id);
+
+            // test insufficient revert trying to burn value (includes discount)
+            vm.expectRevert(
+                abi.encodeWithSelector(IERC1155Errors.ERC1155InsufficientBalance.selector, account, balance, value, id)
+            );
+            circles.burnAndUpdateTotalSupply(account, id, value);
+
+            // test happy path burning valid balance (excludes discount)
+            _expectEmitDiscountEvents(account, id, discountCost); // discount
+            _expectEmitTransferSingle(account, address(0), id, balance); // burned balance
+            circles.burnAndUpdateTotalSupply(account, id, balance);
+        } else {
+            _expectEmitTransferSingle(account, address(0), id, value);
+            circles.burnAndUpdateTotalSupply(account, id, value);
+        }
+
+        // 6. Check final user balance and total supply are reduced
+        assertEq(_getBalance(account, id), 0, "User balance after burn mismatch");
+        assertEq(circles.totalSupply(id), 0, "Total supply after burn mismatch");
+        assertEq(circles.getTotalSupplyLastUpdatedDayValue(id), currentDay, "Expected last updated day mismatch");
+
+        // 7. Case, when total supply is less than balances is hard to reproduce, let's cheat to reach the branch
+        address derivedAccount = address(uint160(uint256(keccak256(abi.encode(account)))));
+        // leave the space to mint extra 1
+        if (value == maxBalance) value = maxBalance - 1;
+        if (value != 0) circles.mintAndUpdateTotalSupply(derivedAccount, id, value, "", false);
+
+        // Force the discounted balance in storage to exceed totalSupply, triggering revert
+        bytes32 idSlot = keccak256(abi.encodePacked(id, uint256(17)));
+        bytes32 derivedAccountSlot = keccak256(abi.encodePacked(uint256(uint160(derivedAccount)), idSlot));
+        uint256 discountedBalance = (uint256(currentDay) << 192) + value + 1;
+        vm.store(address(circles), derivedAccountSlot, bytes32(discountedBalance));
+
+        vm.expectRevert(abi.encodeWithSelector(ICirclesCompactErrors.CirclesErrorNoArgs.selector, 0x84));
+        circles.burnAndUpdateTotalSupply(derivedAccount, id, value + 1);
+    }
+
+    // -------------------------------------------------------------------------
     // Internal helpers
     // -------------------------------------------------------------------------
 
