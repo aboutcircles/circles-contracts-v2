@@ -27,6 +27,12 @@ contract CirclesTest is Test, TimeCirclesSetup, IERC1155Errors, ICirclesErrors {
 
     /// @notice Represents Demurrage.MAX_VALUE in the underlying Circles contract.
     uint256 internal maxBalance;
+    /// @notice Represents Circles.MAX_CLAIM_DURATION.
+    uint256 internal maxClaimDuration;
+    /// @notice Represents Circles.INDEFINITE_FUTURE.
+    uint96 internal indefiniteFuture;
+    /// @notice Represents Circles.CIRCLES_STOPPED_V1.
+    address internal circlesStoppedV1;
 
     /// @notice Mock receivers used to test different receiving scenarios.
     MockERC1155ReceiverOk internal receiverOk;
@@ -53,6 +59,12 @@ contract CirclesTest is Test, TimeCirclesSetup, IERC1155Errors, ICirclesErrors {
 
         // Store the maximum possible balance (from the parent contract constant)
         maxBalance = circles.getMaxBalance();
+        // Store the maximum claim duration (circles contract constant)
+        maxClaimDuration = circles.getMAX_CLAIM_DURATION();
+        // Store the indefinite future representation (circles contract constant)
+        indefiniteFuture = circles.getINDEFINITE_FUTURE();
+        // Store the circles stopped v1 status (circles contract constant)
+        circlesStoppedV1 = circles.getCIRCLES_STOPPED_V1();
 
         // Record the current day
         currentDay = circles.day(block.timestamp);
@@ -391,6 +403,115 @@ contract CirclesTest is Test, TimeCirclesSetup, IERC1155Errors, ICirclesErrors {
 
         vm.expectRevert(abi.encodeWithSelector(ICirclesCompactErrors.CirclesErrorNoArgs.selector, 0x84));
         circles.burnAndUpdateTotalSupply(derivedAccount, id, value + 1);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test `_calculateIssuance` via `calculateIssuance`
+    // -------------------------------------------------------------------------
+
+    /**
+     * @notice Tests how `_calculateIssuance` behaves under various conditions:
+     *         - Active v1 status causes revert
+     *         - lastMintTime == INDEFINITE_FUTURE => (0,0,0)
+     *         - No completed hour => (0,0,0)
+     *         - Valid issuance scenario => issuance > 0, etc.
+     * @param human The address for which we calculate issuance.
+     * @param v1status A possible Circles v1 contract address or sentinel for stopped v1.
+     * @param skipHours How many hours we skip from the setup time (or 14 days after the setup time) before calling calculateIssuance.
+     * @param skipSeconds How many seconds we skip after skiped hours.
+     */
+    function testCalculateIssuance(address human, address v1status, uint8 skipHours, uint16 skipSeconds) public {
+        // 1. If the v1status is neither address(0) nor the STOPPED sentinel,
+        //    `_calculateIssuance` should revert with CirclesErrorOneAddressArg.
+        //    We'll detect that case first.
+        bool invalidV1status = (v1status != address(0)) && (v1status != circlesStoppedV1);
+
+        // Set mint time. This simulates an avatar's stored status and last mint time.
+        circles.setMintTime(human, v1status, indefiniteFuture);
+
+        bool random = (uint256(keccak256(abi.encodePacked(human))) & 1) == 1;
+        if (invalidV1status) {
+            // Expect revert: CirclesErrorOneAddressArg
+            // The revert includes (human, 0xC0) as coded in `_calculateIssuance`.
+            vm.expectRevert(
+                abi.encodeWithSelector(ICirclesCompactErrors.CirclesErrorOneAddressArg.selector, human, 0xC0)
+            );
+            circles.calculateIssuance(human);
+            // Set the v1status either address(0) or the STOPPED sentinel to continue
+            if (random) v1status = address(0);
+            else v1status = circlesStoppedV1;
+            circles.setMintTime(human, v1status, indefiniteFuture);
+        }
+
+        // 2. The lastMintTime == INDEFINITE_FUTURE, the function returns (0,0,0).
+        (uint256 issuance, uint256 startPeriod, uint256 endPeriod) = circles.calculateIssuance(human);
+        assertEq(issuance, 0, "Issuance must be zero for indefinite future");
+        assertEq(startPeriod, 0, "startPeriod must be zero for indefinite future");
+        assertEq(endPeriod, 0, "endPeriod must be zero for indefinite future");
+
+        // 3. Test ensuring issuance remains zero if no new hour has passed
+        // Set lastMintTime to the current timestamp
+        uint96 lastMintTime = uint96(block.timestamp);
+        circles.setMintTime(human, v1status, lastMintTime);
+        (issuance, startPeriod, endPeriod) = circles.calculateIssuance(human);
+        assertEq(issuance, 0, "Issuance must be 0 if we're still in the same hour");
+        assertEq(startPeriod, 0, "startPeriod must be 0 if we're still in the same hour");
+        assertEq(endPeriod, 0, "endPeriod must be 0 if we're still in the same hour");
+
+        // Skip forward a certain number of hours to test completed-hour logic
+        uint256 skipTime;
+        if (skipHours > 0) {
+            skipTime = uint256(skipHours) * 1 hours + skipSeconds;
+            if (random) skipTime += maxClaimDuration; // set more than max claim duration (14 days)
+            skip(skipTime);
+            currentDay = circles.day(block.timestamp);
+        }
+
+        // 4. We expect a valid issuance scenario
+        //    This includes the 2-week maximum claim period and real demurrage math.
+        (issuance, startPeriod, endPeriod) = circles.calculateIssuance(human);
+        // Check endPeriod - startPeriod equal the skipped time
+        if (skipTime > maxClaimDuration) {
+            skipTime = maxClaimDuration;
+        } else if (skipHours > 0) {
+            // Note: comments below describing current understanding of inaccuracy, however this might be incorrect.
+            // This condition determines the inaccuracy and holds fuzzing based on initial block.timestamp equal
+            // TimeCirclesSetup.ZERO_TIME + 1, however during the fuzzing of initial block.timestamp the condition is not holding.
+            // TODO: figure out the exact condition, which is holding fuzzing of initial block.timestamp.
+
+            if (skipTime % 1 hours > 0) {
+                // add 1 hour to skipTime due to inaccuracy in `k` - calculation the number of completed hours in day A until `startMint`,
+                // leading to minting an hour for a difference between A and startTime in a range from 1 to 3599 seconds
+                skipTime = (skipTime / 1 hours) * 1 hours + 1 hours;
+                // subtract 1 hour from skipTime due to inaccuracy in `l` - calculation the number of incompleted hours in day B until day B+1day
+                // leading to burning an hour for a difference between B and block.timestamp in a range from 1 to 3599 seconds
+                if (block.timestamp % 1 hours > 0) skipTime -= 1 hours;
+            }
+        }
+
+        assertEq(endPeriod - startPeriod, skipTime, "The claim period should be equal skipped time");
+        // Check boundary assertions for start and end periods
+        if (skipTime == maxClaimDuration) {
+            assertTrue(
+                startPeriod <= block.timestamp - maxClaimDuration,
+                "startPeriod must be <= current block.timestamp - maxClaimDuration"
+            );
+        } else {
+            assertTrue(startPeriod <= lastMintTime, "startPeriod must be <= lastMintTime");
+        }
+        assertTrue(endPeriod <= block.timestamp, "endPeriod must be <= current block.timestamp");
+        // Check issuance
+        uint256 hoursSkipTime = skipTime / 1 hours;
+        if (hoursSkipTime > 0) {
+            assertTrue(
+                issuance <= hoursSkipTime * 10 ** 18,
+                "Issuance should be less than 1CRC per 1 hour due to demurrage or equal"
+            );
+            assertTrue(
+                issuance > (hoursSkipTime - 1) * 10 ** 18,
+                "Issuance should be more than 1CRC per 1 hour for previous hour"
+            );
+        }
     }
 
     // -------------------------------------------------------------------------
