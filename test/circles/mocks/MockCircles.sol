@@ -257,7 +257,7 @@ contract MockClaimReentrantReceiver is IERC1155Receiver {
      * @notice Called by Circles contract after `claimIssuance`.
      *         We'll attempt a reentrant call back into `claimIssuance` exactly once.
      */
-    function onERC1155Received(address, address, uint256 id, uint256 value, bytes calldata data)
+    function onERC1155Received(address, address, uint256 id, uint256, bytes calldata)
         external
         override
         returns (bytes4)

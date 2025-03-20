@@ -710,6 +710,88 @@ contract CirclesTest is Test, TimeCirclesSetup, IERC1155Errors, ICirclesErrors {
         }
     }
 
+    function testCalculateIssuance() public {
+        address alice = makeAddr("alice");
+        circles.setMintTime(alice, address(0), uint96(block.timestamp));
+        for (uint256 i = 0; i < 100; i++) {
+            // Generate a pseudo-random number of seconds between 0 and 16 days (14days is max claimable period)
+            uint256 secondsSkip = uint256(keccak256(abi.encodePacked(block.timestamp, i, uint256(2)))) % 16 days;
+
+            _skipAndMint(secondsSkip, alice);
+        }
+    }
+
+    function testConsecutiveClaimablePeriods() public {
+        // skipTime(5 hours); // todo: investigate why startTime is zero is this commented out?
+        address alice = makeAddr("alice");
+        address bob = makeAddr("bob");
+        circles.setMintTime(alice, address(0), uint96(block.timestamp));
+        circles.setMintTime(bob, address(0), uint96(block.timestamp));
+
+        uint256 previousEndPeriod = 0;
+
+        for (uint256 i = 0; i < 10; i++) {
+            // Calculate issuance to get the current start and end periods
+            (, uint256 startPeriod, uint256 endPeriod) = circles.calculateIssuance(alice);
+
+            // For iterations after the first, check if the previous endPeriod matches the current startPeriod
+            if (i > 0) {
+                assertEq(previousEndPeriod, startPeriod, "EndPeriod does not match next StartPeriod");
+            }
+
+            // Update previousEndPeriod with the current endPeriod for the next iteration
+            previousEndPeriod = endPeriod;
+
+            // Generate a pseudo-random number between 1 and 4
+            uint256 hoursSkip = uint256(keccak256(abi.encodePacked(block.timestamp, i, uint256(0)))) % 34 + 1;
+            uint256 secondsSkip = uint256(keccak256(abi.encodePacked(block.timestamp, i, uint256(1)))) % 3600;
+
+            // Simulate passing of time variable windows of time (1-5 hours)
+            skip(hoursSkip * 1 hours + secondsSkip);
+
+            // Perform the mint operation as Alice
+            circles.claimIssuance(alice);
+        }
+
+        uint256 balanceOfAlice = circles.balanceOf(alice, uint256(uint160(alice)));
+
+        // now mint for Bob in one go and test that Alice and Bob have the same balance
+        circles.claimIssuance(bob);
+        uint256 balanceOfBob = circles.balanceOf(bob, uint256(uint160(bob)));
+        // the difference between Alice and Bob is less than dust
+        assertApproxEqAbs(balanceOfAlice, balanceOfBob, 10 ** (18 - 15));
+    }
+
+    function testDemurragedTransfer() public {
+        address alice = makeAddr("alice");
+        address bob = makeAddr("bob");
+        circles.setMintTime(alice, address(0), uint96(block.timestamp));
+        circles.setMintTime(bob, address(0), uint96(block.timestamp));
+
+        address[2] memory addresses = [alice, bob];
+        uint256[2] memory circlesIdentifiers = [uint256(uint160(alice)), uint256(uint160(bob))];
+        skip(12 * 24 hours + 1 minutes);
+
+        for (uint256 i = 0; i < 2; i++) {
+            (uint256 expectedIssuance,,) = circles.calculateIssuance(addresses[i]);
+            circles.claimIssuance(addresses[i]);
+            uint256 balance = circles.balanceOf(addresses[i], circlesIdentifiers[i]);
+            assertEq(balance, expectedIssuance);
+        }
+
+        skip(26 hours);
+
+        // send 5 CRC from alice to bob
+        uint256 aliceBalance = circles.balanceOf(addresses[0], circlesIdentifiers[0]);
+        uint256 bobBalance = circles.balanceOf(addresses[1], circlesIdentifiers[0]);
+        vm.prank(addresses[0]);
+        circles.safeTransferFrom(addresses[0], addresses[1], circlesIdentifiers[0], 5 * CRC, "");
+        uint256 aliceBalanceAfter = circles.balanceOf(addresses[0], circlesIdentifiers[0]);
+        uint256 bobBalanceAfter = circles.balanceOf(addresses[1], circlesIdentifiers[0]);
+        assertEq(aliceBalance - 5 * CRC, aliceBalanceAfter);
+        assertEq(bobBalance + 5 * CRC, bobBalanceAfter);
+    }
+
     // -------------------------------------------------------------------------
     // Internal helpers
     // -------------------------------------------------------------------------
@@ -810,5 +892,25 @@ contract CirclesTest is Test, TimeCirclesSetup, IERC1155Errors, ICirclesErrors {
     function _expectPersonalMint(address human) internal {
         vm.expectEmit(true, true, false, false);
         emit ICircles.PersonalMint(human, uint256(0), uint256(0), uint256(0));
+    }
+
+    // Private functions
+
+    function _skipAndMint(uint256 _seconds, address _avatar) private {
+        // ensure the avatar has no issuance already to start with
+        (uint256 issuance, uint256 startPeriod, uint256 endPeriod) = circles.calculateIssuance(_avatar);
+        assertEq(issuance, 0, "Ensure avatar has no issuance");
+
+        // skip time
+        skip(_seconds);
+
+        uint256 balanceBefore = circles.balanceOf(_avatar, uint256(uint160(_avatar)));
+        (issuance, startPeriod, endPeriod) = circles.calculateIssuance(_avatar);
+        uint256 hoursCount = (endPeriod - startPeriod) / 1 hours;
+        circles.claimIssuance(_avatar);
+        uint256 balanceAfter = circles.balanceOf(_avatar, uint256(uint160(_avatar)));
+        assertEq(balanceAfter - balanceBefore, issuance, "Ensure issuance is minted");
+        assertTrue(issuance <= hoursCount * 10 ** 18, "Ensure issuance is not more than expected");
+        assertApproxEqAbs(issuance, hoursCount * 10 ** 18, issuance / 100, "Ensure issuance is correct");
     }
 }
