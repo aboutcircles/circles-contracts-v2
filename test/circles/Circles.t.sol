@@ -15,7 +15,12 @@ import {
     MockERC1155ReceiverWrongReturn,
     MockERC1155ReceiverNoReasonRevert
 } from "test/circles/mocks/MockERC1155.sol";
-import {MockCircles, MockReentrantReceiver} from "test/circles/mocks/MockCircles.sol";
+import {
+    ICircles,
+    MockCircles,
+    MockMintReentrantReceiver,
+    MockClaimReentrantReceiver
+} from "test/circles/mocks/MockCircles.sol";
 
 /**
  * @title CirclesTest
@@ -39,7 +44,8 @@ contract CirclesTest is Test, TimeCirclesSetup, IERC1155Errors, ICirclesErrors {
     MockERC1155ReceiverRevert internal receiverRevert;
     MockERC1155ReceiverWrongReturn internal receiverWrongReturn;
     MockERC1155ReceiverNoReasonRevert internal receiverNoReasonRevert;
-    MockReentrantReceiver internal receiverReentrant;
+    MockMintReentrantReceiver internal receiverReentrantMint;
+    MockClaimReentrantReceiver internal receiverReentrantClaim;
 
     /// @notice Tracks the current day (based on inflationDayZero).
     uint64 currentDay;
@@ -74,14 +80,15 @@ contract CirclesTest is Test, TimeCirclesSetup, IERC1155Errors, ICirclesErrors {
         receiverRevert = new MockERC1155ReceiverRevert();
         receiverWrongReturn = new MockERC1155ReceiverWrongReturn();
         receiverNoReasonRevert = new MockERC1155ReceiverNoReasonRevert();
-        receiverReentrant = new MockReentrantReceiver(circles);
+        receiverReentrantMint = new MockMintReentrantReceiver(circles);
+        receiverReentrantClaim = new MockClaimReentrantReceiver(circles);
 
         // Verify the receivers correctly support the IERC1155Receiver interface
         bytes4 iERC1155Receiver = type(IERC1155Receiver).interfaceId;
         assertTrue(receiverOk.supportsInterface(iERC1155Receiver));
         assertTrue(receiverRevert.supportsInterface(iERC1155Receiver));
         assertTrue(receiverWrongReturn.supportsInterface(iERC1155Receiver));
-        assertTrue(receiverReentrant.supportsInterface(iERC1155Receiver));
+        assertTrue(receiverReentrantMint.supportsInterface(iERC1155Receiver));
     }
 
     // -------------------------------------------------------------------------
@@ -171,7 +178,7 @@ contract CirclesTest is Test, TimeCirclesSetup, IERC1155Errors, ICirclesErrors {
 
             // Test reentrancy scenario
             {
-                address mockReceiver = address(receiverReentrant);
+                address mockReceiver = address(receiverReentrantMint);
                 // For demonstration, clamp if large
                 if (value > maxBalance / 2) {
                     value = maxBalance / 2;
@@ -515,6 +522,195 @@ contract CirclesTest is Test, TimeCirclesSetup, IERC1155Errors, ICirclesErrors {
     }
 
     // -------------------------------------------------------------------------
+    // Test `_claimIssuance` via `claimIssuance`
+    // -------------------------------------------------------------------------
+
+    /**
+     * @notice Tests how `_claimIssuance` behaves under various conditions:
+     *         - Active v1 status causes revert
+     *         - lastMintTime == INDEFINITE_FUTURE => (0,0,0)
+     *         - No completed hour => (0,0,0)
+     *         - Valid issuance scenario => issuance > 0, etc.
+     *         - Reentrancy receiver
+     * @param human The address for which we claim issuance.
+     * @param v1status A possible Circles v1 contract address or sentinel for stopped v1.
+     * @param skipHours How many hours we skip from the setup time (or 14 days after the setup time) before calling calculateIssuance.
+     * @param skipSeconds How many seconds we skip after skiped hours.
+     */
+    function testClaimIssuance(address human, address v1status, uint8 skipHours, uint16 skipSeconds) public {
+        // 1. If the v1status is neither address(0) nor the STOPPED sentinel,
+        //    `_claimIssuance` should revert with CirclesErrorOneAddressArg.
+        //    We'll detect that case first.
+        bool invalidV1status = (v1status != address(0)) && (v1status != circlesStoppedV1);
+
+        // Set mint time. This simulates an avatar's stored status and last mint time.
+        circles.setMintTime(human, v1status, indefiniteFuture);
+
+        bool random = (uint256(keccak256(abi.encodePacked(human))) & 1) == 1;
+        if (invalidV1status) {
+            // Expect revert: CirclesErrorOneAddressArg
+            // The revert includes (human, 0xC0) as coded in `_calculateIssuance`.
+            vm.expectRevert(
+                abi.encodeWithSelector(ICirclesCompactErrors.CirclesErrorOneAddressArg.selector, human, 0xC0)
+            );
+            circles.claimIssuance(human);
+            // Set the v1status either address(0) or the STOPPED sentinel to continue
+            if (random) v1status = address(0);
+            else v1status = circlesStoppedV1;
+            circles.setMintTime(human, v1status, indefiniteFuture);
+        }
+
+        uint256 tokenId = uint256(uint160(human));
+
+        // 2. The lastMintTime == INDEFINITE_FUTURE, the function returns.
+        circles.claimIssuance(human);
+        assertEq(_getBalance(human, tokenId), 0, "Issuance must be zero for indefinite future");
+
+        // 3. Test ensuring issuance remains zero if no new hour has passed
+        // Set lastMintTime to the current timestamp
+        uint96 lastMintTime = uint96(block.timestamp);
+        circles.setMintTime(human, v1status, lastMintTime);
+        // The function returns
+        circles.claimIssuance(human);
+        assertEq(_getBalance(human, tokenId), 0, "Issuance must be zero for the same hour");
+
+        // Skip forward a certain number of hours to test completed-hour logic
+        uint256 skipTime;
+        if (skipHours > 0) {
+            skipTime = uint256(skipHours) * 1 hours + skipSeconds;
+            if (random) skipTime += maxClaimDuration; // set more than max claim duration (14 days)
+            skip(skipTime);
+            currentDay = circles.day(block.timestamp);
+
+            if (human == address(0)) {
+                vm.expectRevert(abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidReceiver.selector, address(0)));
+                circles.claimIssuance(human);
+                return;
+            } else {
+                // 4. Various failing receiver mocks:
+                {
+                    address mockReceiver = address(receiverRevert);
+                    // Should revert with "No thanks"
+                    vm.expectRevert("No thanks");
+                    circles.claimIssuance(mockReceiver);
+                }
+                {
+                    address mockReceiver = address(receiverWrongReturn);
+                    // Should revert with ERC1155InvalidReceiver
+                    vm.expectRevert(
+                        abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidReceiver.selector, mockReceiver)
+                    );
+                    circles.claimIssuance(mockReceiver);
+                }
+                {
+                    address mockReceiver = address(receiverNoReasonRevert);
+                    // Should revert with reason.length == 0 => ERC1155InvalidReceiver
+                    vm.expectRevert(
+                        abi.encodeWithSelector(IERC1155Errors.ERC1155InvalidReceiver.selector, mockReceiver)
+                    );
+                    circles.claimIssuance(mockReceiver);
+                }
+                // 5. Test reentrancy scenario
+                {
+                    address mockReceiver = address(receiverReentrantClaim);
+                    uint256 mockTokenId = uint256(uint160(mockReceiver));
+                    // Define current issuance
+                    (uint256 calculatedIssuance,,) = circles.calculateIssuance(mockReceiver);
+
+                    // Expect only one TransferSingle event due to reentrant call only returns without minting
+                    _expectEmitTransferSingle(address(0), mockReceiver, mockTokenId, calculatedIssuance);
+                    _expectPersonalMint(mockReceiver);
+
+                    // reentrancy should not lead to double-minting, because on first call contract state is updated, which leads second call to early return
+                    circles.claimIssuance(mockReceiver);
+
+                    // Validate final balance reflects only one minting
+                    assertEq(
+                        _getBalance(mockReceiver, mockTokenId),
+                        calculatedIssuance,
+                        "Balance mismatch after reentrancy without state effect"
+                    );
+                    // Validate the total supply data
+                    assertEq(
+                        circles.getTotalSupplyLastUpdatedDayValue(mockTokenId),
+                        currentDay,
+                        "Expected total supply last updated day mismatch"
+                    );
+                    assertEq(
+                        circles.totalSupply(mockTokenId),
+                        calculatedIssuance,
+                        "Expected total supply mismatch after reentrancy without state effect"
+                    );
+                }
+                // 6. Test positive contract receiver
+                {
+                    // The "successful" mock receiver
+                    address mockReceiver = address(receiverOk);
+                    uint256 mockTokenId = uint256(uint160(mockReceiver));
+                    // Define current issuance
+                    (uint256 calculatedIssuance,,) = circles.calculateIssuance(mockReceiver);
+                    // Expect a standard TransferSingle event
+                    _expectEmitTransferSingle(address(0), mockReceiver, mockTokenId, calculatedIssuance);
+                    _expectPersonalMint(mockReceiver);
+
+                    // Execute the claim
+                    circles.claimIssuance(mockReceiver);
+
+                    // Validate final balance
+                    assertEq(
+                        _getBalance(mockReceiver, mockTokenId),
+                        calculatedIssuance,
+                        "Balance mismatch with calculated issuance"
+                    );
+                    // Validate total supply data
+                    assertEq(
+                        circles.getTotalSupplyLastUpdatedDayValue(mockTokenId),
+                        currentDay,
+                        "Expected total supply last updated day mismatch"
+                    );
+                    assertEq(circles.totalSupply(mockTokenId), calculatedIssuance, "Expected total supply mismatch");
+                }
+
+                if (human.code.length == 0) {
+                    // 7. We expect a valid issuance scenario
+                    //    This includes the 2-week maximum claim period and real demurrage math.
+                    _expectPersonalMint(human);
+                    circles.claimIssuance(human);
+                    (, lastMintTime) = circles.getMintTime(human);
+                    assertEq(lastMintTime, uint96(block.timestamp), "Human last mint time should be updated");
+                    // Check issuance
+                    if (skipTime > maxClaimDuration) {
+                        skipTime = maxClaimDuration;
+                    } else if (skipHours > 0) {
+                        if (skipTime % 1 hours > 0) {
+                            skipTime = (skipTime / 1 hours) * 1 hours + 1 hours;
+                            if (block.timestamp % 1 hours > 0) skipTime -= 1 hours;
+                        }
+                    }
+                    uint256 hoursSkipTime = skipTime / 1 hours;
+                    uint256 balance = _getBalance(human, tokenId);
+                    assertTrue(
+                        balance <= hoursSkipTime * 10 ** 18,
+                        "Issuance should be less than 1CRC per 1 hour due to demurrage or equal"
+                    );
+                    assertTrue(
+                        balance > (hoursSkipTime - 1) * 10 ** 18,
+                        "Issuance should be more than 1CRC per 1 hour for previous hour"
+                    );
+                    // Check total supply
+                    assertEq(circles.totalSupply(tokenId), balance, "Expected total supply mismatch");
+                    // Validate total supply data
+                    assertEq(
+                        circles.getTotalSupplyLastUpdatedDayValue(tokenId),
+                        currentDay,
+                        "Expected total supply last updated day mismatch"
+                    );
+                }
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Internal helpers
     // -------------------------------------------------------------------------
 
@@ -608,5 +804,11 @@ contract CirclesTest is Test, TimeCirclesSetup, IERC1155Errors, ICirclesErrors {
     function _expectEmitDiscount(address from, uint256 id, uint256 discountCost) internal {
         vm.expectEmit(true, true, false, true);
         emit IDiscountedBalances.DiscountCost(from, id, discountCost);
+    }
+
+    /// @dev Simple expectation, skipping data checks except human.
+    function _expectPersonalMint(address human) internal {
+        vm.expectEmit(true, true, false, false);
+        emit ICircles.PersonalMint(human, uint256(0), uint256(0), uint256(0));
     }
 }

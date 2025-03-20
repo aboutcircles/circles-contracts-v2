@@ -4,6 +4,10 @@ pragma solidity >=0.8.13;
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {Circles} from "src/circles/Circles.sol";
 
+interface ICircles {
+    event PersonalMint(address indexed human, uint256 amount, uint256 startPeriod, uint256 endPeriod);
+}
+
 /**
  * @title MockCircles
  * @notice A mock implementation of the Circles contract, exposing
@@ -195,7 +199,7 @@ contract MockCircles is Circles {
 /**
  * @dev This receiver attempts a single reentrant call in `onERC1155Received`.
  */
-contract MockReentrantReceiver is IERC1155Receiver {
+contract MockMintReentrantReceiver is IERC1155Receiver {
     MockCircles public circles;
     bool private hasReentered; // to avoid infinite loops
 
@@ -218,6 +222,52 @@ contract MockReentrantReceiver is IERC1155Receiver {
             // This call is reentrant because we're still in the middle
             // of `mintAndUpdateTotalSupply` from the first call.
             circles.mintAndUpdateTotalSupply(address(this), id, value, data, true);
+        }
+
+        return this.onERC1155Received.selector;
+    }
+
+    function onERC1155BatchReceived(
+        address, /* operator */
+        address, /* from */
+        uint256[] calldata, /* ids */
+        uint256[] calldata, /* values */
+        bytes calldata /* data */
+    ) external pure override returns (bytes4) {
+        return this.onERC1155BatchReceived.selector;
+    }
+
+    function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
+        return interfaceId == type(IERC1155Receiver).interfaceId;
+    }
+}
+
+/**
+ * @dev This receiver attempts a single reentrant call in `onERC1155Received`.
+ */
+contract MockClaimReentrantReceiver is IERC1155Receiver {
+    MockCircles public circles;
+    bool private hasReentered; // to avoid infinite loops
+
+    constructor(MockCircles _circles) {
+        circles = _circles;
+    }
+
+    /**
+     * @notice Called by Circles contract after `claimIssuance`.
+     *         We'll attempt a reentrant call back into `claimIssuance` exactly once.
+     */
+    function onERC1155Received(address, address, uint256 id, uint256 value, bytes calldata data)
+        external
+        override
+        returns (bytes4)
+    {
+        if (!hasReentered) {
+            hasReentered = true;
+            // Reenter!
+            // This call is reentrant because we're still in the middle
+            // of `claimIssuance` from the first call.
+            circles.claimIssuance(address(uint160(id)));
         }
 
         return this.onERC1155Received.selector;
