@@ -396,8 +396,7 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactE
                 // We expect a revert on the first token that tries to transfer more
                 // than balance (minted).
                 // `_update` => revert ERC1155InsufficientBalance(from, fromBalance, value, id)
-                // TODO: upgrade forge-std in order to have vm.expectPartialRevert(IERC1155Errors.ERC1155InsufficientBalance.selector);
-                vm.expectRevert();
+                vm.expectPartialRevert(IERC1155Errors.ERC1155InsufficientBalance.selector);
                 erc1155.update(from, to, ids, values);
                 return;
             }
