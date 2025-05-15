@@ -233,8 +233,7 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
     }
 
     function testRenouncedAdminEqualNonAdmin() public {
-        // todo: update forge-std
-        uint256 snapshot = vm.snapshot();
+        uint256 snapshot = vm.snapshotState();
 
         // admin should experience same behaviour as non admin after renounced upgradeability
 
@@ -248,7 +247,7 @@ contract adminOperationsUpgradeableRenounceableProxy is Test, GroupSetup {
         vm.stopPrank();
 
         // let's revert to initial state to upgrade to implementation with selector clashes
-        vm.revertTo(snapshot);
+        vm.revertToState(snapshot);
         _upgradeToAndCall(mockMintPolicyWithSelectorClashes, "");
 
         // implementation with selector clashes

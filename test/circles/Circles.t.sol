@@ -174,7 +174,7 @@ contract CirclesTest is Test, TimeCirclesSetup, IERC1155Errors, ICirclesErrors {
             }
 
             // Snapshot the state for repeated trials
-            uint256 snapshot = vm.snapshot();
+            uint256 snapshot = vm.snapshotState();
 
             // Test reentrancy scenario
             {
@@ -202,7 +202,7 @@ contract CirclesTest is Test, TimeCirclesSetup, IERC1155Errors, ICirclesErrors {
             }
             {
                 // Revert to the snapshot for next scenario
-                vm.revertTo(snapshot);
+                vm.revertToState(snapshot);
 
                 // The "successful" mock receiver
                 address mockReceiver = address(receiverOk);
@@ -226,7 +226,7 @@ contract CirclesTest is Test, TimeCirclesSetup, IERC1155Errors, ICirclesErrors {
             // EOA scenario
             if (account.code.length == 0) {
                 // Revert again to snapshot
-                vm.revertTo(snapshot);
+                vm.revertToState(snapshot);
                 // Expect a standard TransferSingle event
                 _expectEmitTransferSingle(address(0), account, id, value);
 

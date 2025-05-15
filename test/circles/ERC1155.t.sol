@@ -618,7 +618,7 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactE
         } else {
             // 7) Everything is valid for transfer execution.
             // Make snapshot
-            uint256 snapshot = vm.snapshot(); // TODO: update forge-std to use vm.snapshotState()
+            uint256 snapshot = vm.snapshotState();
             // transfer
             // Finally, do the call
             if (random) {
@@ -632,7 +632,7 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactE
             assertEq(_getBalance(from, id), 0, "Incorrect final balance for `from`");
             assertEq(_getBalance(to, id), value, "Incorrect final balance for `to`");
             // Revert to snapshot
-            vm.revertTo(snapshot); // TODO: update forge-std to use vm.revertToStateAndDelete(snapshot)
+            vm.revertToState(snapshot);
             // Skip a day for discount to occur
             skip(1 days);
             // 8) Everything is valid for transfer with discount execution.
@@ -774,7 +774,7 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactE
             //    - Step 2: Revert to snapshot, skip time, then transfer again to see discount events
 
             // Step 1: Transfer now
-            uint256 snapshot = vm.snapshot(); // TODO: update forge-std
+            uint256 snapshot = vm.snapshotState();
             if (random) {
                 if (values.length == 1) _expectEmitTransferSingle(from, from, to, ids[0], values[0]);
                 else _expectEmitTransferBatch(from, from, to, ids, values);
@@ -796,7 +796,7 @@ contract ERC1155Test is Test, TimeCirclesSetup, IERC1155Errors, ICirclesCompactE
             }
 
             // Revert to snapshot
-            vm.revertTo(snapshot); // TODO: update forge-std
+            vm.revertToState(snapshot);
 
             // 8) Skip time so discount cost can accumulate.
             skip(1 days);
