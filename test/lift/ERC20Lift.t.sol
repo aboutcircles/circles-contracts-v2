@@ -9,12 +9,23 @@ import "../setup/TimeCirclesSetup.sol";
 import "../setup/AvatarCreation.sol";
 import "../hub/MockDeployment.sol";
 import "../hub/MockHub.sol";
+import "../../src/errors/Errors.sol";
 
-contract ERC20LiftTest is Test, TimeCirclesSetup, AvatarCreation {
+contract ERC20LiftTest is Test, TimeCirclesSetup, AvatarCreation, ICirclesErrors, ICirclesCompactErrors {
     // State variables
 
     MockDeployment public mockDeployment;
     MockHub public hub;
+    ERC20Lift public lift;
+
+    address public alice;
+    address public bob;
+    address public nonUser;
+
+    DemurrageCircles public aliceERC20;
+
+    event ERC20WrapperDeployed(address indexed avatar, address indexed erc20Wrapper, CirclesType circlesType);
+    event ProxyCreation(address proxy, address masterCopy);
 
     // Constructor
 
@@ -29,59 +40,96 @@ contract ERC20LiftTest is Test, TimeCirclesSetup, AvatarCreation {
         // Mock deployment
         mockDeployment = new MockDeployment(INFLATION_DAY_ZERO, 365 days);
         hub = mockDeployment.hub();
+        lift = mockDeployment.erc20Lift();
+
+        alice = addresses[0];
+        bob = addresses[1];
+        nonUser = makeAddr("nonUser");
+
+        // register Alice and Bob
+        // Alice registers short name
+        vm.startPrank(alice);
+        hub.registerHumanUnrestricted();
+        mockDeployment.nameRegistry().registerShortName();
+        vm.stopPrank();
+        vm.prank(bob);
+        hub.registerHumanUnrestricted();
+        
+        // skip time and mint
+        skipTime(14 days);
+        vm.prank(alice);
+        hub.personalMintWithoutV1Check();
+        vm.prank(bob);
+        hub.personalMintWithoutV1Check();
     }
 
     // Tests
 
-    function testERC20Wrap() public {
-        // register Alice and Bob
-        vm.prank(addresses[0]);
-        hub.registerHumanUnrestricted();
-        vm.prank(addresses[1]);
-        hub.registerHumanUnrestricted();
+    function testEnsureERC20InvalidType() public {
+        uint256 invalidType = type(uint256).max;
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(CirclesInvalidParameter.selector, invalidType, 0));
+        address(lift).call(abi.encodeWithSelector(lift.ensureERC20.selector, alice, invalidType));
+    }
 
-        // Alice registers short name
-        vm.startPrank(addresses[0]);
-        mockDeployment.nameRegistry().registerShortName();
-        vm.stopPrank();
+    function testEnsureERC20NotHubOrHumanOrGroup() public {
+        vm.prank(nonUser);
+        vm.expectRevert(abi.encodeWithSelector(CirclesErrorOneAddressArg.selector, nonUser, 0x26));
+        lift.ensureERC20(nonUser, CirclesType.Demurrage);
+    }
 
-        // skip time and mint
-        skipTime(14 days);
-        vm.prank(addresses[0]);
-        hub.personalMintWithoutV1Check();
-        vm.prank(addresses[1]);
-        hub.personalMintWithoutV1Check();
+    function testEnsureERC20() public {
+        address expectedAddress = 0xDF3DA9c97F5DB9B89dce95A05B1e2a04a00A59D3;
+        vm.prank(alice);
+        vm.expectEmit(true, true, true, true);
+        emit ERC20WrapperDeployed(alice, expectedAddress, CirclesType.Demurrage);
+        emit ProxyCreation(expectedAddress, lift.masterCopyERC20Wrapper(uint256(CirclesType.Demurrage)));
+        address deployedAddress = lift.ensureERC20(alice, CirclesType.Demurrage);
+        assertEq(deployedAddress, expectedAddress);
+        assertEq(lift.erc20Circles(CirclesType.Demurrage, alice), expectedAddress);
+    }
 
-        uint256 aliceBalance = hub.balanceOf(addresses[0], uint256(uint160(addresses[0])));
+    /// todo: Not sure if the rest of the tests even belong here in the first place
 
-        // wrap some into demurrage ERC20 of Alice by Alice
-        vm.prank(addresses[0]);
-        DemurrageCircles aliceERC20 = DemurrageCircles(hub.wrap(addresses[0], 10 * CRC, CirclesType.Demurrage));
-        assertEq(aliceERC20.balanceOf(addresses[0]), 10 * CRC);
+    function testSelfWrap() public withTokenDeployed {
+        uint256 aliceBalance = hub.balanceOf(alice, uint256(uint160(alice)));
+        
+        vm.prank(alice);
+        hub.wrap(alice, 10 * CRC, CirclesType.Demurrage);
 
-        // Give Bob some Alice CRC, so he can wrap them too
-        vm.prank(addresses[0]);
-        hub.safeTransferFrom(addresses[0], addresses[1], uint256(uint160(addresses[0])), 5 * CRC, "");
-        vm.prank(addresses[1]);
-        hub.wrap(addresses[0], 5 * CRC, CirclesType.Demurrage);
-        // assert Bob has 5 CRC in Alice's ERC20
-        assertEq(aliceERC20.balanceOf(addresses[1]), 5 * CRC);
+        assertEq(aliceERC20.balanceOf(alice), 10 * CRC);
+        assertEq(hub.balanceOf(alice, uint256(uint160(alice))), aliceBalance - 10 * CRC);
+    }
 
-        // now test wrapping by simply sending ERC1155 to the ERC20 wrapper
-        vm.prank(addresses[0]);
-        hub.safeTransferFrom(addresses[0], address(aliceERC20), uint256(uint160(addresses[0])), 5 * CRC, "");
-        // assert Alice has 10 + 5 = 15 CRC in her ERC20
-        assertEq(aliceERC20.balanceOf(addresses[0]), 15 * CRC);
-        // Alice wrapped 15 CRC, and gave 5 CRC to Bob
-        assertEq(hub.balanceOf(addresses[0], uint256(uint160(addresses[0]))), aliceBalance - 20 * CRC);
+    function testSimpleSelfWrap() public withTokenDeployed {
+        uint256 aliceBalance = hub.balanceOf(alice, uint256(uint160(alice)));
+        
+        vm.prank(alice);
+        hub.safeTransferFrom(alice, address(aliceERC20), uint256(uint160(alice)), 5 * CRC, "");
 
-        // somewhat cheekily test here that the demurrage works in ERC20 too
-        // todo: split this out into proper unit tests, rather than stories
+        assertEq(aliceERC20.balanceOf(alice), 5 * CRC);
+        assertEq(hub.balanceOf(alice, uint256(uint160(alice))), aliceBalance - 5 * CRC);
+    }
 
-        // skip time
-        skipTime(2 days);
-        // assert Alice has 15 CRC in her ERC20
-        // 2 days, 15 * (0.9998013320086...)^2 = 14.994040552292530832 (rounded down)
-        assertEq(aliceERC20.balanceOf(addresses[0]), 14994040552292530832);
+    function testForeignWrap() public withTokenDeployed {
+        vm.prank(alice);
+        hub.safeTransferFrom(alice, bob, uint256(uint160(alice)), 5 * CRC, "");
+        vm.prank(bob);
+        hub.wrap(alice, 5 * CRC, CirclesType.Demurrage);
+        assertEq(aliceERC20.balanceOf(bob), 5 * CRC);
+    }
+
+    function testSimpleForeignWrap() public withTokenDeployed {
+        vm.prank(alice);
+        hub.safeTransferFrom(alice, bob, uint256(uint160(alice)), 5 * CRC, "");
+        vm.prank(bob);
+        hub.safeTransferFrom(bob, address(aliceERC20), uint256(uint160(alice)), 5 * CRC, "");
+        assertEq(aliceERC20.balanceOf(bob), 5 * CRC);
+    }
+
+    modifier withTokenDeployed() {
+        vm.prank(alice);
+        aliceERC20 = DemurrageCircles(mockDeployment.erc20Lift().ensureERC20(alice, CirclesType.Demurrage));
+        _;
     }
 }
